@@ -1,0 +1,319 @@
+# Lessons
+#
+# One lesson per concept, about 3 minutes, in three rounds:
+#   1. see_it     an everyday example and a question to predict the answer
+#   2. try_it     the same idea on a real company in the game. Interactive and
+#                 computed from game numbers, so it lives in code
+#                 (prototype/src/screens/lessons/); only its intro is here
+#   3. your_turn  a judgment question with no single right answer; the coach
+#                 pushes back once, then wraps up
+#
+# Finishing a lesson marks the concept "explained", never "applied". Only a
+# thesis or scouting report counts as using a concept.
+#
+# Fields
+#   concept    slug in concepts.yaml
+#   format     talk | time_machine | sort | what_if | simulate | flaw
+#   minutes    rough length
+#   see_it     setup, question, choices (text, say, right?)
+#   try_it     intro: what the coach says before round 2
+#   your_turn  ask (bubbles), chips, pushback (match: regex on the answer, say,
+#              chips; the last entry without `match` is the default), wrap
+#
+# {placeholders} are filled from the game's numbers at run time, for example
+# {company} and {pe}. Prototype numbers are made up. Every lesson is `draft`.
+#
+# Concepts without a lesson open their term sheet instead.
+
+lessons:
+
+  - concept: pe-ratio
+    format: talk
+    minutes: 3
+    see_it:
+      setup: >
+        A lemonade stand makes $1,000 of profit a year. Someone offers to sell it to
+        you for $23,000.
+      question: If the profit never changes, how many years until you've made your money back?
+      choices:
+        - text: "2"
+          say: That would be a steal. $23,000 ÷ $1,000 a year is 23 years, not 2.
+        - text: "23"
+          right: true
+          say: >
+            Exactly. $23,000 ÷ $1,000 = 23. That number is the P/E: the price divided
+            by a year of profit. A typical S&P 500 company has a P/E of about 23 right now.
+        - text: "230"
+          say: Close, but one zero too many. $23,000 ÷ $1,000 a year is 23 years.
+    try_it:
+      intro: >
+        Same math, real companies. Buyers pay about {pe} years of profit for {company}
+        and about {pe_b} for {company_b}.
+    your_turn:
+      ask:
+        - What would have to be true for {company} to be worth {pe} years of its profit?
+      chips: [Profits keep growing fast, People keep wanting what it sells, Not sure]
+      pushback:
+        - match: "not sure|idk|dunno"
+          say: >
+            Here's a way in. If {company}'s profits grew 10% a year, after 5 years it
+            would earn about 1.6 times what it does now. Today's price would then be
+            about {pe5} times those bigger profits. Is that still a lot?
+          chips: [Still a lot, Seems fair, Not sure]
+        - say: >
+            Say profits grow 10% a year. After 5 years {company} earns about 1.6 times
+            what it does now, so today's price would be about {pe5} times those profits.
+            A typical company is about 23. Would you still pay today's price?
+          chips: ["Yes, it'll grow faster than that", "No, that's too much", Depends]
+      wrap: >
+        There's no right answer, and that's investing. Every P/E is a bet about how
+        fast profits will grow. When you write a thesis, say what growth you expect and why.
+
+  - concept: diversification-concentration-risk
+    format: time_machine
+    minutes: 4
+    see_it:
+      setup: >
+        Two friends each have $10,000. Riley puts it all in one company. Casey splits it
+        evenly across 20 companies. One of those companies has a disaster and its
+        stock falls 50%. Both of them own it.
+      question: How much does each one lose?
+      choices:
+        - text: Both lose $5,000
+          say: >
+            Riley does. But for Casey that company was only $500 of the $10,000, so a 50%
+            fall costs Casey $250.
+        - text: Riley loses $5,000, Casey loses $250
+          right: true
+          say: >
+            Right. Same bad news, very different damage. Spreading money out is called
+            diversification. It doesn't stop bad things from happening; it limits how
+            much one of them can hurt.
+        - text: Both lose $250
+          say: >
+            Casey does. But Riley had everything in that one company, so a 50% fall costs
+            Riley $5,000.
+    try_it:
+      intro: >
+        Now live through it. You'll own a real company for a real year, but we won't
+        say which one until the end.
+    your_turn:
+      ask:
+        - How big should one stock be in your portfolio, so a 50% drop wouldn't keep you up at night?
+      chips: ["10%", "25%", "50%"]
+      pushback:
+        - match: "50"
+          say: >
+            At 50%, a 50% drop costs your whole portfolio a quarter of its value. That's
+            what you just lived through. And the club caps a new pick at 25%. What would
+            you do if a pick grew to 40% of your money on its own?
+          chips: [Trim it back, Let it ride, Not sure]
+        - match: "25"
+          say: >
+            At 25%, a 50% drop costs your whole portfolio about 12%. That's the club's cap
+            when you buy. But winners grow. What would you do if a pick grew to 40% of
+            your money on its own?
+          chips: [Trim it back, Let it ride, Not sure]
+        - say: >
+            At 10%, a 50% drop costs your whole portfolio about 5%. Painful, not a
+            disaster. But winners grow. What would you do if a pick grew to 40% of your
+            money on its own?
+          chips: [Trim it back, Let it ride, Not sure]
+      wrap: >
+        Both are real choices, and people argue about it. The trick is to decide before
+        it happens how big one stock is allowed to get. Write that limit into your next thesis.
+
+  - concept: profit-margins
+    format: sort
+    minutes: 3
+    see_it:
+      setup: >
+        Two lemonade stands each sell $100 of lemonade. Stand A spends $90 on lemons,
+        cups and rent. Stand B spends $60.
+      question: Which one keeps more of each $1 it takes in?
+      choices:
+        - text: Stand A
+          say: Stand A spends $90 of every $100, so it keeps 10¢ of each $1. Stand B keeps 40¢.
+        - text: Stand B
+          right: true
+          say: >
+            Right. Stand B keeps $40 of $100, or 40¢ of each $1. Stand A keeps 10¢. That's
+            profit margin: how much of each $1 of sales a business keeps as profit.
+        - text: The same
+          say: >
+            They sell the same amount, but Stand B spends less. It keeps 40¢ of each $1;
+            Stand A keeps 10¢.
+    try_it:
+      intro: >
+        Your turn to guess. Put these four companies in order, from the one that keeps
+        the most of each $1 to the one that keeps the least.
+    your_turn:
+      ask:
+        - "{low} keeps {low_margin} of each $1 and {high} keeps {high_margin}. If costs went up by 5¢ for every $1 of sales, which business would be hurt more?"
+      chips: ["{low}", "{high}", About the same]
+      pushback:
+        - match: "same"
+          say: >
+            Both lose 5¢ per $1. But {high} would still keep plenty, while {low} only
+            keeps {low_margin} to begin with, so it would lose money on every sale unless it
+            raised prices. So what does a thin margin mean?
+          chips: [Less room for mistakes, Nothing much, Not sure]
+        - say: >
+            {low}. It only keeps {low_margin} of each $1, so 5¢ more in costs would turn
+            its profit into a loss unless it raised prices. {high} would still keep plenty.
+            So what does a thin margin mean?
+          chips: [Less room for mistakes, Nothing much, Not sure]
+      wrap: >
+        A thin margin means less room for mistakes. It doesn't mean a bad business:
+        {low} makes up for it by selling a huge amount. Margins tell you what kind of
+        business it is, and what could hurt it.
+
+  - concept: costs-and-taxes
+    format: what_if
+    minutes: 3
+    see_it:
+      setup: >
+        You bought a stock for $1,000 and it's now worth $1,500. You sell it after 2
+        months. In this club, the tax on a gain is 40% if you held it under 6 months.
+      question: How much do you keep?
+      choices:
+        - text: $1,500
+          say: >
+            You'd owe tax on the $500 gain: 40% of $500 is $200. So you keep $1,300.
+        - text: $1,300
+          right: true
+          say: >
+            Right. The tax is on the gain, not the whole amount: 40% of $500 is $200,
+            so you keep $1,300. Hold it 6 months or longer and the tax drops to 20%.
+        - text: $900
+          say: >
+            That's taking 40% of everything. The tax is only on the $500 gain: $200.
+            You keep $1,300.
+    try_it:
+      intro: >
+        Play with it. Change how long you hold and how much the stock gains, and watch
+        what you keep.
+    your_turn:
+      ask:
+        - "Your stock is up 30% and it's day 150. Waiting 32 more days cuts the tax in half. What would make you sell today anyway?"
+      chips: ["I think it'll drop soon", I want the money for another pick, "Nothing, I'd wait"]
+      pushback:
+        - match: "drop|fall|down"
+          say: >
+            That's a real reason. On $1,000 up 30%, waiting saves $60 in tax. So selling
+            today only comes out ahead if the stock falls more than about 5% in the next
+            month. How sure are you?
+          chips: [Pretty sure, Not that sure]
+        - match: "pick|another|money"
+          say: >
+            Fair. Just count the extra $60 in tax as part of what the new pick costs you.
+            Is the new pick better by more than that?
+          chips: [Yes, "Hmm, maybe not"]
+        - say: >
+            Waiting saves $60 here. But what if the stock starts falling on day 160?
+            Would you still wait?
+          chips: [Still wait, "I'd sell", Depends how much]
+      wrap: >
+        Taxes and fees are the one part of investing you control. The price is up to
+        the market; how often you trade is up to you. A good thesis says how long you
+        plan to hold.
+
+  - concept: luck-vs-skill
+    format: simulate
+    minutes: 3
+    see_it:
+      setup: >
+        30 people each flip a coin 5 times.
+      question: How likely is it that at least one of them gets 5 heads in a row?
+      choices:
+        - text: Almost impossible
+          say: >
+            For one person it's 1 in 32. But with 30 people trying, someone gets it about
+            6 times out of 10.
+        - text: About 1 in 10
+          say: >
+            It's much more likely than that. With 30 people trying, someone gets 5 heads
+            about 6 times out of 10.
+        - text: More likely than not
+          right: true
+          say: >
+            Right, about 6 times out of 10. For one person it's 1 in 32, but with 30
+            people trying, someone usually does it. And they didn't do anything special.
+    try_it:
+      intro: >
+        Now do it with stocks. 30 players pick stocks completely at random for a season.
+        Nobody knows anything. Some put everything in one stock, some spread it out.
+    your_turn:
+      ask:
+        - Someone tops your club's board this season. What would convince you it was skill and not luck?
+      chips: [They win again next season, Their predictions came true, Their returns were huge]
+      pushback:
+        - match: "again|next|twice"
+          say: >
+            That helps, but with 30 players, someone random wins twice more often than
+            you'd think. What else could you check?
+          chips: [Their predictions, How they explained it, Not sure]
+        - match: "predict"
+          say: >
+            That's the best test we have. A prediction is written down before anyone
+            knows the answer, so luck can't sneak in afterward. That's why the club has
+            a Predictions board. How many right predictions would convince you?
+          chips: ["3 in a row", "Most of them, all season", Not sure]
+        - say: >
+            In the simulation, the biggest returns went to players who bet everything on
+            one stock, with zero skill. Big swings make big winners. What could you check instead?
+          chips: [Their predictions, How they explained it, Not sure]
+      wrap: >
+        Judge the reasoning, not just the result. A good thesis that loses is still good
+        investing, and a lucky guess that wins isn't. Over a whole season, predictions
+        show skill better than returns do.
+
+  - concept: already-priced-in
+    format: flaw
+    minutes: 3
+    see_it:
+      setup: >
+        A famous band announces a surprise concert. Within an hour, resale tickets jump
+        from $50 to $200. You hear the news a week later.
+      question: Is a $200 ticket a bargain because the band is so popular?
+      choices:
+        - text: Yes, the band is amazing
+          say: >
+            The band is amazing, and everyone already knew that when the price jumped to
+            $200. The popularity is already in the price.
+        - text: No, the price already includes that
+          right: true
+          say: >
+            Right. Everyone knew, so the price already went up. For a bargain, you'd need
+            to know something other people don't. Investors say good news everyone knows
+            is "priced in."
+        - text: You can't ever tell
+          say: >
+            You can tell one thing: everyone knew the band was popular when the price
+            jumped. So that news is already in the $200.
+    try_it:
+      intro: >
+        Here's a thesis a friend posted. Every sentence in it is true. Find the problem.
+    your_turn:
+      ask:
+        - Think of a company you like. How would you check whether what you like about it is already in the price?
+      chips: [Look at the P/E, Read the news, Not sure]
+      pushback:
+        - match: "p/?e"
+          say: >
+            Yes. A high P/E means buyers already expect a lot of growth. Compare it with a
+            typical company (about 23) and with its sector. Then ask: what would the company
+            have to do to beat what buyers expect?
+          chips: [Grow faster than expected, Surprise with a new product, Not sure]
+        - match: "news"
+          say: >
+            News tells you what everyone knows, and that's exactly what's in the price
+            already. What could you look for that isn't in the headlines?
+          chips: [The P/E, Something I notice as a customer, Not sure]
+        - say: >
+            Start with the P/E. A high one means buyers already expect a lot. Compare it
+            with a typical company (about 23). What would the company have to do to beat that?
+          chips: [Grow faster than expected, Not sure]
+      wrap: >
+        A good thesis says what you think other investors are missing. If you can't name
+        anything, the good news is probably already in the price.

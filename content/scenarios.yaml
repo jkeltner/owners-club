@@ -1,0 +1,118 @@
+# Time machine scenarios
+#
+# Blind historical replays: the player sees the situation but not the company or
+# the date, makes hold / trim / sell choices at checkpoints, then sees the reveal.
+# Prices are precomputed and stored with each scenario, so a replay never calls the
+# market data provider. Every number in a reveal must be computed from stored
+# price data before a scenario goes active; nothing here is final.
+
+scenarios:
+
+  - slug: single-big-tech-2022
+    concepts: [diversification-concentration-risk]
+    real_setup:
+      tickers: {META: 0.5, SPY: 0.5}
+      start: 2022-01-03
+      end: 2022-12-30
+    blind_description: >
+      You own a social media company that's been a huge winner. It's now half of
+      your portfolio. The rest is in the S&P 500. Here's the next year.
+    checkpoints: [2022-03-31, 2022-06-30, 2022-09-30]
+    reveal: >
+      That was Meta in 2022. Fill in from stored prices: its full-year return, the
+      S&P 500's, and what happened to a 50% position.
+    debrief_questions:
+      - At which checkpoint would trimming have helped most?
+      - How would this year have felt with that stock at 10% of your portfolio instead of 50%?
+    status: draft
+
+  - slug: tech-basket-2022
+    concepts: [correlation]
+    real_setup:
+      tickers: {AAPL: 0.25, MSFT: 0.25, AMZN: 0.25, GOOGL: 0.25}
+      start: 2022-01-03
+      end: 2022-12-30
+    blind_description: >
+      You own four different companies, 25% each: a phone maker, a software
+      company, an online store and a search engine. Feels diversified, right?
+    checkpoints: [2022-04-29, 2022-08-31]
+    reveal: >
+      All four were big tech companies, and in 2022 they mostly fell together.
+      Fill in each one's return and the basket's vs. the S&P 500 from stored prices.
+    debrief_questions:
+      - What news would hit all four of these companies at once?
+    status: draft
+
+  - slug: covid-crash-2020
+    concepts: [costs-and-taxes, luck-vs-skill]
+    real_setup:
+      tickers: {SPY: 1.0}
+      start: 2020-02-19
+      end: 2020-08-31
+    blind_description: >
+      You own the whole market. Suddenly a crisis hits and stocks start falling
+      fast, day after day. What do you do?
+    checkpoints: [2020-03-09, 2020-03-23, 2020-05-29]
+    reveal: >
+      That was the 2020 COVID crash. Fill in from stored prices: the drop from the
+      February peak to the March low, and when the index reached a new high.
+    debrief_questions:
+      - What would selling at the bottom have cost you by the end of the summer?
+    notes: The best-known episode; blinding matters most here, since many kids know the ending.
+    status: draft
+
+  - slug: dot-com-valuation-2000
+    concepts: [already-priced-in, pe-ratio]
+    real_setup:
+      tickers: {CSCO: 1.0}
+      start: 2000-03-01
+      end: 2002-10-31
+    blind_description: >
+      You own the hottest company in the hottest industry. Everyone agrees the
+      future belongs to it. Investors are paying more than 100 times its yearly profit.
+    checkpoints: [2000-09-29, 2001-03-30, 2001-12-31]
+    reveal: >
+      That was Cisco during the dot-com bust. Fill in from stored prices. Note that
+      the business kept growing for years while the stock struggled.
+    debrief_questions:
+      - The company was great. Why was the stock a bad investment at that price?
+    data_gap: >
+      Structured SEC financials start around 2009, so the P/E for 2000 must come
+      from another source or be hand-entered. See the build spec's open questions.
+    status: draft
+
+  - slug: index-vs-picking-decade
+    concepts: [index-as-benchmark]
+    real_setup:
+      tickers: {SPY: 1.0}
+      start: 2014-01-02
+      end: 2023-12-29
+    blind_description: >
+      Pick any three companies from this list of ten, as they looked in 2014. Then
+      we fast-forward ten years and compare your picks with just owning the index.
+    checkpoints: []
+    reveal: >
+      Show each pick's 10-year return against the index's, computed from stored
+      prices. Choose the ten companies so that some beat the index and some lag it.
+    debrief_questions:
+      - How many of your three beat the index? How sure were you when you picked them?
+    status: draft
+
+  - slug: peak-cycle-chips-2018
+    concepts: [peak-cycle-earnings]
+    real_setup:
+      tickers: {MU: 0.5, SPY: 0.5}
+      start: 2018-06-01
+      end: 2018-12-31
+    blind_description: >
+      You own a company that makes memory chips. Its profits just tripled, and its
+      P/E is about 4, while a typical company's is about 23. It looks like a bargain.
+      It's half your portfolio; the rest is in the S&P 500.
+    checkpoints: [2018-08-31, 2018-10-31]
+    reveal: >
+      That was Micron in the second half of 2018, at the top of a memory-chip boom.
+      Fill in from stored prices: its return and the S&P 500's. Its profits fell by
+      more than half the next year; check that against its filings.
+    debrief_questions:
+      - The P/E was about 4, far below a typical company's 23. Why wasn't it a bargain?
+    status: draft

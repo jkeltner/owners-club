@@ -1,0 +1,617 @@
+# Owners Club learning objectives catalog
+#
+# Source of truth for what the game teaches and how. The coach, the weekly
+# recap and the concept tracker all read from this file (see docs/build_spec.md,
+# "Learning objectives store"). Edit freely; every concept starts as `draft`
+# until a reviewer signs off.
+#
+# Fields
+#   slug              stable id, never reused
+#   name              display name
+#   level             1-3 (ranks: Owner = all level 1 applied, Board Member = level 2, Chair = level 3 + a season of predictions)
+#   prerequisites     slugs a player should have applied first
+#   learned_by        explanation | experience
+#   kid_explanation   2-3 sentences a 13-year-old understands
+#   example           a worked example with real-looking numbers
+#   whats_normal      benchmarks so a player can tell a high number from a low one
+#   in_a_thesis       a sentence showing how a player might use it in a thesis
+#   teaching_notes    how we want it presented: analogies to use, things to avoid
+#   misconceptions    wrong ideas to watch for
+#   trigger_events    game events that mark it "encountered"
+#   coach_questions   questions the coach can ask around it
+#   check_questions   multiple choice; a correct answer marks it "explained" (never "applied")
+#   status            draft | active
+
+rank_thresholds:
+  shareholder: first purchase with a written thesis
+  owner: every active level-1 concept applied
+  board_member: every active level-2 concept applied
+  chair: every active level-3 concept applied, plus a full season of scored predictions
+
+concepts:
+
+  # ---------------- Level 1 ----------------
+
+  - slug: market-cap-vs-share-price
+    name: Market cap vs. share price
+    level: 1
+    prerequisites: []
+    learned_by: explanation
+    kid_explanation: >
+      A share price only tells you what one slice costs. Market cap is the price
+      of the whole company: share price times the number of shares. A $50 stock
+      can be a bigger company than a $500 stock.
+    example: >
+      Apple's shares cost about $250 and there are about 15 billion of them, so the whole company is worth about $3.7 trillion. Chipotle's shares cost only $42, but with 1.3 billion shares the whole company is still worth about $56 billion.
+    whats_normal: >
+      The biggest US companies are worth $1 trillion or more. Most companies in the S&P 500 are worth at least $20 billion.
+    in_a_thesis: >
+      Nike is worth about $107 billion for the whole company. If sales start growing again, I think that's too low because…
+    teaching_notes: >
+      Use a pizza analogy: one company cut into 8 big slices, another into 100
+      small ones. Never let a kid conclude a stock is "cheap" because its price is low.
+    misconceptions:
+      - A $20 stock is cheaper than a $400 stock.
+      - A stock that costs more per share is a bigger company.
+    trigger_events:
+      - first company page viewed
+      - first purchase
+    coach_questions:
+      - This stock costs $X a share. How much would it cost to buy the whole company?
+    check_questions:
+      - question: Company A's shares cost $20 and it has 1 billion shares. Company B's shares cost $200 and it has 50 million shares. Which company is worth more?
+        choices: [Company A, Company B, They're worth the same]
+        answer: Company A
+        why: A is worth $20 billion; B is worth $10 billion. Price per share alone doesn't tell you size.
+    status: draft
+
+  - slug: revenue-vs-earnings
+    name: Revenue vs. earnings
+    level: 1
+    prerequisites: []
+    learned_by: explanation
+    kid_explanation: >
+      Revenue is all the money a company takes in from customers. Earnings (profit)
+      is what's left after it pays for everything: workers, materials, rent, taxes.
+      A company can have huge revenue and still lose money.
+    example: >
+      Costco took in about $275 billion from customers last year but kept only about $8 billion as profit: 3 cents of every dollar. Microsoft took in $293 billion and kept $104 billion.
+    whats_normal: >
+      A typical S&P 500 company keeps about 12 cents of profit from each $1 of sales.
+    in_a_thesis: >
+      Boeing takes in $78 billion a year but lost $9 billion. I think it makes a profit again within two years because…
+    teaching_notes: >
+      Lemonade stand: selling $100 of lemonade is revenue; after lemons, sugar and
+      cups cost $70, the $30 left is earnings. Show both numbers side by side on the stock page.
+    misconceptions:
+      - A company with big sales must be profitable.
+    trigger_events:
+      - first company page viewed
+    coach_questions:
+      - Is this company profitable yet, or just growing its sales?
+    check_questions:
+      - question: A company sold $10 billion of products and spent $11 billion running the business. What were its earnings?
+        choices: [$10 billion, $1 billion, -$1 billion]
+        answer: -$1 billion
+        why: Earnings are what's left after costs. It spent more than it took in, so it lost money.
+    status: draft
+
+  - slug: pe-ratio
+    name: P/E ratio
+    level: 1
+    prerequisites: [market-cap-vs-share-price, revenue-vs-earnings]
+    learned_by: explanation
+    kid_explanation: >
+      The P/E ratio tells you how many dollars investors pay today for each $1 the
+      company earns in a year. A P/E of 30 means you're paying $30 for $1 of yearly profit.
+    example: >
+      A lemonade stand earns $1,000 a year. If you buy it for $20,000, you paid a P/E of 20: twenty years of today's profits. Paying $45,000 (a P/E of 45) only makes sense if you expect profits to grow a lot.
+    whats_normal: >
+      A typical S&P 500 company has a P/E of about 23. Slow, steady businesses are often 10 to 20. Fast growers are often 30 to 60 or more. A company with no profits has no P/E at all.
+    in_a_thesis: >
+      Nvidia's P/E is about 45, roughly double a typical company's. That only makes sense if profits keep growing fast, and I think they will because…
+    teaching_notes: >
+      Use a lemonade-stand example. Never call a high P/E "bad"; ask what growth would
+      justify it. Flag when P/E doesn't apply (no profits yet, banks, cyclicals) and
+      point to the sector lens.
+    misconceptions:
+      - A low P/E means the stock is cheap.
+      - A high P/E means the stock is overvalued.
+    trigger_events:
+      - buying a stock with a P/E over 50
+      - buying a stock with negative earnings
+    coach_questions:
+      - What would earnings need to do for this price to make sense?
+      - Investors are paying about X times earnings. Is that a lot for a company growing this fast?
+    check_questions:
+      - question: Stock A has a P/E of 10 and Stock B has a P/E of 40. What does that tell you for sure?
+        choices: [A is the better buy, Investors expect more growth from B, B is overpriced]
+        answer: Investors expect more growth from B
+        why: A higher P/E usually means investors expect earnings to grow faster. It doesn't tell you which is the better buy.
+    status: draft
+
+  - slug: index-as-benchmark
+    name: The index as a benchmark
+    level: 1
+    prerequisites: []
+    learned_by: experience
+    kid_explanation: >
+      The S&P 500 is a basket of 500 big US companies. Owning it means you get the
+      market's return without picking anything. The real question for any pick is
+      whether it beats just owning the whole market.
+    example: >
+      You picked three stocks and ended the year up 8%. Sounds good, but the S&P 500 was up 12%. Doing nothing would have beaten you by 4 points.
+    whats_normal: >
+      Over long stretches the S&P 500 has averaged about 10% a year, but single years swing a lot, from a 37% drop to gains above 30%. Over 10 or more years, most professional stock pickers do worse than it.
+    in_a_thesis: >
+      I'm moving $2,000 out of the index because I think Costco can beat it: …
+    teaching_notes: >
+      Every player starts fully in the index, so this is the first thing they see.
+      Frame each pick as a bet against the index, not against zero.
+    misconceptions:
+      - Making money means you did well.
+      - Beating the market is easy if you pick good companies.
+    trigger_events:
+      - account created (starts in the index)
+      - first leaderboard view
+      - a month where the player made money but trailed the index
+    coach_questions:
+      - You're up 6%. The S&P 500 is up 9%. Did your pick help or hurt?
+    check_questions:
+      - question: Your portfolio is up 8% this year. The S&P 500 is up 12%. How did you do?
+        choices: [Great, you made money, You trailed the market by 4 points, It's a tie]
+        answer: You trailed the market by 4 points
+        why: Just owning the index would have earned 12%. Your picks cost you 4 points compared with doing nothing.
+    status: draft
+
+  # ---------------- Level 2 ----------------
+
+  - slug: diversification-concentration-risk
+    name: Diversification and concentration risk
+    level: 2
+    prerequisites: [index-as-benchmark]
+    learned_by: experience
+    kid_explanation: >
+      If most of your money is in one company, one bad day for that company is a bad
+      day for you. Spreading money across different companies means no single
+      surprise can sink you.
+    example: >
+      If 60% of your money is in one stock and it drops 30%, your whole portfolio drops 18%. If that stock were 10% of your money, the same drop would cost you 3%.
+    whats_normal: >
+      In this game no pick can be more than 25% of your portfolio when you buy it. Many professional investors keep any one stock under 5 to 10%.
+    in_a_thesis: >
+      I'm keeping this pick to 10% of my portfolio so one bad earnings report can't sink me.
+    teaching_notes: >
+      Don't lecture. Use the drift chart and the hold-period prompt to show how a
+      winner quietly grew into most of the portfolio. Tech employees with most of
+      their wealth in company stock are the classic real-world example.
+    misconceptions:
+      - Diversifying means owning more stocks, even if they're all alike.
+      - If a stock keeps going up, holding more of it is safe.
+    trigger_events:
+      - any position above 40% of portfolio
+      - a held position drops 20% or more
+      - time machine concentration scenario completed
+    coach_questions:
+      - This position is now 45% of your portfolio, up from 20% when you bought. Is that what you meant to do?
+      - If this stock fell 30% tomorrow, what would happen to your portfolio?
+    check_questions:
+      - question: You have 60% of your money in one stock and it drops 30%. About how much does your whole portfolio drop?
+        choices: [About 30%, About 18%, About 6%]
+        answer: About 18%
+        why: 60% of your money times a 30% drop is an 18% hit to the whole portfolio.
+    status: draft
+
+  - slug: correlation
+    name: "Correlation: four tech stocks aren't diversified"
+    level: 2
+    prerequisites: [diversification-concentration-risk]
+    learned_by: experience
+    kid_explanation: >
+      Some companies tend to rise and fall together because the same news moves
+      them. Owning four tech companies can be almost as risky as owning one.
+    teaching_notes: >
+      Show the sector mix on the portfolio and club views. The 2022 tech scenario
+      in the time machine is the best way to feel it.
+    misconceptions:
+      - Owning several stocks always means you're diversified.
+    trigger_events:
+      - more than 60% of portfolio in one sector
+      - time machine 2022 tech basket scenario completed
+    coach_questions:
+      - All four of your companies are in tech. What news would hurt all of them at once?
+    check_questions:
+      - question: Which portfolio is more diversified?
+        choices: [Four chipmakers, A chipmaker, a bank, a grocery chain and a drugmaker, They're the same; both have four stocks]
+        answer: A chipmaker, a bank, a grocery chain and a drugmaker
+        why: Companies in different industries are hit by different news, so they're less likely to all fall together.
+    status: draft
+
+  - slug: profit-margins
+    name: Profit margins
+    level: 2
+    prerequisites: [revenue-vs-earnings]
+    learned_by: explanation
+    kid_explanation: >
+      A profit margin is how many cents of profit a company keeps from each dollar
+      of sales. A 25% margin means 25 cents of every dollar is profit.
+    example: >
+      Microsoft keeps about 35 cents of every $1 of sales as profit. Costco keeps about 3 cents. Both are huge, successful companies; they just run very different businesses.
+    whats_normal: >
+      A typical S&P 500 company keeps about 12 cents per $1 of sales. Grocery stores and warehouse clubs keep 2 to 4 cents. Software companies often keep 20 to 35 cents.
+    in_a_thesis: >
+      Coca-Cola keeps 27 cents of every $1 of sales, so even if sales grow slowly, …
+    teaching_notes: >
+      Compare a software company and a grocery chain to show margins vary hugely by
+      business type. Link to the sector lens.
+    misconceptions:
+      - A low-margin business is a bad business.
+    trigger_events:
+      - viewing the fundamentals screen of two companies in different sectors
+    coach_questions:
+      - This company keeps X cents of every dollar. What do you think lets it keep so much (or so little)?
+    check_questions:
+      - question: A company sells $100 million of products and keeps $5 million as profit. What's its profit margin?
+        choices: ["5%", "20%", "95%"]
+        answer: "5%"
+        why: $5 million divided by $100 million is 5 cents of profit per dollar of sales.
+    status: draft
+
+  - slug: free-cash-flow
+    name: Free cash flow
+    level: 2
+    prerequisites: [revenue-vs-earnings]
+    learned_by: explanation
+    kid_explanation: >
+      Free cash flow is the actual cash a business has left after running itself
+      and paying for new equipment and buildings. Earnings follow accounting rules;
+      cash is what's really in the bank.
+    example: >
+      Amazon earned $70 billion last year, but after paying for new warehouses and data centers, only about $21 billion of cash was left over.
+    whats_normal: >
+      Many solid companies turn 10 to 20 cents of every $1 of sales into free cash. Software and chip companies at their best turn 25 to 45 cents.
+    in_a_thesis: >
+      Netflix now turns 20 cents of each $1 of sales into free cash, so it can pay for new shows without borrowing.
+    teaching_notes: >
+      Compare reported earnings with free cash flow for the same company. Useful
+      for media, telecom and chipmakers, where they can differ a lot.
+    misconceptions:
+      - Earnings and cash are the same thing.
+    trigger_events:
+      - viewing a company where earnings and free cash flow differ by more than 30%
+    coach_questions:
+      - This company reports $X of earnings but only $Y of free cash. Where do you think the difference goes?
+    check_questions:
+      - question: Why can a company report a profit but still run low on cash?
+        choices: [It spent heavily on new factories or equipment, Profits are always fake, Cash and profit are the same]
+        answer: It spent heavily on new factories or equipment
+        why: Big spending on equipment uses cash right away but only counts against earnings slowly over time.
+    status: draft
+
+  - slug: dividends
+    name: Dividends and dividend yield
+    level: 2
+    prerequisites: []
+    learned_by: experience
+    kid_explanation: >
+      Some companies send part of their profits to owners as cash, called a
+      dividend. Dividend yield is that yearly cash as a percent of the share price.
+    teaching_notes: >
+      Dividends are credited to the player's portfolio as cash, so they see it
+      happen. Point out that total return includes dividends.
+    misconceptions:
+      - A high dividend yield is always a good sign.
+      - Stock price change is the whole return.
+    trigger_events:
+      - first dividend credited to the portfolio
+    coach_questions:
+      - This company pays out most of its profits. What does that leave for growing the business?
+    check_questions:
+      - question: A $100 stock pays $3 a year in dividends. What's its dividend yield?
+        choices: ["3%", "30%", "0.3%"]
+        answer: "3%"
+        why: $3 of yearly dividends divided by the $100 price is 3%.
+    status: draft
+
+  - slug: debt-balance-sheet-risk
+    name: Debt and balance-sheet risk
+    level: 2
+    prerequisites: [revenue-vs-earnings]
+    learned_by: explanation
+    kid_explanation: >
+      Companies borrow money just like people do. A little debt can help a company
+      grow; a lot of debt means bad times can get dangerous because the loans still
+      have to be paid.
+    teaching_notes: >
+      Show net debt (debt minus cash) on the stock page. Compare it with a year of
+      earnings or cash flow so the number means something.
+    misconceptions:
+      - Any debt is bad.
+    trigger_events:
+      - buying a company whose net debt is more than 4 years of earnings
+    coach_questions:
+      - If sales fell 20% next year, could this company still pay its loans?
+    check_questions:
+      - question: Two companies earn the same profit. One has no debt; the other owes 10 years of profit. Which is riskier in a recession?
+        choices: [The one with no debt, The one with lots of debt, They're the same]
+        answer: The one with lots of debt
+        why: Loan payments don't shrink when sales do, so heavy debt makes bad years much more dangerous.
+    status: draft
+
+  - slug: costs-and-taxes
+    name: Costs and taxes reduce returns
+    level: 2
+    prerequisites: []
+    learned_by: experience
+    kid_explanation: >
+      Every trade costs a fee, and selling a winner early means a bigger tax bill.
+      Trading a lot quietly eats your returns, even when your picks are good.
+    example: >
+      You made $200 on a stock after 5 months. Selling now, the game's 40% tax takes $80. Wait until 6 months and the 20% rate takes $40. Same stock, same gain, $40 difference.
+    whats_normal: >
+      In this game: a 0.5% fee on every trade, 40% tax on gains held under 6 months and 20% after.
+    in_a_thesis: >
+      I plan to hold this at least 6 months so I pay the lower tax rate.
+    teaching_notes: >
+      The "sell now vs. wait" screen and the running fees-and-taxes-paid total do
+      the teaching. Keep it concrete in dollars, not percentages.
+    misconceptions:
+      - Fees are too small to matter.
+      - Taxes only matter for big gains.
+    trigger_events:
+      - first sale of a position held under 6 months
+      - fees and taxes paid this season exceed 2% of portfolio value
+    coach_questions:
+      - Selling now costs you $X in tax. Waiting 23 days would save $Y. What's your reason to sell today?
+    check_questions:
+      - question: You have a $200 gain on a stock bought 5 months ago. In the game, how much do you keep if you sell now (40% tax) vs. after 6 months (20% tax)?
+        choices: ["$120 now vs. $160 later", "$200 either way", "$160 now vs. $120 later"]
+        answer: "$120 now vs. $160 later"
+        why: 40% of $200 is $80 in tax now; waiting past 6 months drops the tax to $40.
+    status: draft
+
+  - slug: luck-vs-skill
+    name: Luck vs. skill (process vs. outcome)
+    level: 2
+    prerequisites: []
+    learned_by: experience
+    kid_explanation: >
+      A stock can go up even when your reason for buying it was wrong, and go down
+      when you were right. Good investors judge their reasoning, not just the result.
+    teaching_notes: >
+      This is the single most important lesson. Use earnings-day follow-ups on
+      predictions: "You said 50%. It grew 30%. The stock went up anyway. Right or lucky?"
+    misconceptions:
+      - If the stock went up, my thesis was right.
+      - If the stock went down, I made a mistake.
+    trigger_events:
+      - an earnings report where the prediction missed but the stock rose
+      - an earnings report where the prediction hit but the stock fell
+    coach_questions:
+      - Your prediction missed, but the stock is up. Were you right or lucky?
+    check_questions:
+      - question: You predicted sales would grow 50%. They grew 20%, but the stock rose 15%. What's the best read?
+        choices: [Your thesis was right, You got lucky; your reasoning missed, The stock price proves your reasoning]
+        answer: You got lucky; your reasoning missed
+        why: The business didn't do what you expected. The stock rose for some other reason, which you didn't predict.
+    status: draft
+
+  # ---------------- Level 3 ----------------
+
+  - slug: sector-yardsticks
+    name: Different businesses, different yardsticks
+    level: 3
+    prerequisites: [pe-ratio, profit-margins, free-cash-flow]
+    learned_by: explanation
+    kid_explanation: >
+      The right number to look at depends on how a company makes money. P/E works
+      for many companies but means little for a bank, a young software company or a
+      biotech with no profits yet.
+    example: >
+      For a bank, whose business is money itself, you compare its price with what it owns minus what it owes. For a restaurant chain, you check whether the same restaurants sold more than last year.
+    whats_normal: >
+      Every company page has a "what matters" panel for its kind of business. Start there.
+    in_a_thesis: >
+      For a restaurant, P/E isn't the main number. Chipotle's same-store sales fell, so I'm watching whether…
+    teaching_notes: >
+      Use the sector lens on each stock page (content/sector_lenses.yaml). The coach
+      flags when a player justifies a pick with the wrong metric.
+    misconceptions:
+      - One ratio works for every company.
+    trigger_events:
+      - citing P/E in a thesis for a company in a sector where the lens says to be careful with it
+    coach_questions:
+      - For a company like this, what number do you think matters most?
+    check_questions:
+      - question: A biotech company has no profits yet. Which is the most useful thing to look at?
+        choices: [Its P/E ratio, How long its cash will last and its drug pipeline, Its dividend yield]
+        answer: How long its cash will last and its drug pipeline
+        why: With no profits, P/E can't be calculated. What matters is whether its drugs work and whether its cash lasts until they do.
+    status: draft
+
+  - slug: peg-ratio
+    name: "PEG ratio: paying for growth"
+    level: 3
+    prerequisites: [pe-ratio]
+    learned_by: explanation
+    kid_explanation: >
+      The PEG ratio divides P/E by how fast earnings are growing. It helps compare
+      a fast-growing company with a slow one: a high P/E can be reasonable if growth is fast enough.
+    example: >
+      Company A has a P/E of 40 and profits growing 40% a year: a PEG of 1. Company B has a P/E of 20 and profits growing 5% a year: a PEG of 4. A looks pricier, but you're paying less for each bit of growth.
+    whats_normal: >
+      Around 1 is often called fair. Above 2 means you're paying a lot for the growth. It's only as good as the growth guess behind it.
+    in_a_thesis: >
+      AMD's P/E is high, but I think its profits will grow even faster, so its PEG is about 1.
+    teaching_notes: >
+      Unlock once P/E is applied. Warn that PEG depends on a growth guess; it can
+      mislead for chipmakers at a peak or drugmakers before a patent expires.
+    misconceptions:
+      - A low PEG guarantees a good deal.
+    trigger_events:
+      - P/E concept applied (unlock)
+    coach_questions:
+      - At this growth rate, is a P/E of X reasonable?
+    check_questions:
+      - question: Two companies both trade at 30 times earnings. One grows 10% a year, the other 40%. Which is the better deal, if growth holds?
+        choices: [The 10% grower, The 40% grower, They're the same]
+        answer: The 40% grower
+        why: Same price per dollar of earnings, but its earnings grow four times faster, so its PEG is much lower.
+    status: draft
+
+  - slug: price-to-book
+    name: Price-to-book, for banks and insurers
+    level: 3
+    prerequisites: [market-cap-vs-share-price]
+    learned_by: explanation
+    kid_explanation: >
+      Book value is roughly what a company owns minus what it owes. For banks and
+      insurers, whose business is mostly money itself, comparing the price to book
+      value is often more useful than P/E.
+    teaching_notes: >
+      Introduce only through the sector lens on a bank or insurer page.
+    misconceptions:
+      - Price-to-book works for every company.
+    trigger_events:
+      - viewing or buying a bank or insurer
+    coach_questions:
+      - This bank trades at X times its book value. What would make it worth more than what it owns?
+    check_questions: []
+    status: draft
+
+  - slug: return-on-equity-roic
+    name: Return on equity and return on invested capital
+    level: 3
+    prerequisites: [profit-margins]
+    learned_by: explanation
+    kid_explanation: >
+      These measure how much profit a company makes from the money put into it. A
+      company that turns $100 into $25 of profit every year is a better business
+      than one that turns $100 into $5.
+    example: >
+      Two lemonade stands each cost $100 to set up. One earns $25 a year and the other earns $5. The first is the better business, even if they sell the same amount of lemonade.
+    whats_normal: >
+      Above 15% is usually a strong business. Below about 8%, a company barely earns more than the money it uses costs.
+    in_a_thesis: >
+      Lockheed earns about 18 cents a year for every $1 put into the business, which is strong for a company that needs big factories.
+    teaching_notes: >
+      Frame it as "how good is this money machine?" Compare two companies in the same industry.
+    misconceptions:
+      - Bigger profits always mean a better business.
+    trigger_events:
+      - viewing the fundamentals screen of two companies in the same sector
+    coach_questions:
+      - For every $100 invested in this company, how much profit does it make each year?
+    check_questions: []
+    status: draft
+
+  - slug: rule-of-40
+    name: Rule of 40 for software
+    level: 3
+    prerequisites: [free-cash-flow]
+    learned_by: explanation
+    kid_explanation: >
+      For software companies, add revenue growth and free-cash-flow margin. If the
+      total is 40 or more, the company is balancing growth and profit well.
+    example: >
+      Microsoft's sales grew 15% and it turned 25 cents of each $1 of sales into free cash. 15 + 25 = 40, right at the line.
+    whats_normal: >
+      40 or more is strong. Young companies get there by growing fast; older ones by making lots of cash.
+    in_a_thesis: >
+      Microsoft is right at the Rule of 40 line: 15% growth plus a 25% free-cash margin.
+    teaching_notes: >
+      Introduce only on software company pages through the sector lens.
+    misconceptions:
+      - Growth is all that matters for software companies.
+    trigger_events:
+      - viewing or buying a software company
+    coach_questions:
+      - This company grows 30% a year with a 5% cash margin. How does that compare to the Rule of 40?
+    check_questions: []
+    status: draft
+
+  - slug: earnings-growth-vs-multiple-expansion
+    name: Earnings growth vs. multiple expansion
+    level: 3
+    prerequisites: [pe-ratio]
+    learned_by: experience
+    kid_explanation: >
+      A stock can rise because the company earns more, or because investors are
+      willing to pay more for each dollar of earnings. The second kind can reverse
+      without the business doing anything wrong.
+    example: >
+      A stock went up 60%. Profits grew 25%, and buyers also started paying 28% more for each $1 of profit. That second part can disappear if the mood changes, even if the business keeps doing fine.
+    whats_normal: >
+      Over many years, most of a stock's gain comes from profits growing. Over a few months, changes in what buyers will pay often matter more.
+    in_a_thesis: >
+      Most of Netflix's gain came from earnings growing, not just people paying more, so I'm holding.
+    teaching_notes: >
+      Use the breakdown of each winner's gain on the portfolio page ("earnings grew
+      25%; investors paying more per dollar: 28%").
+    misconceptions:
+      - If the stock went up, the business must be doing great.
+    trigger_events:
+      - a held position gains 30% or more
+    coach_questions:
+      - Most of this gain came from a higher price per dollar of earnings. What could make that reverse?
+    check_questions: []
+    status: draft
+
+  - slug: peak-cycle-earnings
+    name: "Peak-cycle earnings: when a low P/E is a trap"
+    level: 3
+    prerequisites: [pe-ratio]
+    learned_by: experience
+    kid_explanation: >
+      Some businesses, like chipmakers and homebuilders, go through booms and busts.
+      At the top of a boom, earnings are huge, so the P/E looks low right before
+      earnings fall.
+    example: >
+      A chipmaker earns record profits in a boom year, so its P/E looks low, say 10. Next year demand drops and profits halve. At the same price, its P/E is now 20.
+    whats_normal: >
+      Chipmakers, carmakers, oil companies and homebuilders go through booms and busts. For them, look at profits over several years, not just the best one.
+    in_a_thesis: >
+      Chipmaker profits are at a record, so the low P/E might be a trap. I'm only putting in a small amount.
+    teaching_notes: >
+      Best taught through a time machine replay of a chipmaker or homebuilder cycle.
+    misconceptions:
+      - A low P/E always means a bargain.
+    trigger_events:
+      - time machine cyclical scenario completed
+      - buying a semiconductor or homebuilder stock
+    coach_questions:
+      - Are this company's earnings at a normal level, or at the top of a boom?
+    check_questions: []
+    status: draft
+
+  - slug: already-priced-in
+    name: "\"It's already priced in\""
+    level: 3
+    prerequisites: [pe-ratio]
+    learned_by: explanation
+    kid_explanation: >
+      If everyone already knows a company will do well, that good news is probably
+      already in the price. To beat the market, you need to be right about something
+      other people aren't expecting.
+    example: >
+      Everyone knows Nvidia sells the chips that power AI. That's why its stock costs about 45 times its yearly profit, when a typical company costs about 23. To beat the market from here, its sales have to grow even faster than people already expect.
+    whats_normal: >
+      The higher a company's P/E compared with similar companies, the more good news buyers are already expecting.
+    in_a_thesis: >
+      Everyone expects Nvidia to grow fast, so that's priced in. My bet is that it grows even faster because…
+    teaching_notes: >
+      The coach's signature move on popular stocks: "Everyone knows AI is huge, so
+      what's already in the price?" The dot-com time machine scenario reinforces it.
+    misconceptions:
+      - A great company is always a great stock.
+    trigger_events:
+      - buying one of the most-held stocks in the club
+      - time machine dot-com scenario completed
+    coach_questions:
+      - Everyone knows this company is great. What do you know that the price doesn't already reflect?
+    check_questions:
+      - question: Everyone expects a company's sales to grow 30% next year. Sales grow 30%. What happens to the stock most likely?
+        choices: [It jumps a lot, Not much; that growth was already expected, It falls to zero]
+        answer: Not much; that growth was already expected
+        why: Prices move on surprises. Growth everyone expected was already in the price.
+    status: draft

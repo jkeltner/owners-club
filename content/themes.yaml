@@ -1,0 +1,47 @@
+# Onboarding themes for the "start from curiosity" screen
+#
+# Curation, not recommendation: each theme shows a handful of companies from the
+# game's list so a first-timer can connect what they care about to real companies.
+# The coach never says which to buy. Verify every ticker against the current
+# S&P 500 constituent list before use; membership changes.
+
+themes:
+
+  - name: AI
+    blurb: The companies building and selling artificial intelligence
+    tickers: [NVDA, GOOGL, META, MSFT, AMZN, AVGO, AMD]
+
+  - name: Space and defense
+    blurb: >
+      Rockets, satellites and aircraft. Note: SpaceX is a private company, so it
+      isn't in the game. That's a lesson in itself; see the onboarding flow.
+    tickers: [LMT, NOC, RTX, BA]
+
+  - name: Sports and gaming
+    blurb: Gear, games and entertainment
+    tickers: [NKE, EA, TTWO, DIS]
+
+  - name: Food
+    blurb: Where you eat and what you snack on
+    tickers: [MCD, CMG, SBUX, KO, PEP]
+
+  - name: Stuff I use every day
+    blurb: Phones, shopping and streaming
+    tickers: [AAPL, AMZN, COST, NFLX, TGT]
+
+# Names the curiosity screen should recognize even though they aren't buyable,
+# each with the lesson the coach uses. `theme` shows it as a "can't buy" card
+# inside that theme.
+not_in_game:
+  - name: SpaceX
+    theme: Space and defense
+    reason: private company
+    lesson: Public vs. private companies and IPOs. Then ask which public companies would do well if space takes off.
+  - name: OpenAI
+    theme: AI
+    reason: private company
+    lesson: Same as SpaceX. Then ask which public companies sell to or invest in AI labs.
+  - name: Anthropic
+    theme: AI
+    reason: private company
+    lesson: Same as SpaceX. Then ask which public companies sell to or invest in AI labs.

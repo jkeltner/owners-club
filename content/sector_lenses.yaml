@@ -1,0 +1,85 @@
+# Sector lenses
+#
+# The simplified "what matters for this kind of company" panel on each stock page.
+# The full 19-sector reference is in docs/sector_metrics_reference.md.
+# `computable_from_filings` marks which "look at first" metrics we can compute
+# from SEC EDGAR data; the rest the coach explains in words for the alpha.
+# `typical_pe` is a rough [low, high] range for profitable companies of this
+# kind, so players can tell a high P/E from a low one. Approximate; check
+# against current sector medians before launch.
+
+lenses:
+
+  - kind: Software
+    look_first: Revenue growth plus free-cash-flow margin (Rule of 40)
+    then: [Gross margin, Customer retention]
+    careful_with: P/E for young, unprofitable companies
+    concepts: [rule-of-40, free-cash-flow]
+    typical_pe: [25, 40]
+    computable_from_filings: true
+
+  - kind: Chipmakers
+    look_first: Free cash flow across the boom-and-bust cycle
+    then: [Gross margin, Return on invested capital]
+    careful_with: P/E at the peak of a boom
+    concepts: [peak-cycle-earnings, free-cash-flow]
+    typical_pe: [15, 35]
+    computable_from_filings: true
+
+  - kind: Retailers and restaurants
+    look_first: Same-store sales
+    then: [Operating margin, Inventory]
+    careful_with: Price-to-sales without margins
+    concepts: [profit-margins]
+    typical_pe: [18, 30]
+    computable_from_filings: false   # same-store sales are company-reported, not in standard filings data
+
+  - kind: Consumer brands
+    look_first: Organic sales growth
+    then: [Margins, Cash conversion]
+    careful_with: PEG without asking whether the brand lasts
+    concepts: [profit-margins, peg-ratio]
+    typical_pe: [20, 28]
+    computable_from_filings: partial
+
+  - kind: Banks
+    look_first: Return on equity, price-to-tangible-book
+    then: [Net interest margin, Loan quality]
+    careful_with: Free cash flow and EV/EBITDA
+    concepts: [price-to-book, return-on-equity-roic]
+    typical_pe: [9, 14]
+    computable_from_filings: true
+
+  - kind: Media and streaming
+    look_first: Free cash flow
+    then: [Subscriber growth and churn]
+    careful_with: P/E while spending heavily on content
+    concepts: [free-cash-flow]
+    typical_pe: [18, 35]
+    computable_from_filings: partial   # subscriber counts are company-reported
+
+  - kind: Drugmakers and biotech
+    look_first: Drug pipeline and patents; cash runway for young biotechs
+    then: [Free cash flow]
+    careful_with: P/E for companies with no profits yet
+    concepts: [sector-yardsticks, free-cash-flow]
+    typical_pe: [14, 22]
+    computable_from_filings: partial   # cash runway yes; pipeline value no
+
+  - kind: Energy producers
+    look_first: Free-cash-flow yield
+    then: [Breakeven oil price, Debt]
+    careful_with: P/E at peak oil prices
+    concepts: [free-cash-flow, debt-balance-sheet-risk, peak-cycle-earnings]
+    typical_pe: [9, 15]
+    computable_from_filings: partial
+
+  # Added for the prototype's "Space and defense" theme. Simplified from the
+  # asset-heavy industrials row of docs/sector_metrics_reference.md; needs review.
+  - kind: Aerospace and defense
+    look_first: Order backlog (contracts already signed)
+    then: [Free cash flow, Return on invested capital]
+    careful_with: P/E without asking where the business is in its cycle
+    concepts: [free-cash-flow, return-on-equity-roic]
+    typical_pe: [16, 25]
+    computable_from_filings: partial   # backlog is company-reported
