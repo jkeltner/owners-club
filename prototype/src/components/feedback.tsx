@@ -1,9 +1,11 @@
 // Feedback button on every screen. Notes save to localStorage with the screen
 // name and a snapshot of the game; "Copy all" puts them on the clipboard and
 // "Clear notes" empties the list (second tap confirms, no browser dialog).
-// Later this files GitHub issues.
-import { useState } from 'react'
-import { useGame, type GameState } from '../state/store'
+// On the hosted site each note is also sent to /api/feedback, which files it
+// on GitHub: one issue per tester per day, one comment per note. Notes that
+// can't be sent (local dev, offline) stay here and retry later.
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useGame, type FeedbackNote, type GameState } from '../state/store'
 import { usd } from '../lib/format'
 import { Button } from './ui'
 
@@ -30,19 +32,62 @@ function snapshot(s: GameState): string[] {
   return out
 }
 
+const dayOf = (at: number) => new Date(at).toLocaleDateString('en-CA')
+
+function useSender() {
+  const { state, update } = useGame()
+  const sending = useRef(false)
+  return useCallback(async (notes: FeedbackNote[]) => {
+    if (sending.current) return
+    sending.current = true
+    let issue = state.feedbackIssue
+    try {
+      for (const n of notes.filter((x) => !x.sent)) {
+        const day = dayOf(n.at)
+        const res = await fetch('/api/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tester: state.testerId, issue: issue?.day === day ? issue.number : null, note: n.note, screen: n.screen, at: n.at, context: n.context ?? [] }),
+        })
+        if (!res.ok) break
+        const { issue: number } = (await res.json()) as { issue: number }
+        issue = { day, number }
+        const sentIssue = issue
+        update((s) => ({ feedback: s.feedback.map((f) => (f.at === n.at ? { ...f, sent: true } : f)), feedbackIssue: sentIssue }))
+      }
+    } catch {
+      // No API here (local dev) or offline: the notes stay saved and retry later.
+    } finally {
+      sending.current = false
+    }
+  }, [state.feedbackIssue, state.testerId, update])
+}
+
 export function FeedbackButton() {
   const { state, update } = useGame()
+  const send = useSender()
   const [open, setOpen] = useState(false)
   const [note, setNote] = useState('')
   const [copied, setCopied] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
 
+  // Retry anything unsent once per page load.
+  const retried = useRef(false)
+  useEffect(() => {
+    if (retried.current) return
+    retried.current = true
+    if (state.feedback.some((f) => !f.sent)) void send(state.feedback)
+  }, [send, state.feedback])
+
   const save = () => {
     if (!note.trim()) return
-    update((s) => ({ feedback: [...s.feedback, { screen: s.screen, note: note.trim(), at: Date.now(), context: snapshot(s) }] }))
+    const n: FeedbackNote = { screen: state.screen, note: note.trim(), at: Date.now(), context: snapshot(state) }
+    update((s) => ({ feedback: [...s.feedback, n] }))
+    void send([...state.feedback, n])
     setNote('')
     setOpen(false)
   }
+  const unsent = state.feedback.filter((f) => !f.sent).length
 
   const clearAll = () => {
     if (!confirmClear) return setConfirmClear(true)
@@ -78,11 +123,13 @@ export function FeedbackButton() {
             <div className="sheet-handle" />
             <h3>Note for the makers</h3>
             <p className="muted">Screen: <b>{state.screen}</b>. Confusing? Boring? Cool? Say anything.</p>
+            <p className="muted small">Notes go to the makers on GitHub, where anyone can read them. Your name isn't included, so don't add it.</p>
             <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={4} placeholder="This part was…" autoFocus />
             <Button onClick={save} disabled={!note.trim()}>Save note</Button>
             <Button kind="ghost" onClick={copyAll}>
               {copied ? 'Copied!' : `Copy all notes (${state.feedback.length})`}
             </Button>
+            {unsent > 0 && <p className="muted small center">{unsent} not sent yet. They'll go when the site can reach GitHub.</p>}
             {state.feedback.length > 0 && (
               <Button kind="ghost" onClick={clearAll}>
                 {confirmClear ? `Tap again to delete ${state.feedback.length} notes` : 'Clear notes'}

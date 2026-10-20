@@ -33,7 +33,7 @@ export type Scout = { ticker: string; thesis: string; prediction: Prediction; at
 
 // context: a snapshot of the game at the moment the note was written, so a
 // note like "the coach said something weird" shows what it said.
-export type FeedbackNote = { screen: string; note: string; at: number; context?: string[] }
+export type FeedbackNote = { screen: string; note: string; at: number; context?: string[]; sent?: boolean }
 
 export type GameState = {
   screen: Screen
@@ -48,6 +48,8 @@ export type GameState = {
   scouts: Scout[]
   concepts: Record<string, Progress>
   feedback: FeedbackNote[]
+  testerId: string // random, so GitHub issues group a tester's notes without a name
+  feedbackIssue: { day: string; number: number } | null // today's GitHub issue for this tester
   chat: { who: string; avatar: string; text: string }[]
   soldDemo: 'sold' | 'waited' | null
   timeMachineDone: boolean
@@ -74,6 +76,8 @@ const initial = (): GameState => ({
   scouts: [],
   concepts: {},
   feedback: [],
+  testerId: Math.random().toString(36).slice(2, 8),
+  feedbackIssue: null,
   chat: chatSeed,
   soldDemo: null,
   timeMachineDone: false,
@@ -159,7 +163,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const reset = useCallback(() => {
-    setState((s) => ({ ...initial(), feedback: s.feedback }))
+    setState((s) => ({ ...initial(), feedback: s.feedback, testerId: s.testerId, feedbackIssue: s.feedbackIssue }))
     window.scrollTo({ top: 0 })
   }, [])
 
