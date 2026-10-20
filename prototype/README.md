@@ -27,7 +27,7 @@ To playtest on a phone, run `npm run dev` and open the "Network" URL it prints, 
 
 Underlined terms anywhere (in the coach's messages too) open a sheet with a plain explanation, a "go deeper" link to the lesson, what's normal, an example, a check question and "ask the coach". Returning players open on the feed.
 
-The ✎ button at the top right of every screen saves a feedback note to the browser, with the screen name and a snapshot of the game (company, draft thesis, pick, the last few coach messages, concepts learned); "Copy all notes" puts them on the clipboard, and "Clear notes" (tap twice) deletes them. "Restart the prototype" on the Me tab resets everything except the notes.
+The ✎ button at the top right of every screen saves a feedback note to the browser, with the screen name and a snapshot of the game (company, draft thesis, pick, the last few coach messages, concepts learned); On the hosted site (https://owners-club-alpha.vercel.app) each note is also filed on GitHub: one issue per tester per day, labeled `playtest-feedback`. "Copy all notes" puts them on the clipboard, and "Clear notes" (tap twice) deletes them. "Restart the prototype" on the Me tab resets everything except the notes.
 
 ## Where things are
 
