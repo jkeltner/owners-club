@@ -12,13 +12,14 @@
 import { MARKET_PE, concept, fill, lens, lessonFor, sectorPlural } from '../content'
 import { marketCapB, peRatio, type Company } from '../data/companies'
 import { bigUsd } from '../lib/format'
-import type { ChatMsg, ProgressLevel } from '../state/store'
+import type { ChatMsg, Experience, ProgressLevel } from '../state/store'
 
 export type CoachMode = 'pick' | 'private' | 'sell' | 'debrief' | 'explain' | 'lesson'
 
 export type CoachContext = {
   mode: CoachMode
   playerName: string
+  experience?: Experience | null // 'some' skips definitions; 'lots' also asks harder questions
   company?: Company
   history: ChatMsg[]
   turn: number // how many replies the coach has already given
@@ -66,6 +67,8 @@ function pickScript(ctx: CoachContext, input: string | null): CoachReply {
   const pe = peRatio(c)
   const peText = pe === null ? '' : pe.toFixed(0)
   const theme = c.ai ? 'AI' : c.name
+  const knowsBasics = ctx.experience === 'some' || ctx.experience === 'lots'
+  const expert = ctx.experience === 'lots'
   const range = lens(c.lens)?.typical_pe
   const sector = sectorPlural(c.lens)
   const compare =
@@ -75,7 +78,9 @@ function pickScript(ctx: CoachContext, input: string | null): CoachReply {
   if (ctx.turn === 0) {
     return {
       bubbles: [
-        `Hey ${ctx.playerName}! I'm your coach. I won't tell you what to buy. I ask questions so your pick has a real reason behind it.`,
+        expert
+          ? `Hey ${ctx.playerName}! I'm your coach. I won't tell you what to buy. You know the basics, so I'll skip to the hard questions.`
+          : `Hey ${ctx.playerName}! I'm your coach. I won't tell you what to buy. I ask questions so your pick has a real reason behind it.`,
         `So: why ${c.name}? What got you interested?`,
       ],
       chips: [c.ai ? 'AI is huge' : `Everyone knows ${c.name}`, 'I use their stuff', 'The stock keeps going up', 'Not sure yet'],
@@ -87,7 +92,9 @@ function pickScript(ctx: CoachContext, input: string | null): CoachReply {
   const pricedIn =
     pe === null
       ? `${c.name} lost ${bigUsd(-c.earningsB)} last year, so it has no P/E: there's no profit to divide by. Buyers still pay ${bigUsd(marketCapB(c))} for the whole company. What are they expecting to happen?`
-      : `Here's one way to see it. ${c.name}'s stock costs about ${peText} times what the company earned last year. That number is called the P/E. ${compare} So what are buyers expecting that makes them pay ${pe > MARKET_PE ? 'that much' : 'that'}?`
+      : knowsBasics
+        ? `${c.name}'s P/E is ${peText}: the stock costs ${peText} times last year's profit. ${compare} What growth is that price already counting on?`
+        : `Here's one way to see it. ${c.name}'s stock costs about ${peText} times what the company earned last year. That number is called the P/E. ${compare} So what are buyers expecting that makes them pay ${pe > MARKET_PE ? 'that much' : 'that'}?`
   const pricedInChips =
     pe === null ? ['It makes money again', 'What does that mean?', "Maybe they're wrong"]
       : ['Lots of growth', 'What does P/E mean?', "Maybe they're wrong"]
@@ -138,6 +145,22 @@ function pickScript(ctx: CoachContext, input: string | null): CoachReply {
         chips: ['A new product', 'New customers', "They'll raise prices", 'Not sure'],
       }
     }
+    // Experienced players get the math behind "priced in": how long growth
+    // like last year's would take to bring the P/E down to a typical level.
+    if (expert && pe !== null && pe > MARKET_PE && c.revenueGrowth > 0) {
+      const pe5 = pe / (1 + c.revenueGrowth / 100) ** 5
+      const stillHigh = pe5 > MARKET_PE
+      return {
+        bubbles: [
+          `Let's check that. Say profit grows ${c.revenueGrowth}% a year for five years, like sales did last year, and the stock price stays flat. The P/E would ${stillHigh ? 'still be' : 'fall to'} about ${pe5.toFixed(0)}, ${stillHigh ? 'higher' : 'lower'} than a typical company's ${MARKET_PE} today.`,
+          stillHigh
+            ? `So the price is counting on growth even faster than last year's. What could make ${c.name} grow faster than ${c.revenueGrowth}% a year, or keep more of each sale as profit?`
+            : `So the price is counting on about that much growth, year after year. What could make ${c.name} do better than that, and what could slow it down?`,
+        ],
+        chips: ['Sales grow faster', 'Bigger profit margins', 'A new product', 'Not sure'],
+        marks: [{ slug: 'already-priced-in', level: 'explained' }],
+      }
+    }
     return {
       bubbles: [
         pe === null
@@ -159,7 +182,7 @@ function pickScript(ctx: CoachContext, input: string | null): CoachReply {
       : `what could slow sales down? That's the question to keep asking`
   return {
     bubbles: [
-      `Good thinking. One thing worth watching: ${hole}.`,
+      `Good thinking. One thing worth watching: ${/[.?!]$/.test(hole) ? hole : hole + '.'}`,
       `It's your call either way. Let's write your thesis: why you're buying, and one number you predict for the next earnings report.`,
     ],
     done: true,

@@ -659,3 +659,47 @@ button.holding-top { width: 100%; border: 0; background: transparent; padding: 0
 .friend-holding-top span { margin-left: auto; font-weight: 700; }
 .friend-holding .quote { margin: 4px 0 0 22px; }
 .friend-holding .quote { font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--ink-2); font-family: var(--body); }
+
+/* Experience question (onboarding) */
+.level-list .metric b { font-size: 17px; }
+.level-changes { background: var(--primary-2); border-radius: 14px; padding: 10px 12px; font-size: 15px; margin: 4px 0 14px; }
+.why-toggle { display: flex; gap: 10px; justify-content: space-between; align-items: flex-start; width: 100%; border: 0; background: transparent; padding: 0; text-align: left; }
+.why-toggle > span:last-child { font-weight: 800; color: var(--ink-2); }
+.seg.seg-3 { grid-template-columns: repeat(3, 1fr); }
+.seg.seg-3 button { font-size: 13px; padding: 9px 4px; }
+
+/* Thesis: what the player told the coach */
+.chat-recap { background: var(--gold-2); border: 0; }
+.chat-recap ul { margin: 4px 0 8px; padding-left: 18px; }
+.chat-recap li { margin: 2px 0; }
+.chat-recap .small { margin: 0; }
+
+/* New on the market (feed) */
+.listings h3 { margin: 2px 0 10px; }
+.listing { border-top: 1.5px solid var(--line); }
+.listing-head { display: flex; justify-content: space-between; gap: 10px; width: 100%; border: 0; background: transparent; padding: 10px 0; text-align: left; }
+.listing-head small { display: block; color: var(--ink-2); }
+.listing-head > span:last-child { font-weight: 800; color: var(--ink-2); }
+.listing-body { padding: 0 0 12px; }
+.listing-body p { margin: 0 0 8px; font-size: 15px; }
+.listing-q { background: var(--primary-2); border-radius: 12px; padding: 9px 11px; }
+.listing-related { display: grid; gap: 6px; margin-bottom: 8px; }
+.listing-related > small { color: var(--ink-2); font-weight: 700; }
+.listing-related .co-chip { border: 1.5px solid var(--line); padding: 9px 12px; }
+.listings .recap-concept { background: var(--bg); color: var(--ink); margin-top: 4px; }
+.listings .recap-explain { background: var(--bg); margin: 6px 0 0; }
+.listings > .muted.small { margin: 10px 0 0; }
+
+/* Desktop: explain the phone-width column */
+.desk-panel { display: none; }
+@media (min-width: 1000px) {
+  .desk-panel {
+    display: block; position: fixed; top: 50%; transform: translateY(-50%);
+    right: calc(50% + 215px + 48px); width: 300px; color: var(--ink);
+  }
+  .desk-panel h2 { margin: 12px 0 8px; }
+  .desk-panel p { font-size: 15px; margin: 0 0 12px; }
+  .desk-panel .club-crest { margin: 0; }
+  .desk-url { font-weight: 700; font-family: ui-monospace, monospace; font-size: 14px; }
+}
+.link-btn.small { font-size: 13px; text-align: left; font-weight: 600; padding: 0 0 8px; }

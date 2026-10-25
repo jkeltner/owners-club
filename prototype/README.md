@@ -14,8 +14,8 @@ To playtest on a phone, run `npm run dev` and open the "Network" URL it prints, 
 
 ## What's in it
 
-1. **The first 15 minutes:** invite, join, "you already own the market", curiosity screen (search + themes), company card (P/E next to a typical company's, and a "what matters" panel with a number for every metric it names) or the SpaceX/OpenAI/Anthropic private-company path, coach chat (with a mock mic), thesis + prediction, sizing (25% cap, fee shown), rank earned.
-2. **Club:** friends' theses, the weekly recap (Bell + one concept), a chat stub.
+1. **The first 15 minutes:** invite, join, how much you know about stocks (changes the coach, lessons and market screen; switch it on the Me tab), "you already own the market", curiosity screen (search + themes), company card (P/E next to a typical company's, and a "what matters" panel with a number for every metric it names) or the SpaceX/OpenAI/Anthropic private-company path, coach chat (with a mock mic), thesis + prediction (with a recap of what you told the coach and "Start from my answers"), sizing (25% cap, fee shown), rank earned.
+2. **Club:** friends' theses, the weekly recap (Bell + one concept), "New on the market" (recent IPOs, not buyable, linking to related companies in the game), a chat stub.
 3. **Portfolio:** "Today", plus a "5 months later" demo with the drift chart, after-tax view and gain breakdown. Each holding shows its tax if sold today; tap 📈 for its price chart over 3, 6, 9 or 12 months. A breakdown shows how much each holding pulls your average P/E up or down.
 4. **Sell now vs. wait:** from Costco in the 5-months-later view.
 5. **Leaderboard:** a "how the board works" explainer, main board with risk columns, plus the rookie, long-term, risk-adjusted and predictions boards. Tap a player to see their holdings (a week late, shares only) and the thesis behind each.
@@ -23,9 +23,9 @@ To playtest on a phone, run `npm run dev` and open the "Network" URL it prints, 
    - **Lessons** (three rounds each), one per format: P/E (talk it through), diversification (time machine), profit margins (sort it), costs and taxes (what if), luck vs. skill (run it 100 times), already priced in (spot the flaw). Other concepts open their term sheet, marked "Lesson coming".
    - **Time machine:** one big winner (2022), four tech stocks (2022), the COVID crash (2020), the hottest company (2000), ten years of picking (2014 to 2023), the cheap chipmaker (2018). Blind, with a reveal and a coach debrief.
    - **Scouting reports:** "Scout it" on any company page after your first pick. Same thesis and prediction, no money; shows under Scouting on the portfolio and marks concepts applied.
-7. **Me:** profile, rank (taps through to Learn), club rules and restart.
+7. **Me:** profile, rank (taps through to Learn), how much you know about stocks, club rules and restart.
 
-Underlined terms anywhere (in the coach's messages too) open a sheet with a plain explanation, a "go deeper" link to the lesson, what's normal, an example, a check question and "ask the coach". Returning players open on the feed.
+Underlined terms anywhere (in the coach's messages too) open a sheet with a plain explanation, a "go deeper" link to the lesson, what's normal, an example, a check question and "ask the coach". Returning players open on the feed. On a wide screen, a panel beside the phone column explains the layout and the ✎ button.
 
 The ✎ button at the top right of every screen saves a feedback note to the browser, with the screen name and a snapshot of the game (company, draft thesis, pick, the last few coach messages, concepts learned); On the hosted site (https://owners-club-alpha.vercel.app) each note is also filed on GitHub: one issue per tester per day, labeled `playtest-feedback`. "Copy all notes" puts them on the clipboard, and "Clear notes" (tap twice) deletes them. "Restart the prototype" on the Me tab resets everything except the notes.
 
@@ -49,3 +49,4 @@ The ✎ button at the top right of every screen saves a feedback note to the bro
 - "Ask the coach" on a term only answers two scripted questions; the real coach will answer anything.
 - Sector P/E ranges (`typical_pe` in `sector_lenses.yaml`) are rough and need checking against current sector medians.
 - Avatars are a placeholder set until students pick.
+- "New on the market" shows three 2025 IPOs as stand-ins for the past week's.

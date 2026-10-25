@@ -5,7 +5,7 @@ import { concept } from '../content'
 import { chatSeed } from '../data/club'
 
 export type Screen =
-  | 'invite' | 'join' | 'market' | 'curious' | 'company' | 'private'
+  | 'invite' | 'join' | 'level' | 'market' | 'curious' | 'company' | 'private'
   | 'coach' | 'thesis' | 'size' | 'done'
   | 'feed' | 'portfolio' | 'sell' | 'board' | 'me'
   | 'learn' | 'lesson' | 'replay' | 'scouted'
@@ -13,6 +13,10 @@ export type Screen =
 export type ProgressLevel = 'encountered' | 'explained' | 'applied'
 export const LEVELS: ProgressLevel[] = ['encountered', 'explained', 'applied']
 export type Progress = Partial<Record<ProgressLevel, number>> & { evidence?: string[] }
+
+// How much the player already knows, asked once after joining. It sets how
+// much the coach explains and where lessons start; changeable in Profile.
+export type Experience = 'new' | 'some' | 'lots'
 
 export type ChatMsg = { from: 'coach' | 'player'; text: string }
 
@@ -39,6 +43,7 @@ export type GameState = {
   screen: Screen
   name: string
   avatar: string
+  experience: Experience | null
   companyTicker: string | null
   // Where the company screen's back arrow goes (onboarding vs. a tab).
   companyBack: Screen
@@ -68,6 +73,7 @@ const initial = (): GameState => ({
   screen: 'invite',
   name: '',
   avatar: '🎧',
+  experience: null,
   companyTicker: null,
   companyBack: 'curious',
   draft: null,

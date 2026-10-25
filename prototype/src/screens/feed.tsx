@@ -3,6 +3,7 @@ import { Avatar, Card, Page } from '../components/ui'
 import { MARKET_PE, concept } from '../content'
 import { CLUB_NAME, friendTheses, friends, bellHolder, SP500, type Thesis } from '../data/club'
 import { findCompany } from '../data/companies'
+import { newListings } from '../data/new_listings'
 import { signedPct, usd } from '../lib/format'
 import { useGame } from '../state/store'
 
@@ -51,6 +52,8 @@ export function FeedScreen() {
             {state.pick && <p className="muted small">New this week: {state.name} joined and bought {findCompany(state.pick.ticker)?.name}. Welcome to the club.</p>}
           </Card>
 
+          <NewListings />
+
           {[...mine, ...friendTheses].map((t) => <ThesisCard key={t.id} t={t} mine={t.id === 'mine'} />)}
 
           {!state.pick && (
@@ -97,6 +100,50 @@ function ThesisCard({ t, mine }: { t: Thesis; mine: boolean }) {
           {t.comments.map((c, i) => <p key={i}><b>{c.who}</b> {c.text}</p>)}
         </div>
       )}
+    </Card>
+  )
+}
+
+// Recent IPOs, to widen what players think about. Not buyable in the game:
+// the curated list is the S&P 500, which new companies can't join yet.
+function NewListings() {
+  const { go } = useGame()
+  const [open, setOpen] = useState<string | null>(null)
+  const [why, setWhy] = useState(false)
+  return (
+    <Card className="listings">
+      <p className="eyebrow">🆕 New on the market</p>
+      <h3>Companies that just started selling shares to everyone</h3>
+      {newListings.map((l) => (
+        <div key={l.ticker} className={`listing ${open === l.ticker ? 'open' : ''}`}>
+          <button className="listing-head" onClick={() => setOpen(open === l.ticker ? null : l.ticker)}>
+            <span><b>{l.name}</b><small>{l.what}</small></span>
+            <span aria-hidden>{open === l.ticker ? '−' : '+'}</span>
+          </button>
+          {open === l.ticker && (
+            <div className="listing-body">
+              <p><b>How it makes money:</b> {l.money}</p>
+              <p className="listing-q">🤔 {l.question}</p>
+              {l.related && (
+                <div className="listing-related">
+                  <small>In the game:</small>
+                  {l.related.map((r) => (
+                    <button key={r.ticker} className="co-chip" onClick={() => go('company', { companyTicker: r.ticker, companyBack: 'feed' })}>
+                      <b>{findCompany(r.ticker)?.name}</b><small>{r.why}</small>
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p className="muted small">Started trading {l.listed} · {l.ticker}</p>
+            </div>
+          )}
+        </div>
+      ))}
+      <button className="recap-concept" onClick={() => setWhy(!why)}>
+        <span>Why can't I buy these here?</span><span>{why ? '−' : '+'}</span>
+      </button>
+      {why && <p className="recap-explain">The game only lets you buy companies in the S&P 500. A company can't join until it has traded for at least a year and made a profit, so brand-new companies aren't in it yet. You can still learn how they work, and look at the companies they connect to.</p>}
+      <p className="muted small">Prototype: these 2025 listings stand in for this week's.</p>
     </Card>
   )
 }

@@ -1,4 +1,5 @@
-import { Avatar, Button, Card, Page } from '../../components/ui'
+import { useState } from 'react'
+import { Avatar, Button, Card, Page, TopBar } from '../../components/ui'
 import { Linked } from '../../components/terms'
 import { CLUB_NAME, SP500, bellHolder, friends } from '../../data/club'
 import { signedPct, usd } from '../../lib/format'
@@ -8,12 +9,15 @@ import { useGame } from '../../state/store'
 export function MarketScreen() {
   const { state, go } = useGame()
   const bell = bellHolder()
+  // Players who know the basics get the reasons folded away.
+  const [why, setWhy] = useState(state.experience === 'new' || !state.experience)
   const rows = [
     ...friends.map((f) => ({ id: f.id, name: f.name, avatar: f.avatar, vs: f.ret6m - SP500.ret6m, you: false })),
     { id: 'you', name: state.name, avatar: state.avatar, vs: 0, you: true },
   ].sort((a, b) => b.vs - a.vs || (a.you ? -1 : 1))
   return (
     <Page>
+      <TopBar back="level" />
       <p className="eyebrow">Step 1 of 3</p>
       <h1>You already own the market.</h1>
       <Card className="big-money">
@@ -25,10 +29,19 @@ export function MarketScreen() {
         <p>That's a small piece of <b>500 big US companies</b>, like Apple, Nvidia and Costco. When they do well, so does your money.</p>
       </Card>
       <Card className="how-it-works">
-        <h3>Why start here?</h3>
-        <div className="rule"><span>📈</span><span><b>It's what most experts tell regular people to do.</b> Over long stretches the S&P 500 has grown about 10% a year, with no picking at all.</span></div>
-        <div className="rule"><span>🎯</span><span><b>It's hard to beat.</b> Over 10 or more years, most professional stock pickers do worse than it. So it's the score to beat, not zero.</span></div>
-        <div className="rule"><span>🔀</span><span><b>Picking means moving money out of it.</b> When you buy a company, the money comes from your index fund. You only climb the board if your picks do better than that money would have.</span></div>
+        {why ? (
+          <>
+            <h3>Why start here?</h3>
+            <div className="rule"><span>📈</span><span><b>It's what most experts tell regular people to do.</b> Over long stretches the S&P 500 has grown about 10% a year, with no picking at all.</span></div>
+            <div className="rule"><span>🎯</span><span><b>It's hard to beat.</b> Over 10 or more years, most professional stock pickers do worse than it. So it's the score to beat, not zero.</span></div>
+            <div className="rule"><span>🔀</span><span><b>Picking means moving money out of it.</b> When you buy a company, the money comes from your index fund. You only climb the board if your picks do better than that money would have.</span></div>
+          </>
+        ) : (
+          <button className="why-toggle" onClick={() => setWhy(true)}>
+            <span><b>The index is the score to beat.</b> Every pick moves money out of it, and you only climb the board if your picks beat that money.</span>
+            <span aria-hidden>+</span>
+          </button>
+        )}
       </Card>
       <h2>{CLUB_NAME}</h2>
       <p className="muted">Ranked by 6-month return vs. the S&P 500.</p>

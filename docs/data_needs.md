@@ -21,6 +21,7 @@ Source guesses follow the free stack in the [build spec](build_spec.md#market-da
 | S&P 500 dividend yield | Dividends lesson | Quarterly | Compute from member dividends | Not shown |
 | S&P 500 member list with sector and industry | Market screen; sector lens choice; sector P/E | When the index changes | Index provider list or a maintained public list | 25 hand-picked companies |
 | Typical single-stock vs. index volatility | "Run it 100 times" simulator, so random seasons look realistic | Once | Compute from 10 years of prices | Not built |
+| New listings (IPOs) in the past week: name, ticker, exchange, first trading day, what it does, how it makes money, related S&P 500 companies | "New on the market" feed card | Weekly | IPO calendar (exchange or a market data API) for the list; the plain-language fields written per company, with a source link | Three 2025 listings, hand-written |
 | Private companies (OpenAI, Anthropic, SpaceX): latest valuation, and which public companies own a stake | 🔒 cards; private-company lesson | When news breaks | Hand-curated, with a source link per fact | Hand-written |
 
 ### Time machine scenarios (stored with each scenario, once)

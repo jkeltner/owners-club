@@ -52,7 +52,9 @@ export function LessonScreen() {
   const l = lessonFor(state.lessonSlug ?? '') ?? lessonFor('pe-ratio')!
   const c = concept(l.concept)
   const facts: Record<string, string> = { ...lessonFacts(l, state), slug: l.concept }
-  const [round, setRound] = useState(0)
+  // Players who know the basics start at "Try it"; the warm-up is one tap away.
+  const skipWarmUp = state.experience === 'some' || state.experience === 'lots'
+  const [round, setRound] = useState(skipWarmUp ? 1 : 0)
   const [ready, setReady] = useState(false)
   const [finished, setFinished] = useState(false)
 
@@ -94,6 +96,7 @@ export function LessonScreen() {
         </>
       ) : round === 1 ? (
         <>
+          {skipWarmUp && <button className="link-btn small" onClick={() => setRound(0)}>You know the basics, so we skipped the everyday example. Show it</button>}
           <CoachSays text={fill(l.try_it.intro, facts)} />
           <TryIt l={l} onDone={() => setReady(true)} onFinishReplay={next} />
           {ready && l.format !== 'time_machine' && <Button onClick={next}>Next: your turn</Button>}

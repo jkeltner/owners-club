@@ -48,7 +48,7 @@ export function JoinScreen() {
         onClick={() => {
           update(() => ({ name: name.trim(), avatar }))
           mark('index-as-benchmark', 'encountered', 'account created (starts in the index)')
-          go('market')
+          go('level')
         }}
       >
         That's me

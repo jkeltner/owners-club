@@ -13,6 +13,7 @@ const clip = (t: string, n = 140) => (t.length > n ? t.slice(0, n) + '…' : t)
 
 function snapshot(s: GameState): string[] {
   const out: string[] = []
+  if (s.experience) out.push(`experience: ${s.experience}`)
   if (s.companyTicker) out.push(`company: ${s.companyTicker}`)
   if (s.draft) {
     if (s.draft.thesis) out.push(`draft thesis: "${clip(s.draft.thesis)}"`)

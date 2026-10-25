@@ -3,9 +3,11 @@ import { CLUB_NAME } from '../data/club'
 import { RANKS, rankIndex } from '../lib/ranks'
 import { DEFAULT_SETTINGS } from '../lib/rules'
 import { useGame } from '../state/store'
+import { EXPERIENCE } from '../data/experience'
 
 export function ProfileScreen() {
-  const { state, reset, go } = useGame()
+  const { state, reset, go, update } = useGame()
+  const exp = EXPERIENCE.find((e) => e.id === (state.experience ?? 'new'))!
   const ri = rankIndex(state)
   const rank = ri >= 0 ? RANKS[ri] : null
 
@@ -28,6 +30,14 @@ export function ProfileScreen() {
         <span className="go" aria-hidden>▸</span>
       </Card>
       <p className="muted small">Your concepts, lessons and what's next for your rank are in the Learn tab.</p>
+
+      <h2>How much you know about stocks</h2>
+      <div className="seg seg-3">
+        {EXPERIENCE.map((e) => (
+          <button key={e.id} className={exp.id === e.id ? 'on' : ''} onClick={() => update(() => ({ experience: e.id }))}>{e.label}</button>
+        ))}
+      </div>
+      <p className="muted small">{exp.changes}</p>
 
       <h2>Club rules</h2>
       <Card className="rules-mini">

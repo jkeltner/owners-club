@@ -27,7 +27,7 @@ export function CoachChat({ mode, company, facts, voiceSample, onDone, renderTic
 
   const run = async (input: string | null, history: ChatMsg[], t: number) => {
     setTyping(true)
-    const ctx: CoachContext = { mode, playerName: state.name || 'friend', company, history, turn: t, facts }
+    const ctx: CoachContext = { mode, playerName: state.name || 'friend', experience: state.experience, company, history, turn: t, facts }
     const r = await askCoach(ctx, input)
     r.marks?.forEach((m) => mark(m.slug, m.level, `coach:${mode}`))
     const next = [...history, ...r.bubbles.map((b) => ({ from: 'coach' as const, text: b }))]
