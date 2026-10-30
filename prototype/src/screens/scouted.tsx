@@ -37,6 +37,12 @@ export function ScoutedScreen() {
         </Card>
       )}
       <Button onClick={() => go('learn')}>Back to Learn</Button>
+      {s && (
+        <Button kind="secondary" onClick={() => go('thesis', { draft: { thesis: s.thesis, prediction: s.prediction, amount: 1000, fromScout: true }, companyTicker: s.ticker, companyBack: 'portfolio', coachLog: [] })}>
+          Want to own it? Make it a pick
+        </Button>
+      )}
+      <p className="muted small center">A pick starts from this report: same thesis, same prediction, plus real (pretend) money. It will show up in your portfolio either way.</p>
       <Button kind="ghost" onClick={() => go('portfolio')}>See it in your portfolio</Button>
     </Page>
   )

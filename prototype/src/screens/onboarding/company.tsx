@@ -41,7 +41,7 @@ export function CompanyScreen() {
         <Stat label="Whole company" value={bigUsd(marketCapB(c))} conceptSlug="market-cap-vs-share-price" sub="market cap" />
         <Stat label="P/E" value={pe === null ? 'n/a' : `${pe.toFixed(0)}x`} conceptSlug="pe-ratio" sub={pe === null ? 'no profits yet' : `$${pe.toFixed(0)} per $1 of profit`} />
         <Stat label="Revenue" value={bigUsd(c.revenueB)} conceptSlug="revenue-vs-earnings" sub={`${signedPct(c.revenueGrowth, 0)} vs. last year`} />
-        <Stat label="Earnings (profit)" value={bigUsd(c.earningsB)} conceptSlug="revenue-vs-earnings" sub={c.earningsB > 0 ? `keeps ${netMargin(c).toFixed(0)}¢ of each $1 of sales` : 'lost money last year'} />
+        <Stat label="Earnings (profit)" value={bigUsd(c.earningsB)} conceptSlug="revenue-vs-earnings" sub={c.earningsB > 0 ? `keeps ${netMargin(c).toFixed(0)}¢ of each $1 of sales as profit` : 'lost money last year'} />
       </Card>
 
       <Card className="pe-card">
@@ -93,7 +93,7 @@ export function CompanyScreen() {
       <div className="sticky-cta">
         {state.pick ? (
           <div className="cta-pair">
-            <Button kind="secondary" onClick={() => go('thesis', { draft: { thesis: '', prediction: null, amount: 0, scout: true } })}>🔭 Scout it</Button>
+            <Button kind="secondary" onClick={() => go('thesis', { draft: { thesis: '', prediction: null, amount: 0, scout: true }, coachLog: [] })}>🔭 Scout it</Button>
             <Button onClick={() => go('coach', { draft: { thesis: '', prediction: null, amount: 1000 }, coachLog: [] })}>Make a pick</Button>
           </div>
         ) : (

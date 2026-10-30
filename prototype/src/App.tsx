@@ -50,7 +50,7 @@ export default function App() {
   const { state } = useGame()
   const Current = SCREENS[state.screen] ?? InviteScreen
   // After the first pick, browsing a company from a tab keeps the tab bar.
-  const tabbed = TABBED.includes(state.screen) || (state.pick !== null && (state.screen === 'company' || (state.screen === 'thesis' && !!state.draft?.scout)))
+  const tabbed = TABBED.includes(state.screen) || (state.pick !== null && (state.screen === 'company' || state.screen === 'curious' || (state.screen === 'thesis' && !!state.draft?.scout)))
   return (
     <div className={`app ${tabbed ? 'has-tabs' : ''}`}>
       <Current key={state.screen} />

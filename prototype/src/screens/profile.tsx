@@ -32,12 +32,19 @@ export function ProfileScreen() {
       <p className="muted small">Your concepts, lessons and what's next for your rank are in the Learn tab.</p>
 
       <h2>How much you know about stocks</h2>
+      <p className="muted small">You answered this when you joined. It changes how much gets explained, never the rules, the scoring or your rank. Change it any time.</p>
       <div className="seg seg-3">
         {EXPERIENCE.map((e) => (
-          <button key={e.id} className={exp.id === e.id ? 'on' : ''} onClick={() => update(() => ({ experience: e.id }))}>{e.label}</button>
+          <button key={e.id} className={exp.id === e.id ? 'on' : ''} onClick={() => update(() => ({ experience: e.id }))}>{e.icon} {e.label}</button>
         ))}
       </div>
-      <p className="muted small">{exp.changes}</p>
+      <Card className="effects-card" key={exp.id}>
+        <p className="eyebrow">With "{exp.label}", right now</p>
+        <div className="rule"><span>🧢</span><span><b>The coach</b> {exp.effects.coach}</span></div>
+        <div className="rule"><span>💡</span><span><b>Explainers</b> {exp.effects.explains}</span></div>
+        <div className="rule"><span>📚</span><span><b>Lessons</b> {exp.effects.lessons}</span></div>
+        <p className="muted small">Same for everyone: the rules, how the board is scored, and what it takes to rank up.</p>
+      </Card>
 
       <h2>Club rules</h2>
       <Card className="rules-mini">

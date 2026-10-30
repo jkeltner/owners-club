@@ -130,10 +130,10 @@ lessons:
       setup: >
         Two lemonade stands each sell $100 of lemonade. Stand A spends $90 on lemons,
         cups and rent. Stand B spends $60.
-      question: Which one keeps more of each $1 it takes in?
+      question: Which one keeps more of each $1 it takes in as profit?
       choices:
         - text: Stand A
-          say: Stand A spends $90 of every $100, so it keeps 10¢ of each $1. Stand B keeps 40¢.
+          say: Stand A spends $90 of every $100, so it keeps 10¢ of each $1 as profit. Stand B keeps 40¢.
         - text: Stand B
           right: true
           say: >
@@ -141,15 +141,15 @@ lessons:
             profit margin: how much of each $1 of sales a business keeps as profit.
         - text: The same
           say: >
-            They sell the same amount, but Stand B spends less. It keeps 40¢ of each $1;
+            They sell the same amount, but Stand B spends less. It keeps 40¢ of each $1 as profit;
             Stand A keeps 10¢.
     try_it:
       intro: >
         Your turn to guess. Put these four companies in order, from the one that keeps
-        the most of each $1 to the one that keeps the least.
+        the most of each $1 as profit to the one that keeps the least.
     your_turn:
       ask:
-        - "{low} keeps {low_margin} of each $1 and {high} keeps {high_margin}. If costs went up by 5¢ for every $1 of sales, which business would be hurt more?"
+        - "{low} keeps {low_margin} of each $1 as profit and {high} keeps {high_margin}. If costs went up by 5¢ for every $1 of sales, which business would be hurt more?"
       chips: ["{low}", "{high}", About the same]
       pushback:
         - match: "same"

@@ -22,6 +22,11 @@ Source guesses follow the free stack in the [build spec](build_spec.md#market-da
 | S&P 500 member list with sector and industry | Market screen; sector lens choice; sector P/E | When the index changes | Index provider list or a maintained public list | 25 hand-picked companies |
 | Typical single-stock vs. index volatility | "Run it 100 times" simulator, so random seasons look realistic | Once | Compute from 10 years of prices | Not built |
 | New listings (IPOs) in the past week: name, ticker, exchange, first trading day, what it does, how it makes money, related S&P 500 companies | "New on the market" feed card | Weekly | IPO calendar (exchange or a market data API) for the list; the plain-language fields written per company, with a source link | Three 2025 listings, hand-written |
+| Share of the S&P 500 in its 10 biggest companies | Market screen square grid and copy; index fund glossary | Monthly | Compute from member market caps (part C) or S&P Dow Jones Indices fact sheet | `MARKET_FACTS.top10Pct = 40` |
+| S&P 500's share of the total US stock market's value | "What's the market?" card | Yearly | S&P Dow Jones Indices ("about 80% of available market cap") | `MARKET_FACTS.sp500CoverPct = 80` |
+| Number of US companies on the stock market, today and in 1996 | "What's the market?" card ("about half as many as in 1996") | Yearly | World Bank listed domestic companies, or the Wilshire/CRSP count | `MARKET_FACTS.usListed = 4000`; from a tester note, needs a source check |
+| Share of US companies with $100M+ yearly sales that are public | "What's the market?" card ("about 1 in 8") | Yearly | S&P Capital IQ counts of public vs. private companies (cited by Apollo) | `MARKET_FACTS.publicOneIn = 8`; from a tester note ("13%"), needs a source check |
+| Which big companies are in the Dow and listed on the Nasdaq | "What's the market?" card; Dow and Nasdaq glossary examples | When the Dow changes | Dow member list (S&P Dow Jones Indices); exchange per ticker from the price source | Hand-written |
 | Private companies (OpenAI, Anthropic, SpaceX): latest valuation, and which public companies own a stake | 🔒 cards; private-company lesson | When news breaks | Hand-curated, with a source link per fact | Hand-written |
 
 ### Time machine scenarios (stored with each scenario, once)
@@ -50,7 +55,7 @@ Source guesses follow the free stack in the [build spec](build_spec.md#market-da
 | Debt and cash | Debt lesson; return on invested capital | Quarterly | EDGAR | |
 | Shareholders' equity, goodwill and intangibles | Price-to-book and tangible book (banks); return on equity | Quarterly | EDGAR | |
 | Dividends per share and payment dates | Dividends lesson; crediting cash to portfolios | Per payment | Price source | Open question in the build spec |
-| Earnings dates, past and next | Countdowns; prediction checks; scouting reports | Weekly | Alpha Vantage earnings calendar | |
+| Earnings dates, past and next | Countdowns; prediction checks; scouting reports; "This week on the market" feed card (companies reporting in the next 7 days) | Weekly | Alpha Vantage earnings calendar | Hand-written `daysToEarnings` per company |
 | Sector and industry → which lens | Sector lens; sector P/E band | When it changes | Member list (part A), mapped to our lenses | |
 | Plain "what it does and how it makes money" | Company page; themes; the coach | Yearly | Hand-written; EDGAR segment data helps | |
 | Sector numbers from company reports | Lens panel; sort-it and talk-it-through lessons | Quarterly | Hand-entered from earnings releases, or skip for the alpha | See the list below |

@@ -10,7 +10,10 @@ import { useGame } from '../../state/store'
 export function SizeScreen() {
   const { state, go, update, mark } = useGame()
   const c = findCompany(state.companyTicker ?? '') ?? findCompany('NVDA')!
-  const cap = maxPurchase(STARTING_VALUE)
+  // Later picks come out of whatever index money is left.
+  const inPicks = [state.pick, ...state.morePicks].reduce((a, p) => a + (p?.amount ?? 0), 0)
+  const indexLeft = STARTING_VALUE - inPicks
+  const cap = Math.max(100, Math.min(maxPurchase(STARTING_VALUE), indexLeft))
   const amount = Math.min(state.draft?.amount ?? 1000, cap)
   const fee = tradeFee(amount)
   const setAmount = (a: number) => update((s) => ({ draft: { ...s.draft!, amount: a } }))
@@ -18,10 +21,15 @@ export function SizeScreen() {
 
   const confirm = () => {
     const d = state.draft!
-    update(() => ({
-      pick: { ticker: c.ticker, amount, fee, thesis: d.thesis, prediction: d.prediction!, at: Date.now() },
-      draft: null,
-    }))
+    update((s) => {
+      const next = { ticker: c.ticker, amount, fee, thesis: d.thesis, prediction: d.prediction!, at: Date.now() }
+      return {
+        ...(s.pick ? { morePicks: [...s.morePicks, next] } : { pick: next }),
+      // A scouting report on this company has become a pick; keep just the pick.
+        scouts: s.scouts.filter((x) => x.ticker !== c.ticker),
+        draft: null,
+      }
+    })
     // Quizzes teach; theses prove. Only the thesis marks concepts "applied".
     for (const slug of tagThesis(d.thesis)) mark(slug, 'applied', `thesis on ${c.ticker}`)
     go('done')
@@ -31,7 +39,7 @@ export function SizeScreen() {
     <Page>
       <TopBar back="thesis" title="Size your pick" />
       <h1>How much goes into {c.name}?</h1>
-      <p className="muted">The money comes out of your S&P 500 index fund. Whatever you don't move stays there, matching the market.</p>
+      <p className="muted">The money comes out of your S&P 500 index fund{inPicks > 0 ? ` (${usd(indexLeft)} is still in it)` : ''}. Whatever you don't move stays there, matching the market.</p>
 
       <Card className="size-card">
         <div className="size-amount">{usd(amount)}</div>

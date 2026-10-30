@@ -121,7 +121,8 @@ export function TabBar() {
   const current = state.screen === 'sell' ? 'portfolio'
     : ['lesson', 'replay', 'scouted'].includes(state.screen) ? 'learn'
       : state.screen === 'company' ? state.companyBack
-        : state.screen
+        : state.screen === 'curious' ? 'portfolio'
+          : state.screen
   return (
     <nav className="tabbar">
       {TABS.map((t) => (

@@ -7,7 +7,7 @@ import { DEMO_FEES_PAID, DEMO_SP500_RETURN, DEMO_TAXES_PAID, GAIN_SPLIT, WEEKS, 
 import { findCompany } from '../data/companies'
 import { signedPct, usd } from '../lib/format'
 import { DEFAULT_SETTINGS, INDEX_TICKER, STARTING_VALUE, daysUntilLongTerm, daysUntilUnlocked, isLocked, taxIfSoldToday, taxRateFor, type Lot } from '../lib/rules'
-import { useGame } from '../state/store'
+import { useGame, type Pick } from '../state/store'
 
 type Holding = Lot & { name: string; pending?: boolean }
 
@@ -20,12 +20,14 @@ export function PortfolioScreen() {
   const [view, setView] = useState<'now' | 'later'>('now')
   const [decision, setDecision] = useState<string | null>(null)
   const pick = state.pick
+  const picks: Pick[] = [pick, ...state.morePicks].filter((p): p is Pick => !!p)
+  const inPicks = picks.reduce((a, p) => a + p.amount, 0)
   const ffPick = demoPick(pick?.ticker)
 
   const holdings: Holding[] = view === 'now'
     ? [
-        { ticker: INDEX_TICKER, name: 'S&P 500 index', cost: STARTING_VALUE - (pick?.amount ?? 0), value: STARTING_VALUE - (pick?.amount ?? 0), daysHeld: 0 },
-        ...(pick ? [{ ticker: pick.ticker, name: findCompany(pick.ticker)?.name ?? pick.ticker, cost: pick.amount - pick.fee, value: pick.amount - pick.fee, daysHeld: 0, pending: true }] : []),
+        { ticker: INDEX_TICKER, name: 'S&P 500 index', cost: STARTING_VALUE - inPicks, value: STARTING_VALUE - inPicks, daysHeld: 0 },
+        ...picks.map((p) => ({ ticker: p.ticker, name: findCompany(p.ticker)?.name ?? p.ticker, cost: p.amount - p.fee, value: p.amount - p.fee, daysHeld: 0, pending: true })),
       ]
     : demoLots(ffPick)
 
@@ -79,11 +81,17 @@ export function PortfolioScreen() {
         <HoldingRow key={h.ticker} h={h} total={total} color={colorFor(h.ticker, order)}
           onSell={h.ticker === 'COST' && view === 'later' ? () => go('sell') : undefined} />
       ))}
+      {view === 'now' && (
+        <>
+          <Button kind="secondary" onClick={() => go('curious')}>＋ Make another pick</Button>
+          <p className="muted small center">Money comes out of your index fund, up to {DEFAULT_SETTINGS.capAtPurchase * 100}% of your portfolio per pick. The coach goes first, then your thesis.</p>
+        </>
+      )}
 
       {state.scouts.length > 0 && (
         <>
           <h2>🔭 Scouting</h2>
-          <p className="muted small">Theses on companies you don't own. No money in them; they're scored at earnings like a pick.</p>
+          <p className="muted small">Theses on companies you don't own. No money in them; they're scored at earnings like a pick. Changed your mind? Any of them can become a pick.</p>
           {state.scouts.map((s) => {
             const c = findCompany(s.ticker)
             return (
@@ -91,6 +99,9 @@ export function PortfolioScreen() {
                 <div><b>{c?.name ?? s.ticker}</b><small>Checked in {c?.daysToEarnings ?? '?'} days</small></div>
                 <p className="small">"{s.thesis}"</p>
                 <div className="prediction-pill">🎯 {s.prediction.label}: {s.prediction.unit === '$' ? `$${s.prediction.value.toFixed(2)}` : `${s.prediction.value}%`} or more</div>
+                <button className="link-btn" onClick={() => go('thesis', { draft: { thesis: s.thesis, prediction: s.prediction, amount: 1000, fromScout: true }, companyTicker: s.ticker, companyBack: 'portfolio', coachLog: [] })}>
+                  Make it a pick →
+                </button>
               </Card>
             )
           })}

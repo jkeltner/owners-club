@@ -116,7 +116,7 @@ The coach uses this record in two ways. It unlocks Level 3 concepts once a playe
 
 **Leveling up without trading.** Kids who want to move faster can, without trading more. The rule: a quiz can teach a concept, but you level up by using it. Passing a check question marks a concept as explained; applied still means using it in a written thesis. Chair needs a season of predictions, so the top rank always takes time.
 
-- **Scouting reports.** Write a thesis and a prediction on any company without buying it. It's scored at earnings like a real position, so the fastest way to level up is to analyze more companies, not to trade more.
+- **Scouting reports.** Write a thesis and a prediction on any company without buying it. It's scored at earnings like a real position, so the fastest way to level up is to analyze more companies, not to trade more. From the Learn tab, every concept leads to one: the coach applies that concept to the numbers of a company the player picks, asks for their read, then hands over to the report. A scouting report can later become a real pick with the same thesis and prediction.
 - **Coach office hours.** Ask the coach to teach any concept, then answer its check questions.
 - **Lessons.** Each concept has a 3-minute lesson in three rounds: an everyday example with a question to predict the answer, the same idea tried on a real company in the game, then a judgment question where the coach pushes back once. Finishing a lesson marks the concept explained, never applied.
 - **Time machine.** Replay a real stretch of market history in a few minutes (see below).
@@ -163,7 +163,7 @@ Players join a private league, get $10,000 in virtual cash, and build a portfoli
 | Minimum hold | Each purchase is locked for 3 months. | Every decision lives long enough to be judged, including through at least one earnings report. Per-position locks mean free cash can always be used. |
 | Trading fee | 0.5% of each trade's value, shown before the player confirms. | Churning costs returns, and the cost is the same whether you hold 4 positions or 12. |
 | Capital gains tax | 40% on gains held under 6 months, 20% on gains held longer. Losses offset gains. | Close to real top-bracket rates, and the 20-point gap rewards patience. The real-world threshold is 12 months; 6 matches the game's timescale. |
-| Shared theses | A player's reasoning is visible to the league when they buy. Comments attach to the thesis. Tapping a player on the leaderboard shows their portfolio: each holding's share of the whole (never dollars), as of last Friday's close, with the thesis it was bought with. | The social activity becomes arguing about businesses, not prices. |
+| Shared theses | A player's reasoning is visible to the league when they buy. Comments attach to the thesis and are written right under it in the feed. Tapping a player on the leaderboard shows their portfolio: each holding's share of the whole (never dollars), as of last Friday's close, with the thesis it was bought with. | The social activity becomes arguing about businesses, not prices. |
 | Delayed positions | Holdings are revealed with a lag (weekly), not in real time. | Prevents everyone from copying whoever is in first place. |
 
 All of these settings start at the values above and can be changed per league.
@@ -296,7 +296,7 @@ The game borrows fantasy sports' social mechanics and deliberately leaves out it
 - **A weekly AI recap.** A short, lightly roasting summary of the league's week that also slips in one concept: "Alex's portfolio P/E just hit 60. Here's what that means."
 - **News on companies you own.** Alerts on earnings, big moves and major news for each player's holdings, by text or email, so there's a reason to open the app that's about the business.
 - **Earnings-day events.** When a company several players hold reports, the league sees whose predictions came true.
-- **New on the market.** A weekly feed card on companies that just had their IPO: what each one does, how it makes money, one question to think about, and the S&P 500 companies in the game it connects to (a supplier, a big customer, a rival). New companies can't be bought, because they aren't in the S&P 500 yet, so the card widens what players think about without turning into a hot-stock tip. It never shows first-day price jumps.
+- **This week on the market.** A weekly feed card in two parts. First, the companies in the game reporting earnings in the next week, each with the one number to watch for its kind of business and which clubmates own it: earnings week is when theses get checked, so it's the reason to open the app that's about the business, not the price. Then the companies that just had their IPO: what each one does, how it makes money, one question to think about, and the S&P 500 companies in the game it connects to (a supplier, a big customer, a rival). New companies can't be bought, because they aren't in the S&P 500 yet, so the card widens what players think about without turning into a hot-stock tip. It never shows price moves or first-day jumps.
 
 **Competition built into the club:**
 

@@ -13,8 +13,9 @@ import { MARKET_PE, concept, fill, lens, lessonFor, sectorPlural } from '../cont
 import { marketCapB, peRatio, type Company } from '../data/companies'
 import { bigUsd } from '../lib/format'
 import type { ChatMsg, Experience, ProgressLevel } from '../state/store'
+import { conceptFact } from './concept_facts'
 
-export type CoachMode = 'pick' | 'private' | 'sell' | 'debrief' | 'explain' | 'lesson'
+export type CoachMode = 'pick' | 'private' | 'sell' | 'debrief' | 'explain' | 'lesson' | 'scout'
 
 export type CoachContext = {
   mode: CoachMode
@@ -43,6 +44,7 @@ export async function askCoach(ctx: CoachContext, input: string | null): Promise
     case 'debrief': return debriefScript(ctx, input)
     case 'explain': return explainScript(ctx, input)
     case 'lesson': return lessonScript(ctx, input)
+    case 'scout': return scoutScript(ctx, input)
   }
 }
 
@@ -190,6 +192,54 @@ function pickScript(ctx: CoachContext, input: string | null): CoachReply {
       { slug: pe === null ? 'revenue-vs-earnings' : 'pe-ratio', level: 'explained' },
       { slug: 'already-priced-in', level: 'explained' },
     ],
+  }
+}
+
+// A scouting report with the coach, built around one concept (facts.focus,
+// chosen on the Learn tab). Three turns: the concept on this company's
+// numbers, the player's read, then hand over to the report. The real coach
+// does the same from the concept record and the company's data.
+function scoutScript(ctx: CoachContext, input: string | null): CoachReply {
+  const c = ctx.company!
+  const slug = ctx.facts?.focus || (peRatio(c) === null ? 'revenue-vs-earnings' : 'pe-ratio')
+  const k = concept(slug)
+  const f = conceptFact(slug, c)
+  const knowsBasics = ctx.experience === 'some' || ctx.experience === 'lots'
+
+  if (ctx.turn === 0) {
+    return {
+      bubbles: [
+        `Let's scout ${c.name} using ${k.name.toLowerCase()}, ${ctx.playerName}. No money moves; you'll write what you think and one prediction, and it counts for your rank like a real pick.`,
+        ...(knowsBasics ? [] : [k.kid_explanation]),
+        f.line,
+        f.ask,
+      ],
+      chips: f.chips,
+      marks: [{ slug, level: 'encountered' }],
+    }
+  }
+
+  if (ctx.turn === 1) {
+    const intent = classify(input ?? '')
+    const lead = intent === 'confused' || intent === 'unsure'
+      ? `Fair question. ${k.whats_normal ?? k.kid_explanation}`
+      : f.followup
+    return {
+      bubbles: [
+        lead,
+        `So, knowing that: is ${c.name} more or less likely to beat the market from here? Pick a side and say why in a few words.`,
+      ],
+      chips: ['More likely to beat the market', 'Less likely to beat the market', 'Could go either way'],
+      marks: [{ slug, level: 'explained' }],
+    }
+  }
+
+  return {
+    bubbles: [
+      `That's a thesis. Write it down and put the number in it, so the club can check your reasoning${k.in_a_thesis ? `, something like: "${k.in_a_thesis}"` : '.'}`,
+      `Then pick one prediction for ${c.name}'s next earnings report. If you'd rather own it, you can turn the report into a real pick afterwards.`,
+    ],
+    done: true,
   }
 }
 

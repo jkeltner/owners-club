@@ -54,7 +54,7 @@ export function SortMargins({ onDone }: Round) {
     <>
       {!done ? (
         <>
-          <p className="muted small">Tap them in order: the one that keeps the most of each $1 first. Tap again to undo.</p>
+          <p className="muted small">Tap them in order: the one that keeps the most of each $1 as profit first. Tap again to undo.</p>
           <div className="sort-list">
             {items.map((c) => {
               const pos = order.indexOf(c.ticker)
@@ -80,7 +80,7 @@ export function SortMargins({ onDone }: Round) {
             ))}
             <p className="muted small">Profit kept from each $1 of sales, last year.</p>
           </Card>
-          <CoachSays text={`Surprised by ${right[3].name}? It keeps about ${Math.round(netMargin(right[3]))}¢ of each $1, but it sells an enormous amount, and its members pay a yearly fee. ${right[0].name} keeps ${Math.round(netMargin(right[0]))}¢ because nobody else can make chips like its chips right now.`} />
+          <CoachSays text={`Surprised by ${right[3].name}? It keeps about ${Math.round(netMargin(right[3]))}¢ of each $1 as profit, but it sells an enormous amount, and its members pay a yearly fee. ${right[0].name} keeps ${Math.round(netMargin(right[0]))}¢ because nobody else can make chips like its chips right now.`} />
         </>
       )}
     </>

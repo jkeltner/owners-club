@@ -6,7 +6,8 @@ import { findCompany, norm, searchCompanies } from '../../data/companies'
 import { useGame } from '../../state/store'
 
 export function CuriousScreen() {
-  const { go } = useGame()
+  const { state, go } = useGame()
+  const returning = !!state.pick // came from the portfolio, not onboarding
   const [q, setQ] = useState('')
   const [openTheme, setOpenTheme] = useState<string | null>(null)
   const matches = searchCompanies(q).slice(0, 5)
@@ -16,9 +17,10 @@ export function CuriousScreen() {
 
   return (
     <Page>
-      <TopBar back="market" />
-      <p className="eyebrow">Step 2 of 3</p>
-      <h1>What companies do you use, love, or think will be huge?</h1>
+      <TopBar back={returning ? 'portfolio' : 'market'} />
+      {returning ? <p className="eyebrow">Another pick</p> : <p className="eyebrow">Step 2 of 3</p>}
+      <h1>{returning ? 'What company are you curious about now?' : 'What companies do you use, love, or think will be huge?'}</h1>
+      {returning && <p className="muted">The money comes out of your index fund, up to 25% per pick. The coach goes first, like last time.</p>}
       <div className="search">
         <span aria-hidden>🔎</span>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Try Nvidia, Nike, SpaceX…" />

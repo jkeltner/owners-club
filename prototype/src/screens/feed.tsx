@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Avatar, Card, Page } from '../components/ui'
-import { MARKET_PE, concept } from '../content'
-import { CLUB_NAME, friendTheses, friends, bellHolder, SP500, type Thesis } from '../data/club'
-import { findCompany } from '../data/companies'
+import { Linked } from '../components/terms'
+import { MARKET_PE, concept, lens } from '../content'
+import { CLUB_NAME, friendHoldings, friendTheses, friends, bellHolder, SP500, type Thesis } from '../data/club'
+import { companies, findCompany } from '../data/companies'
 import { newListings } from '../data/new_listings'
 import { signedPct, usd } from '../lib/format'
-import { useGame } from '../state/store'
+import { useGame, type Pick } from '../state/store'
 
 export function FeedScreen() {
   const { state, update, go } = useGame()
@@ -15,15 +16,15 @@ export function FeedScreen() {
   const jordan = friends.find((f) => f.id === 'jordan')!
   const [open, setOpen] = useState<string | null>(null)
 
-  const mine: Thesis[] = state.pick
-    ? [{
-        id: 'mine', who: `${state.name} (you)`, avatar: state.avatar, ticker: state.pick.ticker,
-        companyName: findCompany(state.pick.ticker)?.name ?? state.pick.ticker, action: 'bought', amount: state.pick.amount,
-        why: state.pick.thesis,
-        prediction: `${state.pick.prediction.label}: ${state.pick.prediction.unit === '$' ? `$${state.pick.prediction.value.toFixed(2)}` : `${state.pick.prediction.value}%`} or more`,
-        daysAgo: 0, comments: [{ who: 'Alex', text: 'ok but what if it’s already priced in 👀' }],
-      }]
-    : []
+  // The player's own picks, newest first, as thesis cards like everyone else's.
+  const myPicks: Pick[] = [state.pick, ...state.morePicks].filter((p): p is Pick => !!p)
+  const mine: Thesis[] = myPicks.map((p, i) => ({
+    id: i === 0 ? 'mine' : `mine-${p.ticker}`, who: `${state.name} (you)`, avatar: state.avatar, ticker: p.ticker,
+    companyName: findCompany(p.ticker)?.name ?? p.ticker, action: 'bought' as const, amount: p.amount,
+    why: p.thesis,
+    prediction: `${p.prediction.label}: ${p.prediction.unit === '$' ? `$${p.prediction.value.toFixed(2)}` : `${p.prediction.value}%`} or more`,
+    daysAgo: 0, comments: i === 0 ? [{ who: 'Alex', text: 'ok but what if it’s already priced in 👀' }] : [],
+  })).reverse()
 
   const send = () => {
     if (!msg.trim()) return
@@ -52,9 +53,9 @@ export function FeedScreen() {
             {state.pick && <p className="muted small">New this week: {state.name} joined and bought {findCompany(state.pick.ticker)?.name}. Welcome to the club.</p>}
           </Card>
 
-          <NewListings />
+          <ThisWeek myTickers={myPicks.map((p) => p.ticker)} />
 
-          {[...mine, ...friendTheses].map((t) => <ThesisCard key={t.id} t={t} mine={t.id === 'mine'} />)}
+          {[...mine, ...friendTheses].map((t) => <ThesisCard key={t.id} t={t} mine={t.id.startsWith('mine')} />)}
 
           {!state.pick && (
             <Card onClick={() => go('curious')} className="nudge">
@@ -83,7 +84,20 @@ export function FeedScreen() {
   )
 }
 
+// A thesis in the feed, with its comments and a box to add one. Comments
+// attach to the thesis (concept doc: the social part is arguing about
+// businesses), so the box sits right under the reasoning it's about.
 function ThesisCard({ t, mine }: { t: Thesis; mine: boolean }) {
+  const { state, update } = useGame()
+  const [text, setText] = useState('')
+  const added = state.comments[t.id] ?? []
+  const all = [...t.comments, ...added]
+  const firstName = t.who.replace(/ \(you\)$/, '')
+  const post = () => {
+    if (!text.trim()) return
+    update((s) => ({ comments: { ...s.comments, [t.id]: [...(s.comments[t.id] ?? []), { who: `${s.name} (you)`, text: text.trim() }] } }))
+    setText('')
+  }
   return (
     <Card className={`thesis-card ${mine ? 'mine' : ''}`}>
       <div className="row">
@@ -95,25 +109,68 @@ function ThesisCard({ t, mine }: { t: Thesis; mine: boolean }) {
       </div>
       <p className="quote">"{t.why}"</p>
       <div className="prediction-pill">🎯 {t.prediction}</div>
-      {t.comments.length > 0 && (
-        <div className="comments">
-          {t.comments.map((c, i) => <p key={i}><b>{c.who}</b> {c.text}</p>)}
+      <div className="comments">
+        {all.map((c, i) => <p key={i}><b>{c.who}</b> {c.text}</p>)}
+        <div className="compose comment-compose">
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && post()}
+            placeholder={mine ? 'Reply to your club…' : `Ask ${firstName} about ${t.companyName}…`}
+            aria-label={`Comment on ${firstName}'s thesis`}
+          />
+          <button className="send" onClick={post} disabled={!text.trim()} aria-label="Post comment">↑</button>
         </div>
-      )}
+      </div>
     </Card>
   )
 }
 
-// Recent IPOs, to widen what players think about. Not buyable in the game:
-// the curated list is the S&P 500, which new companies can't join yet.
-function NewListings() {
+// What's happening on the market this week: companies in the game reporting
+// earnings (business news, with what to watch, never price moves), then
+// recent IPOs. Not buyable: the curated list is the S&P 500, which new
+// companies can't join yet.
+function ThisWeek({ myTickers }: { myTickers: string[] }) {
   const { go } = useGame()
   const [open, setOpen] = useState<string | null>(null)
   const [why, setWhy] = useState(false)
+  const reporting = companies.filter((c) => c.daysToEarnings <= 7).sort((a, b) => a.daysToEarnings - b.daysToEarnings)
+  const holders = (ticker: string) => {
+    const names = friends.filter((f) => friendHoldings[f.id]?.some((h) => h.ticker === ticker)).map((f) => f.name)
+    if (myTickers.includes(ticker)) names.unshift('You')
+    return names
+  }
+  const when = (d: number) => (d <= 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`)
   return (
     <Card className="listings">
-      <p className="eyebrow">🆕 New on the market</p>
-      <h3>Companies that just started selling shares to everyone</h3>
+      <p className="eyebrow">🗓️ This week on the market</p>
+
+      {reporting.length > 0 && (
+        <>
+          <h3><Linked text="Earnings reports" /> this week</h3>
+          <p className="muted small">Every 3 months a company shows its real numbers. That's when theses get checked, so it's the week to pay attention.</p>
+          <div className="earnings-list">
+            {reporting.map((c) => {
+              const who = holders(c.ticker)
+              const l = lens(c.lens)
+              return (
+                <button key={c.ticker} className="earnings-row" onClick={() => go('company', { companyTicker: c.ticker, companyBack: 'feed' })}>
+                  <span className="tick">{c.ticker}</span>
+                  <span className="earnings-main">
+                    <b>{c.name}</b> <small>reports {when(c.daysToEarnings)}</small>
+                    {l && <small className="watch">Watch: {l.look_first.toLowerCase()}</small>}
+                    {who.length > 0 && <small className="holders">{who.join(', ')} {who.length === 1 && who[0] !== 'You' ? 'owns' : 'own'} it</small>}
+                  </span>
+                  <span className="go" aria-hidden>▸</span>
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      <h3>🆕 New on the market</h3>
+      <p className="muted small">Companies that just started selling shares to everyone.</p>
       {newListings.map((l) => (
         <div key={l.ticker} className={`listing ${open === l.ticker ? 'open' : ''}`}>
           <button className="listing-head" onClick={() => setOpen(open === l.ticker ? null : l.ticker)}>
@@ -143,7 +200,7 @@ function NewListings() {
         <span>Why can't I buy these here?</span><span>{why ? '−' : '+'}</span>
       </button>
       {why && <p className="recap-explain">The game only lets you buy companies in the S&P 500. A company can't join until it has traded for at least a year and made a profit, so brand-new companies aren't in it yet. You can still learn how they work, and look at the companies they connect to.</p>}
-      <p className="muted small">Prototype: these 2025 listings stand in for this week's.</p>
+      <p className="muted small">Prototype: these 2025 listings stand in for this week's, and the earnings dates are made up.</p>
     </Card>
   )
 }

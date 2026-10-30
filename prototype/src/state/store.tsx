@@ -47,10 +47,14 @@ export type GameState = {
   companyTicker: string | null
   // Where the company screen's back arrow goes (onboarding vs. a tab).
   companyBack: Screen
-  draft: { thesis: string; prediction: Prediction | null; amount: number; scout?: boolean } | null
+  // scout: a scouting report, no money. focus: the concept the coach walks
+  // through first. fromScout: a saved scouting report being turned into a pick.
+  draft: { thesis: string; prediction: Prediction | null; amount: number; scout?: boolean; focus?: string; fromScout?: boolean } | null
   coachLog: ChatMsg[]
   pick: Pick | null
+  morePicks: Pick[] // picks after the first; the first stays in `pick` (it sets the Shareholder rank)
   scouts: Scout[]
+  comments: Record<string, { who: string; text: string }[]> // the player's replies on feed theses, by thesis id
   concepts: Record<string, Progress>
   feedback: FeedbackNote[]
   testerId: string // random, so GitHub issues group a tester's notes without a name
@@ -79,7 +83,9 @@ const initial = (): GameState => ({
   draft: null,
   coachLog: [],
   pick: null,
+  morePicks: [],
   scouts: [],
+  comments: {},
   concepts: {},
   feedback: [],
   testerId: Math.random().toString(36).slice(2, 8),

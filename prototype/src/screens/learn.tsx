@@ -1,7 +1,7 @@
 // The Learn tab: where am I (rank), what next (one lesson), and everything
 // else (scouting reports, time machine replays, every concept by rank).
 import { useState } from 'react'
-import { ConceptSheet } from '../components/terms'
+import { ConceptSheet, Linked } from '../components/terms'
 import { Button, Card, LevelDots, Page, Sheet } from '../components/ui'
 import { lessonFor, scenarios, type Concept } from '../content'
 import { companies, findCompany } from '../data/companies'
@@ -11,10 +11,15 @@ import { useGame } from '../state/store'
 
 const hasReplay = (slug: string) => scenarios.some((s) => s.concepts.includes(slug))
 
+// What "used" means, in one line, wherever the rank rules come up.
+const USED_MEANS = 'A thesis is the reason you write when you buy. A scouting report is the same thing for a company you don\'t buy.'
+
 export function LearnScreen() {
   const { state, go, update } = useGame()
   const [open, setOpen] = useState<Concept | null>(null)
-  const [choosing, setChoosing] = useState(false)
+  // The company chooser for a scouting report. `focus` is the concept the
+  // coach walks through first; without one, the coach picks a basic one.
+  const [choosing, setChoosing] = useState<{ focus?: Concept } | null>(null)
   const ri = rankIndex(state)
   const rank = ri >= 0 ? RANKS[ri] : null
   const next = RANKS[ri + 1]
@@ -26,7 +31,16 @@ export function LearnScreen() {
     if (lessonFor(c.slug) && isOpen(state, c) && !state.lessonsDone.includes(c.slug)) startLesson(c.slug)
     else setOpen(c)
   }
-  const scout = (ticker: string) => go('company', { companyTicker: ticker, companyBack: 'learn' })
+  // Scouting from Learn always goes through the coach: it applies the concept
+  // to the company's numbers, then the player writes the report.
+  const scoutWithCoach = (ticker: string, focus?: Concept) =>
+    go('coach', {
+      companyTicker: ticker,
+      companyBack: 'learn',
+      draft: { thesis: '', prediction: null, amount: 0, scout: true, focus: focus?.slug },
+      coachLog: [],
+    })
+  const chooseFor = (focus?: Concept) => { setOpen(null); setChoosing({ focus: focus ?? target }) }
 
   const lvl = Math.max(1, Math.min(3, ri + 1))
   const pathList = ofLevel(lvl)
@@ -42,14 +56,15 @@ export function LearnScreen() {
       {showIntro && (
         <Card className="learn-intro">
           <p className="eyebrow">How leveling up works</p>
-          <Ladder at={ri} />
-          <p>Every rank comes with a few <b>concepts</b>: ideas investors use, like P/E or profit margins. Each concept fills in three dots:</p>
+          <p>There are four ranks. You climb by showing you understand businesses, not by making money, so a lucky stock doesn't move you up.</p>
+          <RankSteps at={ri} />
+          <p>Every rank after Shareholder comes with a few <b>concepts</b>: ideas investors use, like P/E or profit margins. Each concept fills in three dots:</p>
           <ul className="intro-dots">
             <li><Dots n={1} /> <span><b>Seen.</b> It came up in your game, or you tapped it.</span></li>
             <li><Dots n={2} /> <span><b>Learned.</b> You did its lesson or got its check question right.</span></li>
-            <li><Dots n={3} /> <span><b>Used.</b> You used it in a thesis or a scouting report.</span></li>
+            <li><Dots n={3} /> <span><b>Used.</b> You used it in a <Linked text="thesis" /> or a <Linked text="scouting report" />. {USED_MEANS}</span></li>
           </ul>
-          <p>Use every concept of a rank in a thesis and you move up. Lessons teach you; theses prove you've got it.</p>
+          <p>Use every concept of a rank and you move up. Lessons teach you; theses prove you've got it. The fastest way: scout a company with the coach, straight from a concept below.</p>
           <Button onClick={dismissIntro}>Got it</Button>
         </Card>
       )}
@@ -63,15 +78,20 @@ export function LearnScreen() {
             <h3>{rank!.icon} You're a {rank!.name}{next ? <span>. Next: {next.icon} {next.name}</span> : null}</h3>
             {next && (
               <>
-                <p className="small">Use these {pathList.length} concepts in a thesis or scouting report to become {next.name === 'Owner' ? 'an' : 'a'} {next.name}. <b>{used} of {pathList.length} done.</b></p>
+                <p className="small">Use these {pathList.length} concepts in a <Linked text="thesis" /> or <Linked text="scouting report" /> to become {next.name === 'Owner' ? 'an' : 'a'} {next.name}. <b>{used} of {pathList.length} done.</b></p>
                 <div className="progress"><span style={{ width: `${(used / pathList.length) * 100}%` }} /></div>
               </>
             )}
           </>
         )}
         <div className="concept-list path-list">{pathList.map(row)}</div>
-        {target && ri >= 0 && <p className="small path-next">Next step: use <b>{target.name.toLowerCase()}</b> in a thesis. Tap it to learn it first.</p>}
-        {!showIntro && <button className="link-btn" onClick={() => setShowIntro(true)}>How ranks work</button>}
+        {target && ri >= 0 && (
+          <>
+            <p className="small path-next">Next step: use <b>{target.name.toLowerCase()}</b> in a thesis or scouting report. Tap it above to learn it first, or go straight to using it:</p>
+            <Button kind="secondary" onClick={() => chooseFor(target)}>🧢 Scout a company using {target.name.toLowerCase()}</Button>
+          </>
+        )}
+        {!showIntro && <button className="link-btn" onClick={() => setShowIntro(true)}>How do I rank up?</button>}
       </Card>
 
       {suggestion && (
@@ -90,7 +110,8 @@ export function LearnScreen() {
       <h2>Practice</h2>
       <Card className="scout-card">
         <p className="eyebrow">🔭 Scouting report</p>
-        <p>Write a thesis on any company without buying it. It gets scored at earnings like a real pick, and it counts for your rank.</p>
+        <p>A <Linked text="thesis" /> on a company you <b>don't</b> buy: what you think will happen and why, plus one prediction. It's checked at earnings and counts for your rank exactly like a real pick, and you can turn it into a pick later. It's the fastest way to rank up.</p>
+        <p className="small muted">The coach goes first: it applies a concept to the company's numbers, then you write the report.</p>
         {state.scouts.length > 0 && (
           <div className="scout-mini">
             {state.scouts.map((s) => {
@@ -99,7 +120,7 @@ export function LearnScreen() {
             })}
           </div>
         )}
-        <Button kind="secondary" onClick={() => setChoosing(true)}>Scout a company</Button>
+        <Button kind="secondary" onClick={() => chooseFor()}>🧢 Scout a company with the coach</Button>
       </Card>
 
       <h3 className="sub-head">⏱ Time machine</h3>
@@ -142,22 +163,32 @@ export function LearnScreen() {
         <ConceptSheet c={open} onClose={() => setOpen(null)}>
           {!isOpen(state, open) ? (
             <p className="lock-note">🔒 The lesson opens once you've used {missingPrereqs(state, open).map((p) => p.name.toLowerCase()).join(' and ')} in a thesis.</p>
-          ) : lessonFor(open.slug) ? (
-            <Button onClick={() => { setOpen(null); startLesson(open.slug) }}>
-              {state.lessonsDone.includes(open.slug) ? 'Do the lesson again' : 'Start the lesson'}
-            </Button>
           ) : (
-            <p className="lock-note">The full lesson for this one is coming.</p>
+            <>
+              {lessonFor(open.slug) ? (
+                <Button onClick={() => { setOpen(null); startLesson(open.slug) }}>
+                  {state.lessonsDone.includes(open.slug) ? 'Do the lesson again' : 'Start the lesson'}
+                </Button>
+              ) : (
+                <p className="lock-note">The full lesson for this one is coming.</p>
+              )}
+              <Button kind="secondary" onClick={() => chooseFor(open)}>🧢 Use it: scout a company with the coach</Button>
+              <p className="muted small">{state.concepts[open.slug]?.applied ? "You've used this one already. Another report still counts." : 'The coach walks you through it on a company you pick. Using it in the report fills the third dot.'}</p>
+            </>
           )}
         </ConceptSheet>
       )}
 
       {choosing && (
-        <Sheet title="Scout a company" onClose={() => setChoosing(false)}>
-          <p className="muted small">Pick one you don't own. You'll write a thesis and one prediction.</p>
+        <Sheet title={choosing.focus ? `Scout with ${choosing.focus.name.toLowerCase()}` : 'Scout a company'} onClose={() => setChoosing(null)}>
+          <p className="muted small">
+            {choosing.focus
+              ? `Pick a company you don't own. The coach shows you ${choosing.focus.name.toLowerCase()} on its numbers, then you write the report and one prediction.`
+              : "Pick one you don't own. The coach goes first, then you write a thesis and one prediction."}
+          </p>
           <div className="results">
-            {companies.filter((c) => c.ticker !== state.pick?.ticker).map((c) => (
-              <button key={c.ticker} className="result" onClick={() => { setChoosing(false); scout(c.ticker) }}>
+            {companies.filter((c) => c.ticker !== state.pick?.ticker && !state.morePicks.some((p) => p.ticker === c.ticker)).map((c) => (
+              <button key={c.ticker} className="result" onClick={() => { const f = choosing.focus; setChoosing(null); scoutWithCoach(c.ticker, f) }}>
                 <span className="tick">{c.ticker}</span>
                 <span><b>{c.name}</b><small>{c.oneLiner}</small></span>
               </button>
@@ -167,6 +198,36 @@ export function LearnScreen() {
       )}
     </Page>
   )
+}
+
+// The four ranks top to bottom: what each one takes and how far along you are.
+function RankSteps({ at }: { at: number }) {
+  const { state } = useGame()
+  return (
+    <ol className="rank-steps">
+      {RANKS.map((r, i) => {
+        const n = ofLevel(r.level).length
+        const status = i < at ? '✓ Done' : i === at ? "You're here"
+          : r.level === 0 ? 'Not yet' : `${appliedIn(state, r.level).length} of ${n} used`
+        return (
+          <li key={r.name} className={i === at ? 'here' : i < at ? 'past' : ''}>
+            <i aria-hidden>{r.icon}</i>
+            <span>
+              <b>{r.name}</b>{i === RANKS.length - 1 && ' (the top)'}
+              <small>{rankRule(r.level, n)}</small>
+            </span>
+            <em>{status}</em>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
+function rankRule(level: number, n: number) {
+  if (level === 0) return 'Make your first pick and write a thesis: why you think it will beat the index.'
+  const rule = `Use all ${n} ${RANKS[level].name} concepts in theses (when you buy) or scouting reports (when you don't).`
+  return level === 3 ? `${rule} Then make predictions for a whole season (a school year), so the top rank always takes time.` : rule
 }
 
 // The four ranks in a row, with the player's current one highlighted.

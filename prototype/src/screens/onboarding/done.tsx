@@ -7,18 +7,20 @@ import { useGame } from '../../state/store'
 
 export function DoneScreen() {
   const { state, go } = useGame()
-  const pick = state.pick
+  // The first pick earns Shareholder; later picks just confirm.
+  const later = state.morePicks.length > 0
+  const pick = later ? state.morePicks[state.morePicks.length - 1] : state.pick
   const c = findCompany(pick?.ticker ?? '') ?? findCompany('NVDA')!
   const p = pick?.prediction
   return (
     <Page className="done-screen">
       <div className="rank-reveal">
         <div className="rank-badge">
-          <span className="rank-icon">📜</span>
+          <span className="rank-icon">{later ? '✅' : '📜'}</span>
         </div>
-        <p className="eyebrow">Rank earned</p>
-        <h1 className="rank-name">Shareholder</h1>
-        <p className="muted">You made a pick with a real reason. Next up: Owner.</p>
+        <p className="eyebrow">{later ? `Pick ${state.morePicks.length + 1}` : 'Rank earned'}</p>
+        <h1 className="rank-name">{later ? `${c.name}, in.` : 'Shareholder'}</h1>
+        <p className="muted">{later ? 'Picks don\'t change your rank; using concepts in your theses does. Check Learn to see what this one counted for.' : 'You made a pick with a real reason. Next up: Owner.'}</p>
       </div>
 
       <Card className="countdown">

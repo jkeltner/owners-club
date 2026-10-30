@@ -156,8 +156,7 @@ textarea { resize: vertical; line-height: 1.4; }
 .money-label { font-weight: 700; color: var(--ink-2); margin: 6px 0 14px; }
 .sp-grid { display: grid; grid-template-columns: repeat(20, 1fr); gap: 3px; margin: 0 auto 12px; max-width: 280px; }
 .sp-grid span { aspect-ratio: 1; border-radius: 3px; background: var(--primary); opacity: .85; animation: tile-in .4s ease both; }
-.sp-grid span:nth-child(3n) { opacity: .55; }
-.sp-grid span:nth-child(7n) { background: var(--gold); opacity: 1; }
+.sp-grid span.top { background: var(--gold); opacity: 1; }
 .sp-grid span { animation-delay: calc(var(--i, 0) * 1ms); }
 @keyframes tile-in { from { transform: scale(0); } to { transform: scale(1); } }
 
@@ -633,6 +632,13 @@ button.holding-top { width: 100%; border: 0; background: transparent; padding: 0
 .ladder span i { font-style: normal; font-size: 22px; }
 .ladder span.past { opacity: .85; }
 .ladder span.here { opacity: 1; background: var(--gold-2); color: var(--ink); outline: 2px solid var(--gold); }
+.rank-steps { list-style: none; padding: 0; margin: 10px 0; display: grid; gap: 6px; }
+.rank-steps li { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--card); }
+.rank-steps li i { font-style: normal; font-size: 22px; text-align: center; }
+.rank-steps li small { display: block; font-size: 13px; color: var(--ink-2); line-height: 1.35; }
+.rank-steps li em { font-style: normal; font-size: 12px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+.rank-steps li.here { outline: 2px solid var(--gold); background: var(--gold-2); }
+.rank-steps li.past em { color: var(--primary); }
 .learn-path h3 { font-family: var(--display); font-size: 20px; margin: 0 0 4px; }
 .learn-path h3 span { color: var(--ink-2); font-weight: 600; }
 .learn-path .progress { margin: 6px 0 4px; }
@@ -703,3 +709,24 @@ button.holding-top { width: 100%; border: 0; background: transparent; padding: 0
   .desk-url { font-weight: 700; font-family: ui-monospace, monospace; font-size: 14px; }
 }
 .link-btn.small { font-size: 13px; text-align: left; font-weight: 600; padding: 0 0 8px; }
+
+/* Round 6: fold-both-ways explainers, feed comments, earnings this week, Me-tab effects */
+.fold-title { font-family: var(--display); font-size: 18px; }
+.why-toggle:focus-visible { outline: 2px solid var(--primary); border-radius: 8px; }
+.comment-compose { margin-top: 10px; }
+.comment-compose input { padding: 9px 14px; font-size: 14px; }
+.comment-compose .send { width: 36px; height: 36px; }
+.listings h3 + .muted.small { margin: -6px 0 8px; }
+.listings h3:not(:first-of-type) { margin-top: 14px; }
+.earnings-list { display: grid; gap: 6px; margin-bottom: 4px; }
+.earnings-row { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; border: 0; background: var(--bg); border-radius: 12px; padding: 10px 12px; }
+.earnings-row .tick { font-size: 12px; min-width: 48px; }
+.earnings-main { flex: 1; min-width: 0; }
+.earnings-main > small { color: var(--ink-2); }
+.earnings-main .watch, .earnings-main .holders { display: block; font-size: 13px; color: var(--ink-2); }
+.earnings-main .holders { color: var(--primary); font-weight: 600; }
+.effects-card .rule { margin-top: 8px; }
+.effects-card .rule b { display: block; }
+.effects-card > .muted.small { margin: 12px 0 0; }
+.focus-hint p.small { margin: 0; }
+.scout-row .link-btn { padding-top: 6px; }

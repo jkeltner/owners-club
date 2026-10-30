@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { tagThesis } from '../../coach/tagger'
 import { Button, Card, Chip, Page, TopBar } from '../../components/ui'
+import { concept } from '../../content'
 import { eps, findCompany, netMargin, type Company } from '../../data/companies'
 import { useGame, type Prediction } from '../../state/store'
 
@@ -34,19 +35,34 @@ function draftFromChat(name: string, answers: string[]): string {
   return parts.join(' ')
 }
 
+// A scouting report after the coach: the second answer is the player's side
+// ("more likely to beat the market"); the first is their read of the number.
+function draftFromScoutChat(name: string, answers: string[]): string {
+  const [read, side] = answers
+  const parts: string[] = []
+  if (side && /either way|depends/i.test(side)) parts.push(`${name} could go either way: `)
+  else if (side && !skipAnswer(side)) parts.push(`${name} is ${lowerFirst(side.replace(/[.…]+$/, ''))} because `)
+  else parts.push(`I think ${name} `)
+  if (read && !skipAnswer(read) && read.length > 25) parts.push(`${endStop(lowerFirst(read))} `)
+  return parts.join('')
+}
+
 const fmt = (m: Metric, v: number) => (m.unit === '$' ? `$${v.toFixed(2)}` : `${v.toFixed(0)}%`)
 
 export function ThesisScreen() {
   const { state, go, update, mark } = useGame()
   const scout = !!state.draft?.scout
+  const fromScout = !!state.draft?.fromScout // a saved scouting report becoming a pick
+  const focus = state.draft?.focus ? concept(state.draft.focus) : null
   const c = findCompany(state.companyTicker ?? '') ?? findCompany('NVDA')!
   const [thesis, setThesis] = useState(state.draft?.thesis ?? '')
   const [metricId, setMetricId] = useState(state.draft?.prediction?.metric ?? METRICS[0].id)
   const metric = METRICS.find((m) => m.id === metricId)!
   const [value, setValue] = useState<number>(state.draft?.prediction?.value ?? Math.round(metric.ref(c)))
   const ok = thesis.trim().length >= 20
-  const answers = scout ? [] : state.coachLog.filter((m) => m.from === 'player').map((m) => m.text)
+  const answers = state.coachLog.filter((m) => m.from === 'player').map((m) => m.text)
   const watch = scout ? null : state.coachLog.map((m) => m.text.match(/worth watching: (.+)$/)?.[1]).find(Boolean) ?? null
+  const back = state.coachLog.length ? 'coach' : 'company'
 
   const pickMetric = (m: Metric) => {
     setMetricId(m.id)
@@ -68,16 +84,26 @@ export function ThesisScreen() {
 
   return (
     <Page>
-      <TopBar back={scout ? 'company' : 'coach'} title={c.name} />
-      <p className="eyebrow">{scout ? '🔭 Scouting report' : 'Step 3 of 3'}</p>
+      <TopBar back={back} title={c.name} />
+      <p className="eyebrow">{scout ? '🔭 Scouting report' : fromScout ? 'From your scouting report' : 'Step 3 of 3'}</p>
       <h1>{scout ? `My take on ${c.name}` : `Why I'm buying ${c.name}`}</h1>
       <p className="muted">
         {scout
-          ? "You're not buying anything. Write what you think will happen and why, plus one prediction. It's scored at earnings like a real pick, and it counts for your rank."
-          : answers.length
-            ? 'You already did the thinking with the coach. Now put it in one or two sentences your club will read.'
-            : 'One or two sentences: what you think will happen, and why. Your club will see it.'}
+          ? answers.length
+            ? "You're not buying anything. Put what you told the coach into one or two sentences, with the number in it. It's scored at earnings like a real pick, and it counts for your rank."
+            : "You're not buying anything. Write what you think will happen and why, plus one prediction. It's scored at earnings like a real pick, and it counts for your rank."
+          : fromScout
+            ? 'Your scouting report becomes your thesis. Change it if your thinking has changed, then say how much to move into it.'
+            : answers.length
+              ? 'You already did the thinking with the coach. Now put it in one or two sentences your club will read.'
+              : 'One or two sentences: what you think will happen, and why. Your club will see it.'}
       </p>
+      {scout && focus && (
+        <Card className="chat-recap focus-hint">
+          <p className="eyebrow">Use {focus.name.toLowerCase()} in it</p>
+          <p className="small">Say the number and what it means for {c.name}.{focus.in_a_thesis && <> Like: <i>"{focus.in_a_thesis}"</i></>}</p>
+        </Card>
+      )}
       {answers.length > 0 && (
         <Card className="chat-recap">
           <p className="eyebrow">What you told the coach</p>
@@ -87,7 +113,7 @@ export function ThesisScreen() {
       )}
       <textarea className="thesis-box" value={thesis} onChange={(e) => setThesis(e.target.value)} rows={4} placeholder="I think…" />
       <div className="chips">
-        {answers.length > 0 && <Chip onClick={() => setThesis((t) => (t.trim() ? t : draftFromChat(c.name, answers)))}>✍️ Start from my answers</Chip>}
+        {answers.length > 0 && <Chip onClick={() => setThesis((t) => (t.trim() ? t : scout ? draftFromScoutChat(c.name, answers) : draftFromChat(c.name, answers)))}>✍️ Start from my answers</Chip>}
         {STARTERS.map((s) => <Chip key={s} onClick={() => setThesis((t) => (t ? t : s.replace(/…/g, ' ').trim() + ' '))}>{s}</Chip>)}
       </div>
 

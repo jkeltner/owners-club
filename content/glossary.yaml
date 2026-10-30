@@ -108,4 +108,50 @@ terms:
     explanation: >
       One fund that owns a small piece of every company in an index. An S&P 500 index
       fund owns a slice of the 500 biggest US companies, so it moves with the whole
-      market.
+      market. Bigger companies get bigger slices.
+    example: >
+      Of every $100 in an S&P 500 index fund, about $40 is in its 10 biggest companies,
+      like Nvidia, Apple and Microsoft. The other 490 share the remaining $60.
+
+  - slug: dow
+    term: The Dow
+    explanation: >
+      The Dow Jones Industrial Average: 30 big, well-known US companies, picked by a
+      committee. It's the oldest stock index (from 1896), so the news still quotes it,
+      but 30 companies is a small sample of the market.
+    example: >
+      Apple, Microsoft, Nvidia, Coca-Cola and McDonald's are in the Dow. Alphabet
+      (Google) and Meta aren't, even though they're bigger than most that are.
+
+  - slug: nasdaq
+    term: Nasdaq
+    explanation: >
+      A stock exchange: one of the two big places in the US where shares are bought and
+      sold (the other is the New York Stock Exchange). "The Nasdaq" in the news usually
+      means an index of the companies listed there, which leans heavily toward tech.
+    example: >
+      Apple, Microsoft, Nvidia, Amazon and Alphabet are all listed on the Nasdaq.
+      Coca-Cola and JPMorgan are on the New York Stock Exchange.
+
+  - slug: thesis
+    term: Thesis
+    explanation: >
+      The reason you write down when you buy a stock: what you think will happen to the
+      business and why, in a sentence or two, plus one number you predict for its next
+      earnings report. Your club can read it, and it's how you rank up: using an idea in
+      a thesis is what counts.
+    example: >
+      "Costco keeps almost every member, and most of its profit is the fees. I think
+      sales grow 7% or more next quarter."
+
+  - slug: scouting-report
+    term: Scouting report
+    explanation: >
+      A thesis on a company you don't buy. Same thing: what you think will happen and
+      why, plus one prediction, and it's checked at earnings and counts for your rank
+      the same way. No money moves. It's the fastest way to rank up, and you can turn
+      one into a real pick later.
+    example: >
+      You think Nike's P/E of 36 is high for a company whose sales are shrinking, but
+      you don't want to bet on it. Write a scouting report instead and see if you were
+      right in 2 months.

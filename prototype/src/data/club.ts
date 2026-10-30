@@ -23,6 +23,14 @@ export const INVITER = 'Alex'
 // S&P 500 over the same trailing windows (after-tax, as if sold today).
 export const SP500 = { ret3m: 3.1, ret6m: 7.2, ret12m: 13.4, volatility: 15 }
 
+// Rough facts for the "What's the market?" card. Not live; see docs/data_needs.md.
+export const MARKET_FACTS = {
+  top10Pct: 40, // share of the S&P 500 in its 10 biggest companies
+  sp500CoverPct: 80, // S&P 500's share of the whole US stock market's value
+  usListed: 4000, // US companies on the stock market today (about half the 1996 count)
+  publicOneIn: 8, // of US companies with $100M+ in sales, about 1 in 8 is public
+}
+
 export const friends: Friend[] = [
   { id: 'alex', name: 'Alex', avatar: '⚡', monthsPlaying: 8, ret3m: 6.0, ret6m: 16.3, ret12m: null, holdings: 6, largestPct: 31, weightedPE: 29, volatility: 21, predictionsHit: 3, predictionsMade: 7, rank: 'Owner' },
   { id: 'jordan', name: 'Jordan', avatar: '🔥', monthsPlaying: 7, ret3m: 9.4, ret6m: 14.6, ret12m: null, holdings: 4, largestPct: 58, weightedPE: 61, volatility: 38, predictionsHit: 1, predictionsMade: 5, rank: 'Shareholder' },
