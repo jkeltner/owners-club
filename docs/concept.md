@@ -149,6 +149,8 @@ Each episode is tied to a concept:
 
 Finishing a replay marks its concept as encountered, and the coach's debrief can mark it explained. That lets the coach create the moment for any concept a player hasn't hit naturally.
 
+**The weekly club replay.** Earnings cluster into a few weeks a quarter, and the dead weeks between them are when a game goes quiet. So each week every club gets one replay, the same for everyone in the club, chosen against the club's own theses: a club with half its money in one company gets the concentration replay; a club whose picks all ride on AI gets the one about a company everyone agreed would own the future; a club with one member still all in the index gets the decade of picking. The feed card says why this one was picked. The point is to put a counter-example in front of the club the week its theses lean the other way, and to give everyone the same thing to argue about. Reveals stay immediate, because that feedback is what a replay is for, so the card asks for no spoilers in chat, and the next weekly recap compares everyone's choices ("3 of 5 of you sold at the bottom"). The choice is made by the weekly job before the recap goes out, from the club's holdings, each scenario's concept and which replays the club has already had.
+
 ## How the game works
 
 Players join a private league, get $10,000 in virtual cash, and build a portfolio they hold for a full school year. The rules below are each there for a specific reason.
@@ -240,7 +242,7 @@ The main board stays simple on purpose. Secondary boards sit beside it, each hig
 - **Rookie board:** players with under 6 months of history are ranked on 3-month returns until they qualify, so newcomers have something to aim for right away.
 - **Long-term board:** 12-month returns, for players who have been in the game a full year.
 - **Risk-adjusted board:** return per unit of volatility. Too abstract for the main board, but a good conversation starter about what "winning" means.
-- **Predictions board:** ranks players on how often their thesis predictions came true. Over a full year, this is the board that comes closest to measuring skill rather than luck.
+- **Predictions board:** ranks players on how often their thesis predictions came true. Over a full year, this is the board that comes closest to measuring skill rather than luck. Each row also shows the player's record calling clubmates' predictions in earnings showdowns, for bragging rights; it doesn't affect the ranking.
 
 An honest caveat for reviewers: no rule set makes the index player win among eight kids, because whoever takes more risk tops the board more often. The goal is narrower: concentration shouldn't be the obvious winning strategy. The stress tests in the next section show the rules get there.
 
@@ -295,7 +297,7 @@ The game borrows fantasy sports' social mechanics and deliberately leaves out it
 - **Club chat.** Built in, with new theses and trades posted into it automatically. This is where the trash talk happens. The fantasy app Sleeper grew by turning each league into a group chat with a game attached.
 - **A weekly AI recap.** A short, lightly roasting summary of the league's week that also slips in one concept: "Alex's portfolio P/E just hit 60. Here's what that means."
 - **News on companies you own.** Alerts on earnings, big moves and major news for each player's holdings, by text or email, so there's a reason to open the app that's about the business.
-- **Earnings-day events.** When a company several players hold reports, the league sees whose predictions came true.
+- **Earnings showdowns.** When a clubmate's company is about to report, the club votes on their prediction: holds or breaks. Votes stay hidden until the report, so nobody copies the crowd; voting closes at the last market close before the report; nobody can vote on their own call. After the report, a result card shows what the company reported, whether the prediction held and who called it. A vote is a guess about a friend's reasoning, not a bet: votes are for bragging rights only, shown as a "Calls" record on the predictions board, and never count toward rank. This turns the moment a thesis gets checked into a club event, and with four or more holdings plus the club's scouting reports, something reports most weeks in earnings season.
 - **This week on the market.** A weekly feed card in two parts. First, the companies in the game reporting earnings in the next week, each with the one number to watch for its kind of business and which clubmates own it: earnings week is when theses get checked, so it's the reason to open the app that's about the business, not the price. Then the companies that just had their IPO: what each one does, how it makes money, one question to think about, and the S&P 500 companies in the game it connects to (a supplier, a big customer, a rival). New companies can't be bought, because they aren't in the S&P 500 yet, so the card widens what players think about without turning into a hot-stock tip. It never shows price moves or first-day jumps.
 
 **Competition built into the club:**

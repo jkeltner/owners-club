@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { MixBar } from '../components/charts'
 import { Avatar, Card, Page, Sheet } from '../components/ui'
-import { friends, friendHoldings, bellHolder, SP500 } from '../data/club'
+import { calls, friends, friendHoldings, bellHolder, SP500 } from '../data/club'
 import { findCompany } from '../data/companies'
 import { MARKET_PE } from '../content'
 import { signedPct } from '../lib/format'
@@ -15,12 +15,13 @@ const BOARDS: { id: Board; label: string; blurb: string }[] = [
   { id: 'rookie', label: 'Rookie', blurb: 'Under 6 months in? You’re ranked on 3-month returns here.' },
   { id: 'long', label: 'Long-term', blurb: '12-month returns, for players with a full year in the game.' },
   { id: 'risk', label: 'Risk-adjusted', blurb: 'Return divided by how much your portfolio swung up and down along the way. A smooth ride scores higher than a wild one with the same return.' },
-  { id: 'predictions', label: 'Predictions', blurb: 'How often the predictions in your theses came true at earnings reports. The closest thing to measuring skill, not luck.' },
+  { id: 'predictions', label: 'Predictions', blurb: 'How often the predictions in your theses came true at earnings reports. The closest thing to measuring skill, not luck. "Calls" is your record voting on clubmates\u2019 predictions in showdowns: bragging rights only.' },
 ]
 
 type Row = {
   id: string; name: string; avatar: string; you: boolean; months: number
   vs3: number; vs6: number; holdings: number; largest: number; pe: number; riskAdj: number; hit: number; made: number
+  callsRight: number; callsMade: number
 }
 
 export function LeaderboardScreen() {
@@ -35,11 +36,13 @@ export function LeaderboardScreen() {
       id: f.id, name: f.name, avatar: f.avatar, you: false, months: f.monthsPlaying,
       vs3: f.ret3m - SP500.ret3m, vs6: f.ret6m - SP500.ret6m, holdings: f.holdings, largest: f.largestPct,
       pe: f.weightedPE, riskAdj: f.ret6m / f.volatility, hit: f.predictionsHit, made: f.predictionsMade,
+      callsRight: calls[f.id]?.right ?? 0, callsMade: calls[f.id]?.made ?? 0,
     })),
     {
       id: 'you', name: state.name || 'You', avatar: state.avatar, you: true, months: 0, vs3: 0, vs6: 0,
       holdings: state.pick ? 2 : 1, largest: state.pick ? Math.round((state.pick.amount / 10000) * 100) : 0,
       pe: 23, riskAdj: SP500.ret6m / SP500.volatility, hit: 0, made: state.pick ? 1 : 0,
+      callsRight: 0, callsMade: 0, // the player's votes resolve at the next reports
     },
   ]
 
@@ -115,6 +118,11 @@ export function LeaderboardScreen() {
                 <span className="board-score">{score(r)}</span>
                 {!r.you && <span className="board-go" aria-hidden>›</span>}
               </div>
+              {board === 'predictions' && (
+                <div className="risk-cols calls-row">
+                  <span><small>Calls on others</small>{r.callsMade ? `${r.callsRight} of ${r.callsMade} right` : Object.keys(state.votes).length ? `${Object.keys(state.votes).length} waiting` : '—'}</span>
+                </div>
+              )}
               {(board === 'main' || board === 'rookie') && (
                 <div className="risk-cols">
                   <span><small>Holdings</small>{r.holdings}</span>

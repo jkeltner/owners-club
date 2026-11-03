@@ -55,7 +55,8 @@ Source guesses follow the free stack in the [build spec](build_spec.md#market-da
 | Debt and cash | Debt lesson; return on invested capital | Quarterly | EDGAR | |
 | Shareholders' equity, goodwill and intangibles | Price-to-book and tangible book (banks); return on equity | Quarterly | EDGAR | |
 | Dividends per share and payment dates | Dividends lesson; crediting cash to portfolios | Per payment | Price source | Open question in the build spec |
-| Earnings dates, past and next | Countdowns; prediction checks; scouting reports; "This week on the market" feed card (companies reporting in the next 7 days) | Weekly | Alpha Vantage earnings calendar | Hand-written `daysToEarnings` per company |
+| Earnings dates, past and next | Countdowns; prediction checks; scouting reports; "This week on the market" feed card (companies reporting in the next 7 days); earnings showdowns (voting closes at the last close before the report) | Weekly | Alpha Vantage earnings calendar | Hand-written `daysToEarnings` per company |
+| Reported quarter numbers behind each prediction metric (revenue growth, EPS, net margin), the day of the report | Scoring predictions and resolving showdown votes; the result card ("Profit margin: 31¢ of each $1 of sales") | Per report | The company's earnings press release (same day), reconciled against EDGAR when the 10-Q lands weeks later | One hand-written result in `prototype/src/data/club.ts` |
 | Sector and industry → which lens | Sector lens; sector P/E band | When it changes | Member list (part A), mapped to our lenses | |
 | Plain "what it does and how it makes money" | Company page; themes; the coach | Yearly | Hand-written; EDGAR segment data helps | |
 | Sector numbers from company reports | Lens panel; sort-it and talk-it-through lessons | Quarterly | Hand-entered from earnings releases, or skip for the alpha | See the list below |
@@ -82,4 +83,5 @@ These come from parts A and B:
 - **Per company:** market cap, P/E, profit per share, margins, free cash flow, cash conversion, Rule of 40, PEG, return on equity, return on invested capital, price-to-book.
 - **Per stock's price history:** volatility and correlation with the index (risk columns and the correlation lesson).
 - **Per player:** each holding's return, after-tax value, and each holding's effect on the player's average P/E.
+- **Per club, weekly:** largest single position, share of pick money in each kind of business, weighted P/E vs. the market, members still all in the index, and which replays the club has had. These pick the weekly club replay.
 - **Across the index:** the S&P 500's P/E and each sector's typical P/E range.

@@ -6,6 +6,7 @@ import { Button, Card, LevelDots, Page, Sheet } from '../components/ui'
 import { lessonFor, scenarios, type Concept } from '../content'
 import { companies, findCompany } from '../data/companies'
 import { REPLAYS } from '../data/time_machine'
+import { pickWeeklyReplay } from '../lib/weekly_replay'
 import { RANKS, appliedIn, isOpen, missingPrereqs, nextToApply, ofLevel, rankIndex, upNext } from '../lib/ranks'
 import { useGame } from '../state/store'
 
@@ -16,6 +17,7 @@ const USED_MEANS = 'A thesis is the reason you write when you buy. A scouting re
 
 export function LearnScreen() {
   const { state, go, update } = useGame()
+  const weekly = pickWeeklyReplay(state.name, [state.pick, ...state.morePicks].filter((p) => !!p))
   const [open, setOpen] = useState<Concept | null>(null)
   // The company chooser for a scouting report. `focus` is the concept the
   // coach walks through first; without one, the coach picks a basic one.
@@ -129,8 +131,10 @@ export function LearnScreen() {
         {REPLAYS.map((r) => {
           const sc = scenarios.find((s) => s.slug === r.slug)
           const done = state.replaysDone.includes(r.slug)
+          const thisWeek = r.slug === weekly.slug
           return (
-            <button key={r.slug} className={`tm-tile ${done ? 'done' : ''}`} onClick={() => go('replay', { replaySlug: r.slug })}>
+            <button key={r.slug} className={`tm-tile ${done ? 'done' : ''} ${thisWeek ? 'this-week' : ''}`} onClick={() => go('replay', { replaySlug: r.slug })}>
+              {thisWeek && <span className="tm-week">This week's club replay</span>}
               <b>{r.card}</b>
               <small>{sc?.concepts.map((s) => conceptName(s)).join(' · ')}</small>
               {done && <span className="tm-done">✓ Done</span>}

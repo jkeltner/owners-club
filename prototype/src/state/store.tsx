@@ -55,6 +55,7 @@ export type GameState = {
   morePicks: Pick[] // picks after the first; the first stays in `pick` (it sets the Shareholder rank)
   scouts: Scout[]
   comments: Record<string, { who: string; text: string }[]> // the player's replies on feed theses, by thesis id
+  votes: Record<string, 'holds' | 'breaks'> // showdown votes on clubmates' predictions, by thesis id
   concepts: Record<string, Progress>
   feedback: FeedbackNote[]
   testerId: string // random, so GitHub issues group a tester's notes without a name
@@ -86,6 +87,7 @@ const initial = (): GameState => ({
   morePicks: [],
   scouts: [],
   comments: {},
+  votes: {},
   concepts: {},
   feedback: [],
   testerId: Math.random().toString(36).slice(2, 8),

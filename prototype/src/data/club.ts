@@ -80,7 +80,69 @@ export const friendTheses: Thesis[] = [
     why: 'Live sports are bringing in new subscribers, and they barely spend more to stream a game to 10 million people than to 1 million.',
     prediction: 'Profit margin goes above 30%', daysAgo: 9, comments: [],
   },
+  {
+    id: 't5', who: 'Maya', avatar: '🎸', ticker: 'CMG', companyName: 'Chipotle', action: 'bought', amount: 1200,
+    why: "The stock fell 30% this year because the same restaurants sold less than last year. But they're still opening 300 a year, and each new one pays for itself in about 2 years. The P/E is 35, down from 50.",
+    prediction: 'Sales grow 7% or more next quarter', daysAgo: 31,
+    comments: [{ who: 'Priya', text: 'same-store sales is the number to watch, not total sales' }, { who: 'Maya', text: 'yeah but new stores are real sales too 🌯' }],
+  },
 ]
+
+// ---------- Earnings showdowns ----------
+//
+// Before a clubmate's company reports, the club votes on whether their
+// prediction holds or breaks. Votes stay hidden until the report; after it,
+// the result shows who called it. Votes are social (a "Calls" tally on the
+// predictions board), never rank. Upcoming showdowns are derived from the
+// theses above and each company's `daysToEarnings`; this is the one that
+// already resolved.
+
+export type ShowdownResult = {
+  thesisId: string
+  ticker: string
+  companyName: string
+  who: string
+  avatar: string
+  prediction: string
+  reported: string // the number the company reported, in the prediction's terms
+  held: boolean
+  daysAgo: number
+  votes: { holds: string[]; breaks: string[] } // clubmate names
+}
+
+export const showdownResults: ShowdownResult[] = [
+  {
+    thesisId: 't4', ticker: 'NFLX', companyName: 'Netflix', who: 'Alex', avatar: '⚡',
+    prediction: 'Profit margin goes above 30%', reported: 'Profit margin: 31¢ of each $1 of sales', held: true, daysAgo: 5,
+    votes: { holds: ['Priya', 'Maya', 'Sam'], breaks: ['Jordan'] },
+  },
+]
+
+// How many clubmates have voted on each open showdown (direction hidden until the report).
+export const showdownVotesIn: Record<string, number> = { t2: 3, t5: 2 }
+
+// Each clubmate's record calling other people's predictions (right / made).
+export const calls: Record<string, { right: number; made: number }> = {
+  alex: { right: 5, made: 8 }, jordan: { right: 2, made: 6 }, priya: { right: 6, made: 7 }, sam: { right: 3, made: 4 }, maya: { right: 4, made: 6 },
+}
+
+// ---------- Weekly club replay ----------
+//
+// One time machine replay per club per week, the same for everyone, chosen
+// against the club's theses (see src/lib/weekly_replay.ts). Who has played
+// this week's, which replays the club has already had, and how last week's
+// went, for the recap.
+
+export const weeklyReplayPlayed = ['priya', 'alex', 'sam'] // friend ids, this week
+
+// Replays the club has already been given, with how many clubmates played each.
+export const clubReplaysHad: Record<string, number> = { 'single-big-tech-2022': 4, 'covid-crash-2020': 5, 'tech-basket-2022': 1 }
+
+export const lastWeekReplay = {
+  slug: 'covid-crash-2020',
+  card: '2020: the crash',
+  summary: '3 of 5 sold at the second stop, which turned out to be the bottom. Priya and Sam held the whole way and finished ahead.',
+}
 
 export const chatSeed = [
   { who: 'Jordan', avatar: '🔥', text: 'AMD earnings in 2 weeks. my prediction is coming true' },

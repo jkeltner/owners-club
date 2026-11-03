@@ -753,3 +753,38 @@ button.holding-top { width: 100%; border: 0; background: transparent; padding: 0
 .buyers-expect.dark .pe-mark, .buyers-expect.dark .pe-legend i.market { background: var(--gold); }
 .buyers-expect.dark .pe-dot { background: var(--gold); color: var(--ink); }
 .recap-explain .small { margin: 0; color: rgba(255,255,255,.85); }
+
+/* Round 7b: earnings showdown, weekly club replay */
+.anchor { display: block; position: relative; top: -70px; height: 0; }
+.showdown .muted.small { margin: 0 0 6px; }
+.showdown-row { border-top: 1.5px solid var(--line); padding: 12px 0 10px; }
+.showdown-row:first-of-type { border-top: 0; }
+.showdown-head { display: flex; flex-direction: column; }
+.showdown-head small { color: var(--ink-2); }
+.showdown-row .prediction-pill { margin: 8px 0; }
+.showdown-row > small { display: block; line-height: 1.4; }
+.vote-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 2px 0 8px; }
+.vote { border: 2px solid var(--mint); background: var(--mint-2); color: var(--ink); border-radius: 14px; padding: 11px; font-weight: 800; font-size: 16px; }
+.vote.breaks { border-color: var(--coral); background: #fff; }
+.vote.on { background: var(--mint); }
+.vote.breaks.on { background: var(--coral); color: #fff; }
+.vote:disabled { opacity: .4; }
+.showdown-row.own { background: var(--primary-2); border-radius: 14px; padding: 12px; border-top: 0; margin-top: 6px; }
+.showdown-row.result { background: var(--bg); border-radius: 14px; padding: 12px; border-top: 0; margin-top: 6px; }
+.showdown-verdict { margin: 8px 0 6px; font-size: 15px; }
+.showdown-verdict span { display: block; color: var(--ink-2); }
+.link-btn.inline { display: inline; padding: 0; font-size: inherit; font-weight: 700; color: var(--primary); }
+.showdown .recap-concept { background: var(--bg); color: var(--ink); margin-top: 10px; }
+.showdown .recap-explain { background: var(--bg); margin: 6px 0 0; }
+.showdown .recap-explain p { margin: 0 0 8px; font-size: 15px; }
+.showdown .recap-explain p:last-child { margin: 0; }
+.weekly-replay { background: var(--gold-2); border: 0; }
+.weekly-replay h3 { margin: 0 0 6px; }
+.weekly-replay .why-this { margin: 0 0 8px; font-size: 15px; }
+.weekly-replay .muted.small { margin: 0 0 6px; }
+.weekly-replay .btn { margin-top: 6px; }
+.recap-replay { font-size: 15px; margin: 10px 0 0; color: rgba(255,255,255,.85); }
+.recap-replay b { color: var(--gold); }
+.calls-row { grid-template-columns: 1fr; }
+.tm-tile.this-week { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-2); }
+.tm-week { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #b07400; margin-bottom: 2px; }
