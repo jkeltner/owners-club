@@ -35,7 +35,7 @@ Every technical decision lands here with its status. Product and game-rule decis
 | New listings card | A weekly list of recent IPOs (name, ticker, date, what it does, how it makes money, one question, related S&P 500 companies). The prototype hard-codes three 2025 listings in `prototype/src/data/new_listings.ts`. | Source still open: see `docs/data_needs.md`. The plain-language fields need writing per company, so likely a weekly curated step, possibly drafted by the model and reviewed. | Open |
 | Index-to-pick fee | Moving money from the index into a pick is one trade: one 0.5% fee on the amount moved, not a fee on the index sale plus another on the purchase. | Keeps the first pick simple to explain; rule recorded in the concept doc's index holding section. | Decided |
 | Scout coach mode | `askCoach` gets a `scout` mode with a focus concept in its facts. The script applies the concept to the company's numbers (one fact per concept in `prototype/src/coach/concept_facts.ts`), asks for the player's read, then hands over to the report. The live coach does the same from the concept record and the company's data. | Every concept on the Learn tab needs a path to being used, and the coach is the part that can show the concept on real numbers. Same interface as the pick conversation, so screens don't change when the live coach lands. | Proposed |
-| Buyable universe | Players can buy from the S&P 500 only (concept doc rule). A founder note proposes any NYSE or Nasdaq stock above a size and volume floor. | Widening needs a floor, a data source with clean fundamentals for small companies, and a new answer for why recent IPOs aren't buyable. Unresolved. | Open |
+| Buyable universe | Players can buy from the S&P 500 only. | A founder note had proposed any NYSE or Nasdaq stock above a size and volume floor. Decided against on 2026-11-02 after a parent reviewer called the absence of penny stocks the game's biggest differentiator; widening would also need a floor, clean fundamentals for small companies and a new answer for why recent IPOs aren't buyable. The member list is the only universe the data layer has to cover. | Decided |
 
 ## Data model
 
@@ -140,6 +140,7 @@ I'm not a lawyer; the display terms need to be confirmed in writing with whichev
 - [ ] Who edits the concept catalog: only through Claude Code, or do reviewers need an admin page?
 - [ ] How do accounts work: does a parent create the account and invite the kid, and do kids log in by email link or by phone?
 - [ ] How long do we keep kids' chat messages and coach conversations?
+- [ ] The parent nugget (concept doc open question 7): if a kid opts in, where does the weekly one-liner go (a parent's phone number or email on the kid's profile, or a parent account), and does the weekly recap job produce it?
 
 ## Sources
 

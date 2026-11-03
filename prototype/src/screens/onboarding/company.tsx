@@ -39,7 +39,8 @@ export function CompanyScreen() {
 
       <Card className="stats">
         <Stat label="Whole company" value={bigUsd(marketCapB(c))} conceptSlug="market-cap-vs-share-price" sub="market cap" />
-        <Stat label="P/E" value={pe === null ? 'n/a' : `${pe.toFixed(0)}x`} conceptSlug="pe-ratio" sub={pe === null ? 'no profits yet' : `$${pe.toFixed(0)} per $1 of profit`} />
+        <Stat label="P/E" value={pe === null ? 'n/a' : `${pe.toFixed(0)}x`} conceptSlug="pe-ratio" sub={pe === null ? 'no profits yet' : `$${pe.toFixed(0)} per $1 of profit`}
+          pe={pe === null ? undefined : { value: pe, name: c.name, range: l?.typical_pe, sector: sectorPlural(c.lens) }} />
         <Stat label="Revenue" value={bigUsd(c.revenueB)} conceptSlug="revenue-vs-earnings" sub={`${signedPct(c.revenueGrowth, 0)} vs. last year`} />
         <Stat label="Earnings (profit)" value={bigUsd(c.earningsB)} conceptSlug="revenue-vs-earnings" sub={c.earningsB > 0 ? `keeps ${netMargin(c).toFixed(0)}¢ of each $1 of sales as profit` : 'lost money last year'} />
       </Card>
@@ -52,10 +53,10 @@ export function CompanyScreen() {
           </>
         ) : (
           <>
-            <h3>Is a <Linked text="P/E" /> of {pe.toFixed(0)} high?</h3>
+            <h3>What buyers expect</h3>
             <PeScale pe={pe} market={MARKET_PE} range={l?.typical_pe} sector={sectorPlural(c.lens)} />
             <p className="small">
-              Plain math: if {c.name}'s profits never grew, it would take <b>{pe.toFixed(0)} years</b> of profits to add up to what you pay.{' '}
+              A <Linked text="P/E" /> of {pe.toFixed(0)} means buyers pay ${pe.toFixed(0)} for each $1 of yearly profit. Plain math: if {c.name}'s profits never grew, it would take <b>{pe.toFixed(0)} years</b> of profits to add up to what you pay.{' '}
               {pe > MARKET_PE * 1.3
                 ? 'Buyers pay that much because they expect profits to grow a lot.'
                 : pe < MARKET_PE * 0.8

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { concept } from '../content'
-import { ConceptSheet } from './terms'
+import { ConceptSheet, type PeContext } from './terms'
 import { levelOf, useGame, type ProgressLevel, type Screen } from '../state/store'
 
 export function Page({ children, className = '' }: { children: ReactNode; className?: string }) {
@@ -51,7 +51,7 @@ export function Chip({ children, onClick, active }: { children: ReactNode; onCli
 }
 
 // A stat with a "what's this?" sheet for its concept.
-export function Stat({ label, value, conceptSlug, sub }: { label: string; value: ReactNode; conceptSlug?: string; sub?: string }) {
+export function Stat({ label, value, conceptSlug, sub, pe }: { label: string; value: ReactNode; conceptSlug?: string; sub?: string; pe?: PeContext }) {
   const [open, setOpen] = useState(false)
   const { mark } = useGame()
   return (
@@ -64,7 +64,7 @@ export function Stat({ label, value, conceptSlug, sub }: { label: string; value:
       </div>
       <div className="stat-value">{value}</div>
       {sub && <div className="stat-sub">{sub}</div>}
-      {open && conceptSlug && <ConceptSheet c={concept(conceptSlug)} onClose={() => setOpen(false)} />}
+      {open && conceptSlug && <ConceptSheet c={concept(conceptSlug)} onClose={() => setOpen(false)} pe={pe} />}
     </div>
   )
 }

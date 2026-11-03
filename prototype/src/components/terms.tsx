@@ -4,7 +4,8 @@
 // question and a way to ask the coach.
 import { useState, type ReactNode } from 'react'
 import { CoachChat } from './coach_chat'
-import { concept, glossaryTerm, lessonFor, type Concept } from '../content'
+import { PeScale } from './charts'
+import { MARKET_PE, concept, glossaryTerm, lessonFor, type Concept } from '../content'
 import { isOpen } from '../lib/ranks'
 import { useGame } from '../state/store'
 import { Button, Sheet } from './ui'
@@ -103,7 +104,32 @@ function GlossarySheet({ slug, onClose }: { slug: string; onClose: () => void })
   )
 }
 
-export function ConceptSheet({ c, onClose, children }: { c: Concept; onClose: () => void; children?: ReactNode }) {
+// A P/E in context (a company's, or a player's average), so the sheet can
+// lead with the comparison instead of the definition.
+export type PeContext = { value: number; name: string; range?: [number, number]; sector?: string }
+
+// The comparison, framed as what buyers expect rather than a verdict: a high
+// P/E is never "bad" (teaching notes), it's high expectations.
+export function BuyersExpect({ pe, dark }: { pe: PeContext; dark?: boolean }) {
+  const high = pe.value > MARKET_PE * 1.3
+  const low = pe.value < MARKET_PE * 0.8
+  return (
+    <div className={`buyers-expect ${dark ? 'dark' : ''}`}>
+      <b>What buyers expect</b>
+      <PeScale pe={pe.value} market={MARKET_PE} range={pe.range} sector={pe.sector ?? ''} />
+      <p>
+        {pe.name} {pe.name.endsWith('average') ? 'is' : 'is at'} <b>{pe.value.toFixed(0)}</b>. A typical S&P 500 company is about {MARKET_PE}.{' '}
+        {high
+          ? 'Buyers are paying a lot more for each $1 of profit, so they expect profits to grow a lot. If growth disappoints, the price can fall even if the business is fine.'
+          : low
+            ? 'Buyers are paying less for each $1 of profit than for a typical company: they expect less growth, or see more risk.'
+            : "That's about what buyers pay for a typical company: ordinary expectations."}
+      </p>
+    </div>
+  )
+}
+
+export function ConceptSheet({ c, onClose, children, pe }: { c: Concept; onClose: () => void; children?: ReactNode; pe?: PeContext }) {
   const { mark, state, go } = useGame()
   const q = c.check_questions[0]
   const lesson = lessonFor(c.slug)
@@ -112,6 +138,7 @@ export function ConceptSheet({ c, onClose, children }: { c: Concept; onClose: ()
   const right = picked === q?.answer
   return (
     <Sheet title={c.name} onClose={onClose}>
+      {pe && c.slug === 'pe-ratio' && <BuyersExpect pe={pe} />}
       <p>{c.kid_explanation}</p>
       {!children && (lesson && isOpen(state, c) ? (
         <Button onClick={() => { onClose(); go('lesson', { lessonSlug: c.slug, lessonBack: state.screen === 'lesson' ? state.lessonBack : state.screen }) }}>

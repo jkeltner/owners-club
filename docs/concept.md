@@ -157,7 +157,7 @@ Players join a private league, get $10,000 in virtual cash, and build a portfoli
 | --- | --- | --- |
 | Private leagues | A parent creates a league and invites players, ages 13 and up. | Kids play with people they know; the social part is what keeps them playing. |
 | Join anytime | New players can join mid-season. Everyone starts with $10,000 in an S&P 500 index fund (see The first 15 minutes). | It will take time to get friends on board. Trailing-return scoring (below) keeps late joiners comparable. |
-| Curated stock list | Players can buy from the S&P 500, not any ticker. | Keeps out penny stocks and meme names, and guarantees clean fundamentals data for everything buyable. |
+| Curated stock list | Players can buy from the S&P 500, not any ticker. | Keeps out penny stocks and meme names, and guarantees clean fundamentals data for everything buyable. It's also the parent pitch: no leverage, no penny stocks, no crypto, no options. A parent of a target-age kid called that the game's biggest differentiator, so the limit is a feature to say out loud, not a constraint to apologize for. (Widening to any NYSE or Nasdaq stock above a size floor was considered and dropped.) |
 | Basic fundamentals | Each stock shows price history, revenue, earnings, EPS, P/E, margins and growth. | Enough to reason about a business; far short of a Bloomberg terminal. |
 | Position cap | No purchase can be more than 25% of the portfolio's value. Winners can grow past 25% afterward. | Guarantees at least four holdings, while keeping the lesson of winners drifting into concentration. |
 | Minimum hold | Each purchase is locked for 3 months. | Every decision lives long enough to be judged, including through at least one earnings report. Per-position locks mean free cash can always be used. |
@@ -183,7 +183,7 @@ A first-timer shouldn't face a blank $10,000. That's intimidating, and it pushes
 2. **Everyone starts fully invested in the S&P 500.** A new player's $10,000 begins in an index fund: "You already own a small piece of 500 companies." That teaches the benchmark in the first minute, and every player starts level with the market. Each pick is then a deliberate bet against the index ("I'm moving $2,000 out of the market and into Nvidia because..."), and a kid who makes one great pick and leaves the rest in the index is playing well.
 3. **Start from curiosity.** The first screen asks what companies they use, love or think will be huge. Kids can type a name or browse themes like AI, space, sports and gaming, food, or stuff I use every day; each theme shows a handful of companies from the game's list. That's curation, not recommendation: the coach still never says what to buy.
 4. **Whatever they name becomes the first lesson.** For Nvidia, the coach runs a light version of its usual conversation ("Everyone knows AI is huge, so what's already in the price?"). For SpaceX, the lesson is that it isn't in the S&P 500: public vs. private companies, IPOs, and why you can't buy everything. Then: "Which public companies would do well if space takes off?" Finding the companies that sell the picks and shovels is a real investing skill.
-5. **One guided first pick.** Up to the 25% cap, with a short written thesis and one prediction. The thesis builds on the coach conversation: the screen shows what the player told the coach and can start a draft from their own answers, which they finish in their own words. It earns the Shareholder rank and sets up the reason to come back: "Nvidia reports in 23 days. We'll see if you were right."
+5. **One guided first pick.** Up to the 25% cap, with a short written thesis and one prediction. A thesis has three parts, each a sentence or so in the player's own words: what the business does well, what they think happens next, and the number they're watching. The three parts are free text, never a menu: a thesis built from pickable cards would let a player use a concept without understanding it, and the game marks concepts "applied" from what's written. The screen shows what the player told the coach and can start the first two parts from their own answers; the third part's prompt is the point the coach said was worth watching. It earns the Shareholder rank and sets up the reason to come back: "Nvidia reports in 23 days. We'll see if you were right."
 6. **Friends' theses as examples.** A player who joins through a friend's invite sees why others bought what they did. Seeing a friend's reasoning is the easiest way to learn what a thesis looks like.
 7. **Optional: a 3-minute time machine as the tutorial.** "Pick one of these three companies. It's 2019. Fast-forward." It shows the stakes before any real decisions, and it marks a few concepts as encountered.
 
@@ -199,7 +199,7 @@ Its core move is asking "what do you have to believe?" using real numbers:
 >
 > **Coach:** Agreed, AI is huge. Everyone else knows that too, so it's probably in the price already. Right now investors are paying about X times earnings. What would Nvidia's earnings need to do over the next few years for that to be a good deal? Do you think that's likely?
 
-The conversation ends with a short written thesis and one concrete prediction (for example, "data center revenue grows over 50% next quarter"). Both are saved and shared with the league.
+The conversation ends with a short written thesis in three parts (what the business does well, what happens next, the number being watched) and one concrete prediction (for example, "data center revenue grows over 50% next quarter"). Both are saved and shared with the league.
 
 Each position then follows the same cycle:
 
@@ -343,6 +343,7 @@ Two questions from the first draft are now settled: the game starts as a small p
 4. **How should predictions be scored?** The current plan is to have players pick from a menu of measurable metrics (revenue growth, earnings per share, margins) and commit to a number, so grading is objective. Is that enough, or too restrictive?
 5. **Is a brief coach conversation enough to teach anything?** Two or three questions keeps the game fun. Does it achieve the learning goal?
 6. **What would make your kid open it on a random Tuesday?** Company news, the weekly recap and the club chat are the current answers. What else?
+7. **What does a parent get?** A parent reviewer wanted something to show at dinner. The current thinking is smaller than a report: one weekly nugget by text or email that opens a conversation ("Costco reports Thursday; your kid predicted 7% sales growth"), opted into by the kid, never pushed on them. What's the right nugget, and does a parent need an account to get it?
 
 ## Sources
 

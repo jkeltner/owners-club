@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Avatar, Card, Page } from '../components/ui'
-import { Linked } from '../components/terms'
-import { MARKET_PE, concept, lens } from '../content'
+import { BuyersExpect, Linked } from '../components/terms'
+import { concept, lens } from '../content'
 import { CLUB_NAME, friendHoldings, friendTheses, friends, bellHolder, SP500, type Thesis } from '../data/club'
 import { companies, findCompany } from '../data/companies'
 import { newListings } from '../data/new_listings'
@@ -49,7 +49,12 @@ export function FeedScreen() {
             <button className="recap-concept" onClick={() => setOpen(open === 'pe' ? null : 'pe')}>
               <span>What's a P/E of {jordan.weightedPE} mean?</span><span>{open === 'pe' ? '−' : '+'}</span>
             </button>
-            {open === 'pe' && <p className="recap-explain">{concept('pe-ratio').kid_explanation} So {jordan.name} is paying, on average, ${jordan.weightedPE} for every $1 of yearly profit. A typical S&P 500 company is about {MARKET_PE}. Prices that high only hold up if profits grow fast, so if growth disappoints, stocks like these can fall hard.</p>}
+            {open === 'pe' && (
+              <div className="recap-explain">
+                <BuyersExpect pe={{ value: jordan.weightedPE, name: `${jordan.name}'s average` }} dark />
+                <p className="small">{concept('pe-ratio').kid_explanation} So {jordan.name} is paying, on average, ${jordan.weightedPE} for every $1 of yearly profit.</p>
+              </div>
+            )}
             {state.pick && <p className="muted small">New this week: {state.name} joined and bought {findCompany(state.pick.ticker)?.name}. Welcome to the club.</p>}
           </Card>
 

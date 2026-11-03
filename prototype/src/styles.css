@@ -730,3 +730,26 @@ button.holding-top { width: 100%; border: 0; background: transparent; padding: 0
 .effects-card > .muted.small { margin: 12px 0 0; }
 .focus-hint p.small { margin: 0; }
 .scout-row .link-btn { padding-top: 6px; }
+
+/* Round 7: a thesis in three parts, and "what buyers expect" */
+.thesis-slots { display: grid; gap: 10px; margin: 10px 0 4px; }
+.slot { display: block; border: 2px solid var(--line); background: var(--card); border-radius: 16px; padding: 12px 14px; }
+.slot.filled { border-color: var(--mint); }
+.slot-label { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; }
+.slot-label b { font-size: 15px; }
+.slot-label small { color: var(--ink-2); font-size: 13px; }
+.slot textarea { width: 100%; border: 0; background: transparent; padding: 0; font-size: 17px; min-height: 48px; resize: vertical; }
+.slot textarea:focus { outline: none; }
+.slot-chips { margin: 6px 0 0; }
+.slot-chips .chip { font-size: 13px; padding: 7px 10px; }
+.chat-recap .chip { margin-top: 2px; }
+.buyers-expect { background: var(--bg); border-radius: 14px; padding: 10px 12px; margin: 0 0 12px; }
+.buyers-expect > b { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); }
+.buyers-expect .pe-scale { margin: 14px 0 4px; }
+.buyers-expect p { margin: 8px 0 0; font-size: 15px; }
+.buyers-expect.dark { background: rgba(255,255,255,.08); color: #fff; margin: 0 0 8px; }
+.buyers-expect.dark > b, .buyers-expect.dark .pe-legend { color: rgba(255,255,255,.75); }
+.buyers-expect.dark .pe-track { background: rgba(255,255,255,.25); }
+.buyers-expect.dark .pe-mark, .buyers-expect.dark .pe-legend i.market { background: var(--gold); }
+.buyers-expect.dark .pe-dot { background: var(--gold); color: var(--ink); }
+.recap-explain .small { margin: 0; color: rgba(255,255,255,.85); }

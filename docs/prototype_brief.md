@@ -81,5 +81,6 @@ Watch, don't help. Afterward, note:
 - Could they explain their own thesis afterward?
 - Which screen did they want to go back to?
 - Would they open it again tomorrow? What would make them?
+- Did their thesis contain a number (a P/E, a growth rate, a margin), or only a story?
 
 Log findings in `docs/playtests/` as one dated Markdown file per session.
