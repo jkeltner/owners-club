@@ -4,7 +4,7 @@ How tester notes get read and turned into recommendations. Decided 2026-11-04; t
 
 ## The loop
 
-1. **Notes become issues.** The ✎ button on the hosted prototype posts to `api/feedback.ts`, which files one GitHub issue per tester per day, labeled `playtest-feedback`, with one comment per note and a game-state snapshot. Testers get a random ID, never a name.
+1. **Notes become issues.** The ✎ button on the hosted prototype posts to `api/feedback.ts`, which files one GitHub issue per tester per day, labeled `playtest-feedback`, with one comment per note and a game-state snapshot. Testers get a random ID, never a name. A note left after the issue has been reviewed starts a new issue, so nothing lands on an issue the review has already passed.
 2. **Claude reviews them every morning.** A launchd job on the Mac mini (`com.jkeltner.owners-club.feedback-review`, 6:50 AM Pacific) runs `scripts/review_feedback.sh`, which runs Claude Code headless with the project skill `.claude/skills/review-feedback/SKILL.md`. For each unreviewed issue it reads every note against the product rules, the concept doc, earlier playtest logs and the prototype code, posts a comment (Recommend / Discuss / Decline, effort S/M/L, the concrete change) and adds the `reviewed` label. The report is saved to `~/Library/Logs/owners-club/reviews/<date>.md` and emailed to Jeff as HTML (Gmail shows Markdown as literal asterisks, so `scripts/md_to_html.py` converts it first).
 3. **Nothing changes automatically.** Jeff reads the report and tells Claude Code which recommendations to implement. That is when code gets written, the batch is logged in `docs/playtests/`, and the issues get closed.
 

@@ -6,6 +6,7 @@ declare const process: { env: Record<string, string | undefined> } // Node's, wi
 
 const REPO = 'jkeltner/owners-club'
 const LABEL = 'playtest-feedback'
+const REVIEWED = 'reviewed' // added by the daily review (docs/feedback_review.md)
 const GH = `https://api.github.com/repos/${REPO}`
 
 type Body = { tester?: unknown; issue?: unknown; note?: unknown; screen?: unknown; at?: unknown; context?: unknown }
@@ -43,13 +44,16 @@ export async function POST(req: Request): Promise<Response> {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' },
     })
 
-  // Reuse the tester's issue only if it's an open playtest issue.
+  // Reuse the tester's issue only if it's an open playtest issue that the
+  // daily review hasn't read yet; a note after the review starts a new issue,
+  // otherwise it would sit on a `reviewed` issue and never be seen.
   let issue: number | null = null
   if (typeof b.issue === 'number' && Number.isInteger(b.issue)) {
     const r = await gh(`/issues/${b.issue}`)
     if (r.ok) {
       const found = (await r.json()) as { state: string; labels: { name: string }[] }
-      if (found.state === 'open' && found.labels.some((l) => l.name === LABEL)) issue = b.issue
+      const names = found.labels.map((l) => l.name)
+      if (found.state === 'open' && names.includes(LABEL) && !names.includes(REVIEWED)) issue = b.issue
     }
   }
   if (issue === null) {
