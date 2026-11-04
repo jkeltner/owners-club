@@ -19,6 +19,7 @@ A stock-picking game for kids (13+) and their friends that rewards understanding
   - `lessons.yaml`: the three-round lesson for each concept that has one
 - `prototype/`: the clickable prototype (create it here).
 - `docs/playtests/`: one dated Markdown file per playtest session.
+- `docs/feedback_review.md`: how tester notes become GitHub issues and get a daily Claude review (`scripts/review_feedback.sh`, skill `.claude/skills/review-feedback/`).
 
 ## Current task
 

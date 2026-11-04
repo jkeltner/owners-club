@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.jkeltner.owners-club.feedback-review</string>
+
+    <!-- Daily playtest-feedback review (docs/feedback_review.md): Claude Code
+         reads the open `playtest-feedback` issues and recommends changes.
+         Nothing in the app changes. Runs from a clone in ~/Code, not
+         ~/Documents: launchd jobs can't read ~/Documents without a Full Disk
+         Access grant (TCC). -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/jkeltner/Code/owners-club-review/scripts/review_feedback.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/jkeltner/Code/owners-club-review</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/jkeltner/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/jkeltner</string>
+    </dict>
+
+    <!-- 6:50 every morning, local time (Deep Thoughts runs at 6:40). -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>6</integer>
+        <key>Minute</key>
+        <integer>50</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/jkeltner/Library/Logs/owners-club/review_feedback.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/jkeltner/Library/Logs/owners-club/review_feedback.log</string>
+</dict>
+</plist>
