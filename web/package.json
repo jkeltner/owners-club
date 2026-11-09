@@ -1,0 +1,44 @@
+{
+  "name": "owners-club-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run content && tsx scripts/dev.ts",
+    "build": "npm run content && next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "npm run content && tsc --noEmit",
+    "test": "npm run content && vitest run",
+    "content": "tsx scripts/build_content.ts",
+    "db:generate": "npm run content && drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "auth:generate": "auth generate --config scripts/auth.config.ts --output src/db/auth_schema.ts --yes"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.16",
+    "@electric-sql/pglite-socket": "^0.2.19",
+    "better-auth": "^1.7.18",
+    "drizzle-orm": "^0.45.4",
+    "next": "16.4.5",
+    "pg": "^8.23.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vercel/config": "^0.14.1",
+    "auth": "^1.7.18",
+    "dotenv": "^18.0.8",
+    "drizzle-kit": "^0.31.11",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.1.0"
+  }
+}

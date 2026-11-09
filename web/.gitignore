@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.data/
+.vercel
+.env
+.env*.local
+.env.*
+!.env.example
+# Built from ../content by `npm run content`
+src/content/generated.json
+.env*
