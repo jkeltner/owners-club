@@ -77,7 +77,7 @@ export async function refreshPrices(maxDays = 10, seedFrom?: string): Promise<St
     for (const chunk of chunks(bars, 500)) {
       await db
         .insert(prices)
-        .values(chunk.map((b) => ({ ticker: b.ticker, date: b.date, close: b.close, volume: b.volume, source: "massive" })))
+        .values(chunk.map((b) => ({ ticker: b.ticker, date: b.date, close: b.close, volume: Math.round(b.volume), source: "massive" }))) // split-adjusted volumes are fractional
         .onConflictDoUpdate({ target: [prices.ticker, prices.date], set: { close: sql`excluded.close`, volume: sql`excluded.volume`, source: sql`excluded.source` } });
       written += chunk.length;
     }
@@ -143,8 +143,8 @@ export async function refreshEarnings(maxLookups = 12): Promise<StepResult> {
     .limit(maxLookups);
   let reported = 0;
   const unresolved: string[] = [];
-  for (const [i, d] of due.entries()) {
-    if (i > 0) await alphaVantagePause(); // the free key allows one call a second
+  for (const d of due) {
+    await alphaVantagePause(); // the free key allows one call a second, and the calendar call was just made
     const quarters = await fetchReportedEarnings(d.ticker);
     const match = quarters.find((q) => q.reportedDate === d.date) ?? quarters.find((q) => Math.abs(new Date(q.reportedDate).getTime() - new Date(d.date).getTime()) <= 3 * 86_400_000);
     if (!match) {
