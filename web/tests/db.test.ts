@@ -29,3 +29,19 @@ describe("database", () => {
     expect(withVerifiedSsl(undefined)).toBeUndefined();
   });
 });
+
+describe("financials upsert", () => {
+  beforeAll(() => dbReady);
+
+  it("keeps earlier numbers when a later run has none for that column", async () => {
+    const { upsertFinancials } = await import("@/jobs/nightly");
+    const { financials } = await import("@/db/schema");
+    await upsertFinancials([{ cik: 1, period: "CY2026Q3", periodEnd: "2026-09-30", revenue: 100, netIncome: 10 }]);
+    await upsertFinancials([{ cik: 1, period: "CY2026Q3", netIncome: 12, cash: 5 }]);
+    const [row] = await db.select().from(financials);
+    expect(row.revenue).toBe(100);
+    expect(row.netIncome).toBe(12);
+    expect(row.cash).toBe(5);
+    expect(row.periodEnd).toBe("2026-09-30");
+  });
+});

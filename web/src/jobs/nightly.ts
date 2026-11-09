@@ -7,7 +7,7 @@ import { and, eq, gte, inArray, isNull, lt, max, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { companies, earningsDates, financials, prices } from "@/db/schema";
 import { fetchEarningsCalendar, fetchReportedEarnings } from "@/market/alpha_vantage";
-import { fetchFinancialsForFrame, fetchSecTickers, recentQuarterFrames, recentYearFrames } from "@/market/edgar";
+import { fetchFinancialsForFrame, fetchSecTickers, recentQuarterFrames, recentYearFrames, type FinancialUpsert } from "@/market/edgar";
 import { fetchGroupedDaily, INDEX_FUND_TICKER, massiveFreeTierPause, weekdaysBetween } from "@/market/massive";
 import { fetchSp500Members, toSecTicker } from "@/market/sp500";
 import { runJob, type Step, type StepResult } from "./runner";
@@ -95,23 +95,31 @@ export async function refreshFinancials(opts: { quarters: number; years: number;
   for (const frame of frames) {
     const upserts = await fetchFinancialsForFrame(frame, ciks);
     perFrame[frame] = upserts.length;
-    for (const chunk of chunks(upserts, 200)) {
-      await db
-        .insert(financials)
-        .values(chunk)
-        .onConflictDoUpdate({
-          target: [financials.cik, financials.period],
-          set: Object.fromEntries(
-            ["periodStart", "periodEnd", "revenue", "netIncome", "epsDiluted", "grossProfit", "operatingIncome", "operatingCashFlow", "capex", "sharesOutstanding", "cash", "longTermDebt", "equity", "goodwill", "intangibles", "accession"].map((c) => [
-              c,
-              sql.raw(`coalesce(excluded.${camelToSnake(c)}, ${camelToSnake(c)})`),
-            ]),
-          ),
-        });
-      rows += chunk.length;
-    }
+    rows += await upsertFinancials(upserts);
   }
   return { frames: perFrame, rows, companies: ciks.size };
+}
+
+/**
+ * Insert or update financial rows by (cik, period). A later run never blanks a
+ * number an earlier run had: each column keeps the existing value when the new
+ * one is null. The existing column must be qualified with the table name, or
+ * Postgres can't tell it from `excluded`.
+ */
+export async function upsertFinancials(rows: FinancialUpsert[]): Promise<number> {
+  const merged = ["periodStart", "periodEnd", "revenue", "netIncome", "epsDiluted", "grossProfit", "operatingIncome", "operatingCashFlow", "capex", "sharesOutstanding", "cash", "longTermDebt", "equity", "goodwill", "intangibles", "accession"];
+  let n = 0;
+  for (const chunk of chunks(rows, 200)) {
+    await db
+      .insert(financials)
+      .values(chunk)
+      .onConflictDoUpdate({
+        target: [financials.cik, financials.period],
+        set: Object.fromEntries(merged.map((c) => [c, sql.raw(`coalesce(excluded.${camelToSnake(c)}, financials.${camelToSnake(c)})`)])),
+      });
+    n += chunk.length;
+  }
+  return n;
 }
 
 /** Upcoming report dates for members (one call), then the numbers for members that reported yesterday or today. */

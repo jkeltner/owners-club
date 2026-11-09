@@ -20,7 +20,12 @@ export async function logEvent(event: AppEvent) {
 }
 
 export function errorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
+  if (err instanceof Error) {
+    // Drizzle wraps database errors; the Postgres message is on the cause.
+    const cause = (err as { cause?: unknown }).cause;
+    const causeMsg = cause instanceof Error ? cause.message : typeof cause === "string" ? cause : null;
+    return causeMsg && !err.message.includes(causeMsg) ? `${err.message} (cause: ${causeMsg})` : err.message;
+  }
   return typeof err === "string" ? err : JSON.stringify(err);
 }
 
