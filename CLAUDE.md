@@ -6,7 +6,8 @@ A stock-picking game for kids (13+) and their friends that rewards understanding
 
 - `docs/concept.md`: the product concept, rules and the reasoning behind them. **Source of truth for game rules.**
 - `docs/build_spec.md`: technical decisions (decision log), data model, data stack, open technical questions. **Source of truth for implementation.**
-- `docs/prototype_brief.md`: the current task, a clickable prototype.
+- `docs/prototype_brief.md`: the brief the clickable prototype was built to.
+- `docs/build_plan.md`: the plan for the real build (accounts, database, market data, live coach), with its phases and decision record.
 - `docs/data_needs.md`: running list of every real number the game needs (reference data and per-stock data).
 - `docs/learn_tab_sketch.md`: the Learn tab design (built in the prototype).
 - `docs/sector_metrics_reference.md`: the full sector-by-sector metrics reference from a reviewer.
@@ -23,7 +24,7 @@ A stock-picking game for kids (13+) and their friends that rewards understanding
 
 ## Current task
 
-Build the clickable prototype described in `docs/prototype_brief.md`. Start with "The first 15 minutes" flow, get it playable end to end, then add the other screens in the brief's order.
+The clickable prototype in `prototype/` is done and live at owners-club-alpha.vercel.app; tester notes still arrive as GitHub issues and get the daily review. The next task is the real build in `web/`, by the phases in `docs/build_plan.md`. Its decisions were settled on 2026-11-09; phase 0 (scaffold, database, hello-world deploy) is under way.
 
 ## Product rules the code must respect
 
