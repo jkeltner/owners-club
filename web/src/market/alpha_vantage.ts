@@ -3,7 +3,7 @@
 // requests a day, so the nightly job spends them deliberately: one on the
 // calendar, the rest on companies that just reported. Headlines come later,
 // for companies players hold.
-import { fetchJson, fetchText } from "./http";
+import { fetchJson, fetchText, sleep } from "./http";
 
 function apiKey() {
   const key = process.env.ALPHA_VANTAGE_API_KEY;
@@ -122,3 +122,6 @@ function splitCsv(line: string): string[] {
   out.push(cur);
   return out;
 }
+
+/** The free key allows 25 calls a day and about one a second; wait between consecutive calls. */
+export const alphaVantagePause = () => sleep(1300);

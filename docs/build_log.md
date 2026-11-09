@@ -20,6 +20,8 @@ One note per phase of the real build (see [the build plan](build_plan.md)): what
 
 **Done by Jeff (2026-11-09 evening).** Google OAuth variables moved to `owners-club-web`; the SEC contact for `MARKET_USER_AGENT` is his address (set in all three Vercel environments); Jeff's Projects upgraded to Pro.
 
-**Waiting on Jeff.** A Massive API key and an Alpha Vantage key, added to the Vercel project as `MASSIVE_API_KEY` and `ALPHA_VANTAGE_API_KEY` (Massive offered a direct connection flow; Jeff is pasting it in).
+**Loaded 2026-11-09 evening.** Financials: 12,776 rows across 26 periods (every quarter back to late 2021 and every fiscal year back to 2020) for all 500 members with a CIK; 437 have a third-quarter 2026 filing so far, the rest report later or on off-cycle years. Earnings calendar: 79 upcoming dates through late January (fewer than expected for a three-month window; check against the next nightly run). The first backfill surfaced an ambiguous-column bug in the financials upsert (fixed, with a test) and a burst-rate rejection from Alpha Vantage (lookups now paced at one a second). `scripts/stats.ts` prints what the cache holds.
 
-**Still to do in this phase.** The financials backfill (20 quarters, 6 years) started 2026-11-09 evening; two years of prices once the Massive key is in; the five clean nights; the EDGAR cleanup the internal page turns up (banks with no gross profit, fiscal-year offsets, restated quarters); the part-A reference numbers.
+**Waiting on Jeff.** A working Massive key: the value added to Vercel is 11 characters and Massive answers "Unknown API Key" to it; their keys are 32 characters, so it looks truncated. Prices stay empty until it's replaced.
+
+**Still to do in this phase.** Two years of prices once the Massive key works (`npx tsx scripts/backfill.ts prices`, about two hours at the free tier's pace, resumable); the five clean nights; the EDGAR cleanup the internal page turns up (banks with no gross profit, fiscal-year offsets, restated quarters); the part-A reference numbers.

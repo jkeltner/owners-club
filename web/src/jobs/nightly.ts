@@ -6,7 +6,7 @@
 import { and, eq, gte, inArray, isNull, lt, max, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { companies, earningsDates, financials, prices } from "@/db/schema";
-import { fetchEarningsCalendar, fetchReportedEarnings } from "@/market/alpha_vantage";
+import { alphaVantagePause, fetchEarningsCalendar, fetchReportedEarnings } from "@/market/alpha_vantage";
 import { fetchFinancialsForFrame, fetchSecTickers, recentQuarterFrames, recentYearFrames, type FinancialUpsert } from "@/market/edgar";
 import { fetchGroupedDaily, INDEX_FUND_TICKER, massiveFreeTierPause, weekdaysBetween } from "@/market/massive";
 import { fetchSp500Members, toSecTicker } from "@/market/sp500";
@@ -57,10 +57,11 @@ export async function refreshSp500(): Promise<StepResult> {
 }
 
 /** Closes for every weekday since the last stored date, up to yesterday. One Massive call per day. */
-export async function refreshPrices(maxDays = 10): Promise<StepResult> {
+export async function refreshPrices(maxDays = 10, seedFrom?: string): Promise<StepResult> {
   if (!process.env.MASSIVE_API_KEY) return { skipped: "MASSIVE_API_KEY is not set" };
   const [{ latest }] = await db.select({ latest: max(prices.date) }).from(prices);
-  const from = latest ? daysAgo(-1, new Date(`${latest}T00:00:00Z`)) : daysAgo(7);
+  // Resume after the latest stored day; an empty table starts at `seedFrom` (backfills) or a week ago.
+  const from = latest ? daysAgo(-1, new Date(`${latest}T00:00:00Z`)) : (seedFrom ?? daysAgo(7));
   const to = daysAgo(1);
   const days = weekdaysBetween(from, to).slice(0, maxDays);
   const wanted = new Set([INDEX_FUND_TICKER, ...(await db.select({ ticker: companies.ticker }).from(companies)).map((c) => c.ticker)]);
@@ -142,7 +143,8 @@ export async function refreshEarnings(maxLookups = 12): Promise<StepResult> {
     .limit(maxLookups);
   let reported = 0;
   const unresolved: string[] = [];
-  for (const d of due) {
+  for (const [i, d] of due.entries()) {
+    if (i > 0) await alphaVantagePause(); // the free key allows one call a second
     const quarters = await fetchReportedEarnings(d.ticker);
     const match = quarters.find((q) => q.reportedDate === d.date) ?? quarters.find((q) => Math.abs(new Date(q.reportedDate).getTime() - new Date(d.date).getTime()) <= 3 * 86_400_000);
     if (!match) {
