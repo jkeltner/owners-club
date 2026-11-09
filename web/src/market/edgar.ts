@@ -37,8 +37,8 @@ export const CONCEPTS: Record<FinancialColumn, { instant: boolean; sources: Conc
   epsDiluted: {
     instant: false,
     sources: [
-      { taxonomy: "us-gaap", tag: "EarningsPerShareDiluted", unit: "USD/shares" },
-      { taxonomy: "us-gaap", tag: "EarningsPerShareBasicAndDiluted", unit: "USD/shares" },
+      { taxonomy: "us-gaap", tag: "EarningsPerShareDiluted", unit: "USD-per-shares" },
+      { taxonomy: "us-gaap", tag: "EarningsPerShareBasicAndDiluted", unit: "USD-per-shares" },
     ],
   },
   grossProfit: { instant: false, sources: [{ taxonomy: "us-gaap", tag: "GrossProfit", unit: "USD" }] },
