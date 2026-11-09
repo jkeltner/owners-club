@@ -63,3 +63,7 @@ One OAuth client covers local and production. In the [Google Cloud console](http
 "Continue with Google" appears once both values are set. Someone who joined with an email code can later sign in with Google for the same address; the accounts are linked.
 
 If a custom domain is added later, add its origin and callback URI to the same client and update `BETTER_AUTH_URL`.
+
+## Secrets and local scripts
+
+The provider keys and the Google OAuth client are stored in Vercel as Sensitive variables. Production reads them normally, but `vercel env pull` writes `[SENSITIVE]` in their place, so a local `.env.local` needs them pasted in by hand (from the provider dashboards, never from the repo). `npx tsx scripts/stats.ts` shows what the cache holds; the backfill scripts say which key they're missing.
