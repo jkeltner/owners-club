@@ -5,7 +5,7 @@ import { sql } from "drizzle-orm";
 import { db } from "../src/db";
 
 async function main() {
-  const r = await db.execute(sql`select
+  const r = (await db.execute(sql`select
     (select count(*) from companies where status = 'active') as active_companies,
     (select count(*) from prices) as price_rows,
     (select min(date) from prices) as first_price,
@@ -17,7 +17,7 @@ async function main() {
     (select min(date) from earnings_dates) as first_earnings,
     (select max(date) from earnings_dates) as last_earnings,
     (select count(*) from job_runs) as job_runs,
-    (select count(*) from job_runs where ok = false) as failed_runs`);
+    (select count(*) from job_runs where ok = false) as failed_runs`)) as unknown as { rows: Record<string, unknown>[] };
   console.table(r.rows[0]);
 }
 main().then(() => process.exit(0), (e) => { console.error(e); process.exit(1); });
