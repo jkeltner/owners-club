@@ -7,6 +7,7 @@ import { concepts, lessons, scenarios, lenses, glossary } from "@/content";
 export const dynamic = "force-dynamic";
 
 async function databaseStatus() {
+  if (!process.env.DATABASE_URL) return { ok: false as const, error: "no database attached to this deployment yet" };
   try {
     const rows = (await db.execute(sql`select now() as now, version() as version`)) as unknown as { rows: { now: Date; version: string }[] };
     const row = rows.rows?.[0];
