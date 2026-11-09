@@ -18,6 +18,8 @@ One note per phase of the real build (see [the build plan](build_plan.md)): what
 
 **Decisions made here.** Wikipedia for the member list (S&P's own list is licensed; Wikipedia tracks changes within a day or two, and removed members are marked, not deleted). EDGAR frames rather than the bulk download (a few dozen small calls a night instead of a multi-gigabyte file). SPY for the index holding's price. Headlines deferred to phase 3, for companies players hold: the free Alpha Vantage key allows 25 calls a day.
 
-**Waiting on Jeff.** A Massive API key and an Alpha Vantage key, added to the Vercel project as `MASSIVE_API_KEY` and `ALPHA_VANTAGE_API_KEY`; a contact email for the SEC's required User-Agent (`MARKET_USER_AGENT`); moving the Google OAuth variables from the prototype's Vercel project to `owners-club-web`.
+**Done by Jeff (2026-11-09 evening).** Google OAuth variables moved to `owners-club-web`; the SEC contact for `MARKET_USER_AGENT` is his address (set in all three Vercel environments); Jeff's Projects upgraded to Pro.
 
-**Still to do in this phase.** Backfill five years of financials and two years of prices once the keys and the SEC contact are in; the five clean nights; the EDGAR cleanup the internal page turns up (banks with no gross profit, fiscal-year offsets, restated quarters); the part-A reference numbers.
+**Waiting on Jeff.** A Massive API key and an Alpha Vantage key, added to the Vercel project as `MASSIVE_API_KEY` and `ALPHA_VANTAGE_API_KEY` (Massive offered a direct connection flow; Jeff is pasting it in).
+
+**Still to do in this phase.** The financials backfill (20 quarters, 6 years) started 2026-11-09 evening; two years of prices once the Massive key is in; the five clean nights; the EDGAR cleanup the internal page turns up (banks with no gross profit, fiscal-year offsets, restated quarters); the part-A reference numbers.
