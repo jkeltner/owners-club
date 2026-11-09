@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { concept } from '../content'
 import { chatSeed } from '../data/club'
+import type { CoachReply } from '../coach/coach'
 
 export type Screen =
   | 'invite' | 'join' | 'level' | 'market' | 'curious' | 'company' | 'private'
@@ -19,6 +20,12 @@ export type Progress = Partial<Record<ProgressLevel, number>> & { evidence?: str
 export type Experience = 'new' | 'some' | 'lots'
 
 export type ChatMsg = { from: 'coach' | 'player'; text: string }
+
+// Where a coach conversation stands, so a reload mid-chat resumes instead of
+// starting over (tester note, issue #5). `key` says which conversation the
+// saved coachLog belongs to (mode, company, facts); `reply` is the coach's
+// last turn with its tap chips, or null while the coach owes a reply.
+export type CoachSession = { key: string; turn: number; reply: CoachReply | null }
 
 export type Prediction = { metric: string; label: string; value: number; unit: string }
 
@@ -51,6 +58,7 @@ export type GameState = {
   // through first. fromScout: a saved scouting report being turned into a pick.
   draft: { thesis: string; prediction: Prediction | null; amount: number; scout?: boolean; focus?: string; fromScout?: boolean } | null
   coachLog: ChatMsg[]
+  coachSession: CoachSession | null
   pick: Pick | null
   morePicks: Pick[] // picks after the first; the first stays in `pick` (it sets the Shareholder rank)
   scouts: Scout[]
@@ -83,6 +91,7 @@ const initial = (): GameState => ({
   companyBack: 'curious',
   draft: null,
   coachLog: [],
+  coachSession: null,
   pick: null,
   morePicks: [],
   scouts: [],

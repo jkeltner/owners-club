@@ -1,4 +1,12 @@
 // Chat-style coach conversation with tap replies, typing, and a mock mic.
+//
+// The conversation is saved to the store after every message (log, turn and
+// the coach's last reply), keyed by mode, company and facts. Mounting with a
+// matching key resumes where the player left off, so a page refresh doesn't
+// restart the chat. Screens that start a new conversation reset `coachLog`.
+// The term-sheet mini-chat (`explain`) is the exception: it's a side
+// conversation and must not overwrite the pick conversation the thesis
+// screen reads.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { askCoach, type CoachContext, type CoachMode, type CoachReply } from '../coach/coach'
 import type { Company } from '../data/companies'
@@ -14,12 +22,22 @@ type Props = {
   renderTickers?: (tickers: string[]) => ReactNode
 }
 
+function sessionKey(mode: CoachMode, company?: Company, facts?: Record<string, string>) {
+  return `${mode}|${company?.ticker ?? ''}|${JSON.stringify(facts ?? {})}`
+}
+
 export function CoachChat({ mode, company, facts, voiceSample, onDone, renderTickers }: Props) {
   const { state, mark, update } = useGame()
-  const [log, setLog] = useState<ChatMsg[]>([])
-  const [turn, setTurn] = useState(0)
-  const [typing, setTyping] = useState(true)
-  const [reply, setReply] = useState<CoachReply | null>(null)
+  const persist = mode !== 'explain'
+  const key = sessionKey(mode, company, facts)
+  // A saved conversation for this same moment: resume it.
+  const saved = persist && state.coachSession?.key === key && state.coachLog.length ? state.coachSession : null
+  const savedLog = saved ? state.coachLog : []
+  const savedLast = savedLog[savedLog.length - 1]
+  const [log, setLog] = useState<ChatMsg[]>(savedLog)
+  const [turn, setTurn] = useState(saved?.turn ?? 0)
+  const [typing, setTyping] = useState(!saved || savedLast?.from === 'player')
+  const [reply, setReply] = useState<CoachReply | null>(saved?.reply ?? null)
   const [text, setText] = useState('')
   const [listening, setListening] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
@@ -32,7 +50,8 @@ export function CoachChat({ mode, company, facts, voiceSample, onDone, renderTic
     r.marks?.forEach((m) => mark(m.slug, m.level, `coach:${mode}`))
     const next = [...history, ...r.bubbles.map((b) => ({ from: 'coach' as const, text: b }))]
     setLog(next)
-    update(() => ({ coachLog: next })) // so a feedback note can show what the coach said
+    // Saved so a reload resumes here, and so a feedback note can show what the coach said.
+    if (persist) update(() => ({ coachLog: next, coachSession: { key, turn: t + 1, reply: r } }))
     setReply(r)
     setTurn(t + 1)
     setTyping(false)
@@ -42,7 +61,14 @@ export function CoachChat({ mode, company, facts, voiceSample, onDone, renderTic
   useEffect(() => {
     if (started.current) return
     started.current = true
-    run(null, [], 0)
+    if (!saved) {
+      run(null, [], 0)
+    } else if (savedLast?.from === 'player') {
+      // Reloaded while the coach was typing: answer the player's last message.
+      run(savedLast.text, savedLog, saved.turn)
+    } else if (saved.reply?.done) {
+      onDone?.(savedLog)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -54,6 +80,7 @@ export function CoachChat({ mode, company, facts, voiceSample, onDone, renderTic
     if (!msg.trim() || typing || reply?.done) return
     const next = [...log, { from: 'player' as const, text: msg.trim() }]
     setLog(next)
+    if (persist) update(() => ({ coachLog: next, coachSession: { key, turn, reply: null } }))
     setText('')
     setReply(null)
     run(msg.trim(), next, turn)
