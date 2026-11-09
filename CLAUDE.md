@@ -21,10 +21,12 @@ A stock-picking game for kids (13+) and their friends that rewards understanding
 - `prototype/`: the clickable prototype (create it here).
 - `docs/playtests/`: one dated Markdown file per playtest session.
 - `docs/feedback_review.md`: how tester notes become GitHub issues and get a daily Claude review (`scripts/review_feedback.sh`, skill `.claude/skills/review-feedback/`).
+- `docs/build_log.md`: one note per phase of the real build: what shipped, what changed, what's waiting on someone.
+- `web/`: the real app (Next.js, Drizzle, Better Auth); `web/README.md` covers running and deploying it.
 
 ## Current task
 
-The clickable prototype in `prototype/` is done and live at owners-club-alpha.vercel.app; tester notes still arrive as GitHub issues and get the daily review. The next task is the real build in `web/`, by the phases in `docs/build_plan.md`. Its decisions were settled on 2026-11-09; phase 0 (scaffold, database, hello-world deploy) is under way.
+The clickable prototype in `prototype/` is done and live at owners-club-alpha.vercel.app; tester notes still arrive as GitHub issues and get the daily review. The next task is the real build in `web/`, by the phases in `docs/build_plan.md`. Its decisions were settled on 2026-11-09; phase 0 shipped the same day and phase 1 (the market-data layer: `web/src/market/`, `web/src/jobs/`, the `/admin` data page) is under way. Progress notes go in `docs/build_log.md`, one section per phase.
 
 ## Product rules the code must respect
 

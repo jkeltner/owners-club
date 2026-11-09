@@ -1,6 +1,6 @@
 // Applies drizzle/ migrations to the database in DATABASE_URL (Neon, in the
 // Vercel build). `npm run dev` migrates the local database on its own.
-import "dotenv/config";
+import "./env";
 import { migrateDatabase } from "../src/db";
 
 // Schema changes go over Neon's direct connection rather than the pooler.
