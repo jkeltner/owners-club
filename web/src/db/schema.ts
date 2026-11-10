@@ -109,6 +109,10 @@ export const financials = pgTable(
     capex: bigint("capex", { mode: "number" }),
     // Balance sheet, as of the period end.
     sharesOutstanding: bigint("shares_outstanding", { mode: "number" }),
+    // Weighted-average diluted shares over the period (a flow-period number,
+    // not an instant). Filled for dual-class filers whose shares outstanding
+    // are only reported per share class, which the frames API leaves out.
+    sharesDiluted: bigint("shares_diluted", { mode: "number" }),
     cash: bigint("cash", { mode: "number" }),
     longTermDebt: bigint("long_term_debt", { mode: "number" }),
     equity: bigint("equity", { mode: "number" }),

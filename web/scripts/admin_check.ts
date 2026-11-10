@@ -6,7 +6,7 @@ import "./env";
 import { inArray, sql } from "drizzle-orm";
 import { db } from "../src/db";
 import { companies, financials, prices } from "../src/db/schema";
-import { computeMetrics, peBand } from "../src/market/metrics";
+import { computeMetrics, onePerCompany, peBand } from "../src/market/metrics";
 
 async function main() {
   const members = await db.select().from(companies).where(sql`${companies.status} = 'active'`);
@@ -19,20 +19,24 @@ async function main() {
     .from(prices)
     .where(sql`(${prices.ticker}, ${prices.date}) in (select ticker, max(date) from prices group by ticker)`);
   const price = new Map(priceRows.map((p) => [p.ticker, p.close]));
-  const rows = members.map((m) => ({
+  const tickers = members.map((m) => ({
     ticker: m.ticker,
+    cik: m.cik,
     lens: m.lens,
     m: computeMetrics(m.cik ? (byCik.get(m.cik) ?? []) : [], price.get(m.ticker) ?? null),
   }));
+  // Totals, bands and rankings count a dual listing (GOOG and GOOGL) once;
+  // the per-ticker "missing" and "loss-making" lists keep both.
+  const rows = onePerCompany(tickers);
   const withPe = rows.filter((r) => r.m.pe != null);
   const withCap = rows.filter((r) => r.m.marketCap != null);
   const both = rows.filter((r) => r.m.marketCap != null && r.m.netIncomeTtm != null);
   const cap = both.reduce((a, r) => a + r.m.marketCap!, 0);
   const ni = both.reduce((a, r) => a + r.m.netIncomeTtm!, 0);
   console.log(
-    `active ${rows.length} · with market cap ${withCap.length} · with P/E ${withPe.length} · market P/E ${(cap / ni).toFixed(1)} over ${both.length} companies · total cap $${(cap / 1e12).toFixed(1)}T`,
+    `active ${tickers.length} tickers, ${rows.length} companies · with market cap ${withCap.length} · with P/E ${withPe.length} · market P/E ${(cap / ni).toFixed(1)} over ${both.length} companies · total cap $${(cap / 1e12).toFixed(1)}T`,
   );
-  console.log("missing market cap:", rows.filter((r) => r.m.marketCap == null).map((r) => r.ticker).join(" "));
+  console.log("missing market cap:", tickers.filter((r) => r.m.marketCap == null).map((r) => r.ticker).join(" "));
   const bands = new Map<string, number[]>();
   for (const r of withPe) {
     const k = r.lens ?? "(no lens)";
@@ -55,6 +59,9 @@ async function main() {
   const sorted = [...withPe].sort((a, b) => a.m.pe! - b.m.pe!);
   console.log("lowest P/E:", sorted.slice(0, 5).map((r) => `${r.ticker} ${r.m.pe}`).join(", "));
   console.log("highest P/E:", sorted.slice(-5).map((r) => `${r.ticker} ${r.m.pe}`).join(", "));
-  console.log("loss-making (no P/E):", rows.filter((r) => r.m.netIncomeTtm != null && r.m.netIncomeTtm <= 0).map((r) => r.ticker).join(" "));
+  const bySource = new Map<string, string[]>();
+  for (const r of rows) if (r.m.sharesSource && r.m.sharesSource !== "reported") bySource.set(r.m.sharesSource, [...(bySource.get(r.m.sharesSource) ?? []), r.ticker]);
+  for (const [source, list] of bySource) console.log(`shares from ${source} (${list.length}):`, list.join(" "));
+  console.log("loss-making (no P/E):", tickers.filter((r) => r.m.netIncomeTtm != null && r.m.netIncomeTtm <= 0).map((r) => r.ticker).join(" "));
 }
 main().then(() => process.exit(0), (e) => { console.error(e); process.exit(1); });

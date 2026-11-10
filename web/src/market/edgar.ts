@@ -52,6 +52,10 @@ export const CONCEPTS: Record<FinancialColumn, { instant: boolean; sources: Conc
       { taxonomy: "us-gaap", tag: "CommonStockSharesOutstanding", unit: "shares" },
     ],
   },
+  // Duration concept (weighted over the period). Dual-class filers report
+  // EntityCommonStockSharesOutstanding per share class, which the frames API
+  // drops, but most still report this one with no class axis.
+  sharesDiluted: { instant: false, sources: [{ taxonomy: "us-gaap", tag: "WeightedAverageNumberOfDilutedSharesOutstanding", unit: "shares" }] },
   cash: { instant: true, sources: [{ taxonomy: "us-gaap", tag: "CashAndCashEquivalentsAtCarryingValue", unit: "USD" }] },
   longTermDebt: {
     instant: true,

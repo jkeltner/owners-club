@@ -45,3 +45,18 @@ describe("financials upsert", () => {
     expect(row.periodEnd).toBe("2026-09-30");
   });
 });
+
+describe("diluted shares column", () => {
+  beforeAll(() => dbReady);
+
+  it("stores weighted-average diluted shares and keeps them across runs", async () => {
+    const { upsertFinancials } = await import("@/jobs/nightly");
+    const { financials } = await import("@/db/schema");
+    const { eq } = await import("drizzle-orm");
+    await upsertFinancials([{ cik: 2, period: "CY2026Q3", periodStart: "2026-07-01", periodEnd: "2026-09-30", netIncome: 50, sharesDiluted: 2_500_000_000 }]);
+    await upsertFinancials([{ cik: 2, period: "CY2026Q3", netIncome: 51 }]);
+    const [row] = await db.select().from(financials).where(eq(financials.cik, 2));
+    expect(row.sharesDiluted).toBe(2_500_000_000);
+    expect(row.netIncome).toBe(51);
+  });
+});

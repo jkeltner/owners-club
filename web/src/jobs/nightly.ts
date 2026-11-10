@@ -108,7 +108,7 @@ export async function refreshFinancials(opts: { quarters: number; years: number;
  * Postgres can't tell it from `excluded`.
  */
 export async function upsertFinancials(rows: FinancialUpsert[]): Promise<number> {
-  const merged = ["periodStart", "periodEnd", "revenue", "netIncome", "epsDiluted", "grossProfit", "operatingIncome", "operatingCashFlow", "capex", "sharesOutstanding", "cash", "longTermDebt", "equity", "goodwill", "intangibles", "accession"];
+  const merged = ["periodStart", "periodEnd", "revenue", "netIncome", "epsDiluted", "grossProfit", "operatingIncome", "operatingCashFlow", "capex", "sharesOutstanding", "sharesDiluted", "cash", "longTermDebt", "equity", "goodwill", "intangibles", "accession"];
   let n = 0;
   for (const chunk of chunks(rows, 200)) {
     await db
