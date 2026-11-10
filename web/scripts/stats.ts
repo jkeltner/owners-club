@@ -19,5 +19,12 @@ async function main() {
     (select count(*) from job_runs) as job_runs,
     (select count(*) from job_runs where ok = false) as failed_runs`)) as unknown as { rows: Record<string, unknown>[] };
   console.table(r.rows[0]);
+  // Members whose price history is short: new listings, ticker changes, spinoffs.
+  const short = (await db.execute(sql`select ticker, count(*) as days, min(date) as first
+    from prices group by ticker having count(*) < (select count(distinct date) from prices) * 0.9 order by days`)) as unknown as { rows: Record<string, unknown>[] };
+  if (short.rows.length) {
+    console.log("Tickers with under 90% of the trading days (new listings, ticker changes, spinoffs):");
+    console.table(short.rows);
+  }
 }
 main().then(() => process.exit(0), (e) => { console.error(e); process.exit(1); });
