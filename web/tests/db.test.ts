@@ -1,6 +1,7 @@
 import { count } from "drizzle-orm";
 import { beforeAll, describe, expect, it } from "vitest";
 import { db, dbReady, withVerifiedSsl } from "@/db";
+import { migrationDecision } from "@/db/migrate_policy";
 import { appEvents } from "@/db/schema";
 import { logEvent } from "@/lib/events";
 
@@ -58,5 +59,14 @@ describe("diluted shares column", () => {
     const [row] = await db.select().from(financials).where(eq(financials.cik, 2));
     expect(row.sharesDiluted).toBe(2_500_000_000);
     expect(row.netIncome).toBe(51);
+  });
+
+  it("migrates from production and local builds, never from a preview unless told to", () => {
+    expect(migrationDecision({}).migrate).toBe(true); // npm run db:migrate on a laptop
+    expect(migrationDecision({ VERCEL: "1", VERCEL_ENV: "production" }).migrate).toBe(true);
+    expect(migrationDecision({ VERCEL: "1", VERCEL_ENV: "preview" }).migrate).toBe(false);
+    expect(migrationDecision({ VERCEL: "1", VERCEL_ENV: "development" }).migrate).toBe(false);
+    expect(migrationDecision({ VERCEL: "1" }).migrate).toBe(false); // unknown environment: don't touch the database
+    expect(migrationDecision({ VERCEL: "1", VERCEL_ENV: "preview", MIGRATE_PREVIEW_DATABASE: "1" }).migrate).toBe(true);
   });
 });
