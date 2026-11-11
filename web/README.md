@@ -28,7 +28,7 @@ npm run dev
 
 ## Deploying
 
-Vercel project `owners-club-web` in Jeff's Projects, root directory `web/`, production from `main` (the GitHub repo is connected; a CLI deploy from inside `web/` fails on the root-directory setting, so deploy by pushing). `vercel.ts` runs the migrations against Neon (`DATABASE_URL_UNPOOLED`) before each build. Environment variables live in Vercel; `.env.example` lists the names.
+Vercel project `owners-club-web` in Jeff's Projects, root directory `web/`, production from `main` (the GitHub repo is connected; a CLI deploy from inside `web/` fails on the root-directory setting, so deploy by pushing). `vercel.ts` runs the migrations against Neon (`DATABASE_URL_UNPOOLED`) before each production build. Preview builds share the production database, so they skip migrations (`src/db/migrate_policy.ts`) until previews have a database of their own; then set `MIGRATE_PREVIEW_DATABASE=1` in the Preview environment. Environment variables live in Vercel; `.env.example` lists the names.
 
 | Setting | Local | Production | Variable |
 | --- | --- | --- | --- |
