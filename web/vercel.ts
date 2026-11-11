@@ -4,6 +4,7 @@ export const config: VercelConfig = {
   framework: "nextjs",
   // Apply drizzle/ migrations to Neon before each build, as Deep Thoughts does.
   buildCommand: "npm run db:migrate && npm run build",
-  // The nightly market-data job, 9:30 pm Eastern (after Massive publishes the day's closes).
-  crons: [{ path: "/api/jobs/nightly", schedule: "30 2 * * 2-6" }],
+  // The nightly market-data job, 06:00 UTC Tuesday to Saturday: 1 am Eastern in winter, 2 am in
+  // summer. Massive's free plan serves a day's closes from midnight Eastern, not that evening.
+  crons: [{ path: "/api/jobs/nightly", schedule: "0 6 * * 2-6" }],
 };
