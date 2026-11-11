@@ -52,6 +52,10 @@ export const CONCEPTS: Record<FinancialColumn, { instant: boolean; sources: Conc
       { taxonomy: "us-gaap", tag: "CommonStockSharesOutstanding", unit: "shares" },
     ],
   },
+  // Duration concept (weighted over the period). Dual-class filers report
+  // EntityCommonStockSharesOutstanding per share class, which the frames API
+  // drops, but most still report this one with no class axis.
+  sharesDiluted: { instant: false, sources: [{ taxonomy: "us-gaap", tag: "WeightedAverageNumberOfDilutedSharesOutstanding", unit: "shares" }] },
   cash: { instant: true, sources: [{ taxonomy: "us-gaap", tag: "CashAndCashEquivalentsAtCarryingValue", unit: "USD" }] },
   longTermDebt: {
     instant: true,
@@ -109,10 +113,16 @@ export function recentQuarterFrames(today: Date, quarters: number): string[] {
   return out;
 }
 
-/** The frame names for the last `years` complete calendar years before `today`, newest first. */
+/**
+ * The annual frame names to fetch, newest first: the current calendar year,
+ * then the last `years` complete ones. The current year is there for fiscal
+ * years that have already ended: EDGAR files a year ending June to October
+ * 2026 under CY2026, and without it the 10-K quarter of every such company
+ * (Microsoft, Procter & Gamble, Costco) can't be derived until January.
+ */
 export function recentYearFrames(today: Date, years: number): string[] {
   const y = today.getUTCFullYear();
-  return Array.from({ length: years }, (_, i) => `CY${y - 1 - i}`);
+  return [`CY${y}`, ...Array.from({ length: years }, (_, i) => `CY${y - 1 - i}`)];
 }
 
 /** The instant frame that goes with a duration frame: the quarter's end, or Q4 for a year. */
@@ -143,7 +153,9 @@ export async function fetchFinancialsForFrame(frame: string, wantedCiks: Set<num
         if (!wantedCiks.has(r.cik)) continue;
         const row = rowFor(r);
         if (row[column] != null) continue; // an earlier (preferred) concept already supplied it
-        (row as Record<string, unknown>)[column] = r.val;
+        const val = storedValue(column, r.val);
+        if (val == null) continue;
+        (row as Record<string, unknown>)[column] = val;
         if (!instant) {
           row.periodStart ??= r.start ?? null;
           row.periodEnd ??= r.end;
@@ -153,6 +165,20 @@ export async function fetchFinancialsForFrame(frame: string, wantedCiks: Set<num
     }
   }
   return [...rows.values()];
+}
+
+/**
+ * A reported value as we store it. Every column but EPS is a whole number in
+ * the database, and one fractional value fails the whole insert. A fractional
+ * share count is a filer tagging in millions without the scale (McDonald's
+ * reports 708.3 diluted shares), so it's dropped, not rounded to 708 shares.
+ * Fractional dollar amounts are rounded.
+ */
+export function storedValue(column: FinancialColumn, val: number): number | null {
+  if (!Number.isFinite(val)) return null;
+  if (column === "epsDiluted") return val;
+  if (column === "sharesOutstanding" || column === "sharesDiluted") return Number.isInteger(val) ? val : null;
+  return Math.round(val);
 }
 
 export type SecTicker = { cik: number; ticker: string; title: string };

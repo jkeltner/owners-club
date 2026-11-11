@@ -1,0 +1,1 @@
+ALTER TABLE "financials" ADD COLUMN "shares_diluted" bigint;

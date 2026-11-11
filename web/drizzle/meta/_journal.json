@@ -15,6 +15,13 @@
       "when": 1794255941603,
       "tag": "0001_amusing_senator_kelly",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794323116162,
+      "tag": "0002_flowery_madripoor",
+      "breakpoints": true
     }
   ]
 }

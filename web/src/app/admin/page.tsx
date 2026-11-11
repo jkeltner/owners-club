@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { companies, earningsDates, financials, jobRuns, prices } from "@/db/schema";
 import { bigUsd, usd } from "@/lib/format";
 import { getSession, isAdminEmail } from "@/lib/session";
-import { computeMetrics, peBand, type CompanyMetrics } from "@/market/metrics";
+import { computeMetrics, onePerCompany, peBand, type CompanyMetrics } from "@/market/metrics";
 import { INDEX_FUND_TICKER } from "@/market/massive";
 import { RunStepForm } from "./run_step";
 
@@ -52,8 +52,10 @@ export default async function Admin() {
     return { ...m, metrics };
   });
   const active = rows.filter((r) => r.status === "active");
-  const withPe = active.filter((r) => r.metrics.pe != null);
-  const indexPe = sumPe(active.map((r) => r.metrics));
+  // Company-level totals count a dual listing (GOOG and GOOGL) once.
+  const activeCompanies = onePerCompany(active);
+  const withPe = activeCompanies.filter((r) => r.metrics.pe != null);
+  const indexPe = sumPe(activeCompanies.map((r) => r.metrics));
   const byLens = new Map<string, number[]>();
   for (const r of withPe) byLens.set(r.lens ?? "(no lens)", [...(byLens.get(r.lens ?? "(no lens)") ?? []), r.metrics.pe!]);
   const spy = priceByTicker.get(INDEX_FUND_TICKER);
@@ -62,7 +64,7 @@ export default async function Admin() {
     <main className="status wide">
       <h1>Data</h1>
       <p className="sub">
-        {active.length} members · {rows.filter((r) => r.lens).length} with a lens · {priceDays} days of prices{spy ? ` · SPY ${usd(spy.close, true)} on ${spy.date}` : " · no index fund price yet"} · {withPe.length} with a P/E
+        {active.length} members · {rows.filter((r) => r.lens).length} with a lens · {priceDays} days of prices{spy ? ` · SPY ${usd(spy.close, true)} on ${spy.date}` : " · no index fund price yet"} · {activeCompanies.length} companies · {withPe.length} with a P/E
         {indexPe ? ` · market P/E ${indexPe}` : ""}
       </p>
 
@@ -109,6 +111,7 @@ export default async function Admin() {
 
       <section className="card">
         <h2>Companies</h2>
+        <p className="sub">Mkt cap marks: no mark = shares outstanding as reported; ᵈ = weighted-average diluted shares (company reports shares only per share class); ᵉ = estimated as trailing net income ÷ trailing diluted EPS.</p>
         <table className="data">
           <thead>
             <tr>
@@ -124,7 +127,10 @@ export default async function Admin() {
                   <td>{r.name}</td>
                   <td>{r.lens ?? <span className="muted">{r.subIndustry}</span>}</td>
                   <td>{m.price != null ? usd(m.price, true) : "·"}</td>
-                  <td>{m.marketCap != null ? bigUsd(m.marketCap / 1e9) : "·"}</td>
+                  <td>
+                    {m.marketCap != null ? bigUsd(m.marketCap / 1e9) : "·"}
+                    {m.marketCap != null && m.sharesSource !== "reported" && <SharesMark source={m.sharesSource} />}
+                  </td>
                   <td>{m.pe ?? "·"}</td>
                   <td>{m.revenueTtm != null ? bigUsd(m.revenueTtm / 1e9) : "·"}</td>
                   <td>{m.revenueGrowth != null ? `${m.revenueGrowth}%` : "·"}</td>
@@ -141,6 +147,12 @@ export default async function Admin() {
       </section>
     </main>
   );
+}
+
+function SharesMark({ source }: { source: CompanyMetrics["sharesSource"] }) {
+  if (source === "diluted") return <sup title="Share count is the weighted-average diluted shares, not shares outstanding">ᵈ</sup>;
+  if (source === "derived") return <sup title="Share count estimated as trailing net income ÷ trailing diluted EPS">ᵉ</sup>;
+  return null;
 }
 
 function sumPe(ms: CompanyMetrics[]) {
