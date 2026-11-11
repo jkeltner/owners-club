@@ -59,6 +59,10 @@ export function quarters(rows: FinancialRow[]): Quarter[] {
       const yearVal = y[f];
       if (yearVal == null || inside.some((q) => q[f] == null)) continue;
       const sum = inside.reduce((a, q) => a + (q[f] as number), 0);
+      // A year a thousand times smaller than three of its quarters is a filer
+      // tagging the 10-K in millions without the scale (FedEx's net income is
+      // filed as 4,433). Subtracting from it would invent a multi-billion loss.
+      if (f !== "epsDiluted" && Math.abs(sum) > 1e6 && Math.abs(yearVal) < Math.abs(sum) / 1000) continue;
       derived[f] = f === "epsDiluted" ? round2(yearVal - sum) : yearVal - sum;
     }
     qs.push(derived);
@@ -87,7 +91,10 @@ function missingQuarter(y: FinancialRow, reported: Quarter[]) {
   const atEnd = Math.abs(daysBetween(last, yEnd)) <= SLACK_DAYS;
   if (atStart === atEnd) return null;
   const hole = atStart ? { periodStart: addDays(last, 1), periodEnd: yEnd } : { periodStart: yStart, periodEnd: addDays(first, -1) };
-  if (!isQuarterLength(hole.periodStart, hole.periodEnd)) return null;
+  // The hole can be longer than a reported quarter: PepsiCo, Costco, AutoZone
+  // and Domino's run three 12-week quarters and a 16- or 17-week fourth.
+  const holeDays = daysBetween(hole.periodStart, hole.periodEnd) + 1;
+  if (holeDays < 84 || holeDays > 17 * 7 + SLACK_DAYS) return null;
   return { inside, ...hole };
 }
 

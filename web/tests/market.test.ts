@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseEarningsCalendar, parseAvTime } from "@/market/alpha_vantage";
-import { instantFrameFor, recentQuarterFrames, recentYearFrames } from "@/market/edgar";
+import { instantFrameFor, recentQuarterFrames, recentYearFrames, storedValue } from "@/market/edgar";
 import { lensFor } from "@/market/lens";
 import { weekdaysBetween } from "@/market/massive";
 import { computeMetrics, contiguous, frameForDate, frameForPeriod, onePerCompany, peBand, quarters, shareCount, type FinancialRow } from "@/market/metrics";
@@ -51,9 +51,19 @@ describe("EDGAR frames", () => {
     const today = new Date("2026-11-09T12:00:00Z");
     expect(recentQuarterFrames(today, 5)).toEqual(["CY2026Q3", "CY2026Q2", "CY2026Q1", "CY2025Q4", "CY2025Q3"]);
     expect(recentQuarterFrames(new Date("2026-01-15T00:00:00Z"), 2)).toEqual(["CY2025Q4", "CY2025Q3"]);
-    expect(recentYearFrames(today, 2)).toEqual(["CY2025", "CY2024"]);
+    expect(recentYearFrames(today, 2)).toEqual(["CY2026", "CY2025", "CY2024"]); // the current year holds fiscal years that already ended
     expect(instantFrameFor("CY2026Q3")).toBe("CY2026Q3I");
     expect(instantFrameFor("CY2025")).toBe("CY2025Q4I");
+  });
+});
+
+describe("EDGAR values as stored", () => {
+  it("drops a fractional share count, rounds fractional dollars, keeps EPS as reported", () => {
+    expect(storedValue("sharesDiluted", 708.3)).toBeNull(); // McDonald's tags millions without the scale
+    expect(storedValue("sharesDiluted", 708_300_000)).toBe(708_300_000);
+    expect(storedValue("sharesOutstanding", 12.5)).toBeNull();
+    expect(storedValue("revenue", 1_000_000.4)).toBe(1_000_000);
+    expect(storedValue("epsDiluted", 3.18)).toBe(3.18);
   });
 });
 
@@ -279,6 +289,20 @@ describe("off-calendar fiscal years", () => {
     const m = computeMetrics(may, 10);
     expect(m.netIncomeTtm).toBe(30 + 28 + 20 + 22);
     expect(m.pe).toBeGreaterThan(0);
+  });
+
+  it("doesn't subtract from an annual figure filed in millions without the scale", () => {
+    // FedEx's 10-K tags net income as 4,433 (meaning $4,433 million). Year
+    // minus three real quarters would be a loss of nearly $3 billion.
+    const misScaled = [
+      fq("CY2026Q1", "2025-12-01", "2026-02-28", 1_060_000_000),
+      fq("CY2025Q4", "2025-09-01", "2025-11-30", 956_000_000),
+      fq("CY2025Q3", "2025-06-01", "2025-08-31", 920_000_000),
+      fy("CY2025", "2025-06-01", "2026-05-31", 4433),
+    ];
+    const derived = quarters(misScaled).find((x) => x.derived)!;
+    expect(derived.netIncome).toBeNull();
+    expect(computeMetrics(misScaled, 10).netIncomeTtm).toBeNull();
   });
 
   it("skips the year when its three quarters aren't back to back (no fake quarter before the year starts)", () => {
