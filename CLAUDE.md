@@ -1,6 +1,6 @@
 # Owners Club
 
-A stock-picking game for kids (13+) and their friends that rewards understanding businesses, not betting on prices. Players start with $10,000 in the S&P 500, make picks against the index with a written thesis, and an AI coach stress-tests their reasoning. Open source under MIT.
+A stock-picking game for teens (13 and up) and their friends that rewards understanding businesses, not betting on prices. Players start with $10,000 in the S&P 500, make picks against the index with a written thesis, and an AI coach stress-tests their reasoning. Open source under MIT.
 
 ## Where things are
 
