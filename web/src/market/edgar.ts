@@ -23,14 +23,20 @@ export const CONCEPTS: Record<FinancialColumn, { instant: boolean; sources: Conc
     sources: [
       { taxonomy: "us-gaap", tag: "Revenues", unit: "USD" },
       { taxonomy: "us-gaap", tag: "RevenueFromContractWithCustomerExcludingAssessedTax", unit: "USD" },
+      // Best Buy, TJX, Kraft Heinz and CrowdStrike report sales with sales tax included.
+      { taxonomy: "us-gaap", tag: "RevenueFromContractWithCustomerIncludingAssessedTax", unit: "USD" },
       { taxonomy: "us-gaap", tag: "SalesRevenueNet", unit: "USD" },
       { taxonomy: "us-gaap", tag: "RevenuesNetOfInterestExpense", unit: "USD" },
+      // Utilities (NextEra, Duke, DTE, Xcel).
+      { taxonomy: "us-gaap", tag: "RegulatedAndUnregulatedOperatingRevenue", unit: "USD" },
     ],
   },
   netIncome: {
     instant: false,
     sources: [
       { taxonomy: "us-gaap", tag: "NetIncomeLoss", unit: "USD" },
+      // Booking tags only this one: profit after preferred dividends, which is what EPS is based on.
+      { taxonomy: "us-gaap", tag: "NetIncomeLossAvailableToCommonStockholdersBasic", unit: "USD" },
       { taxonomy: "us-gaap", tag: "ProfitLoss", unit: "USD" },
     ],
   },
@@ -164,7 +170,69 @@ export async function fetchFinancialsForFrame(frame: string, wantedCiks: Set<num
       }
     }
   }
-  return [...rows.values()];
+  return mergePredecessors([...rows.values()]).map(fixProxyScale);
+}
+
+/**
+ * Companies whose SEC registrant changed, so their history sits under an older
+ * CIK. Exxon became ExxonMobil Holdings Corp in 2026: its filings before the
+ * second quarter of 2026 are under 34088. Rows fetched for an old CIK are
+ * stored under the current one.
+ */
+export const PREDECESSOR_CIKS: Record<number, number[]> = {
+  2115436: [34088], // ExxonMobil
+};
+
+/** The CIKs to ask the frames for: the members' own, plus any predecessors. */
+export function withPredecessors(ciks: Set<number>): Set<number> {
+  const out = new Set(ciks);
+  for (const cik of ciks) for (const old of PREDECESSOR_CIKS[cik] ?? []) out.add(old);
+  return out;
+}
+
+/** Moves a predecessor's rows to the current CIK; where both reported a period, the current registrant's values win. */
+export function mergePredecessors(rows: FinancialUpsert[]): FinancialUpsert[] {
+  const currentOf = new Map<number, number>();
+  for (const [cik, olds] of Object.entries(PREDECESSOR_CIKS)) for (const old of olds) currentOf.set(old, Number(cik));
+  const own = new Map(rows.filter((r) => !currentOf.has(r.cik)).map((r) => [`${r.cik}:${r.period}`, r]));
+  for (const r of rows.filter((r) => currentOf.has(r.cik))) {
+    const cik = currentOf.get(r.cik)!;
+    const key = `${cik}:${r.period}`;
+    const mine = own.get(key);
+    if (!mine) {
+      own.set(key, { ...r, cik });
+      continue;
+    }
+    for (const [k, v] of Object.entries(r)) if (k !== "cik" && v != null && (mine as Record<string, unknown>)[k] == null) (mine as Record<string, unknown>)[k] = v;
+  }
+  return [...own.values()];
+}
+
+/**
+ * Net income filed in thousands or millions without the scale. The proxy
+ * statement's pay-versus-performance table tags `NetIncomeLoss` that way
+ * (PG&E: 2,593 for $2,593 million), and when the 10-K uses a different tag the
+ * proxy's figure is the one the frame holds. EPS times diluted shares says
+ * what net income should roughly be; when the stored figure is about a
+ * thousand or a million times smaller, it is scaled up. The band is wide
+ * because EPS is after preferred dividends (Schwab: 8% apart).
+ *
+ * Only annual rows with a net income under 100 million are touched: the proxy
+ * reports fiscal years, and a real S&P 500 year is rarely that small. Without
+ * those limits a wrong share count sets it off: Waters files 98,204 thousand
+ * diluted shares as 98 billion, which made a correct quarterly loss of $136
+ * million look a thousand times too small.
+ */
+export function fixProxyScale(row: FinancialUpsert): FinancialUpsert {
+  const { netIncome, epsDiluted, sharesDiluted } = row;
+  if (!netIncome || !epsDiluted || !sharesDiluted) return row;
+  if (!/^CY\d{4}$/.test(row.period) || Math.abs(netIncome) >= 1e8) return row;
+  const implied = epsDiluted * sharesDiluted;
+  for (const scale of [1e3, 1e6]) {
+    const ratio = implied / (netIncome * scale);
+    if (ratio > 0.75 && ratio < 1.3) return { ...row, netIncome: netIncome * scale };
+  }
+  return row;
 }
 
 /**

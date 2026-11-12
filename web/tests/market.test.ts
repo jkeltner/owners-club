@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { earningsLookupWindow, parseEarningsCalendar, parseAvTime } from "@/market/alpha_vantage";
 import { peLabel } from "@/lib/format";
-import { instantFrameFor, recentQuarterFrames, recentYearFrames, storedValue } from "@/market/edgar";
+import { fixProxyScale, instantFrameFor, mergePredecessors, recentQuarterFrames, recentYearFrames, storedValue, withPredecessors } from "@/market/edgar";
+import { quartersFromFacts, type Fact } from "@/market/edgar_facts";
 import { lensFor } from "@/market/lens";
 import { weekdaysBetween } from "@/market/massive";
 import { computeMetrics, contiguous, frameForDate, frameForPeriod, onePerCompany, peBand, quarters, shareCount, type FinancialRow } from "@/market/metrics";
@@ -385,5 +386,133 @@ describe("P/E as shown", () => {
     expect(peLabel(100)).toBe("100.0");
     expect(peLabel(312.4)).toBe("over 100");
     expect(peLabel(null)).toBeNull();
+  });
+});
+
+describe("figures from the real rows, 2026-11-12", () => {
+  it("scales up net income filed in millions or thousands, checked against EPS times shares", () => {
+    // PG&E 2025: the proxy statement's 2,593; EPS 1.18 on 2,202M diluted shares.
+    expect(fixProxyScale({ cik: 1, period: "CY2025", netIncome: 2593, epsDiluted: 1.18, sharesDiluted: 2_202_000_000 }).netIncome).toBe(2_593_000_000);
+    // Con Edison 2025: filed in thousands; EPS 5.64 on 359M shares.
+    expect(fixProxyScale({ cik: 1, period: "CY2025", netIncome: 2_023_000, epsDiluted: 5.64, sharesDiluted: 359_000_000 }).netIncome).toBe(2_023_000_000);
+    // Schwab 2025: thousands, and EPS is after preferred dividends (8% apart).
+    expect(fixProxyScale({ cik: 1, period: "CY2025", netIncome: 9_140_000, epsDiluted: 4.65, sharesDiluted: 1_809_000_000 }).netIncome).toBe(9_140_000_000);
+    // Waters, second quarter of 2026: the share count is a thousand times too big, the loss is right.
+    expect(fixProxyScale({ cik: 1, period: "CY2026Q2", netIncome: -136_000_000, epsDiluted: -1.39, sharesDiluted: 98_204_000_000 }).netIncome).toBe(-136_000_000);
+    expect(fixProxyScale({ cik: 1, period: "CY2025", netIncome: -136_000_000, epsDiluted: -1.39, sharesDiluted: 98_204_000_000 }).netIncome).toBe(-136_000_000);
+    // A normal row is left alone, and so is one with nothing to check against.
+    expect(fixProxyScale({ cik: 1, period: "CY2025", netIncome: 18_254_000_000, epsDiluted: 7.28, sharesDiluted: 2_507_000_000 }).netIncome).toBe(18_254_000_000);
+    expect(fixProxyScale({ cik: 1, period: "CY2025", netIncome: 2593 }).netIncome).toBe(2593);
+  });
+
+  it("stores a predecessor registrant's rows under the current CIK", () => {
+    expect([...withPredecessors(new Set([2115436, 5]))].sort()).toEqual([2115436, 34088, 5].sort());
+    const merged = mergePredecessors([
+      { cik: 34088, period: "CY2026Q1", revenue: 100, netIncome: 10 },
+      { cik: 34088, period: "CY2026Q2", revenue: 999, sharesDiluted: 7 },
+      { cik: 2115436, period: "CY2026Q2", revenue: 116 },
+      { cik: 5, period: "CY2026Q2", revenue: 1 },
+    ]);
+    expect(merged).toHaveLength(3);
+    expect(merged.find((r) => r.period === "CY2026Q1")).toMatchObject({ cik: 2115436, revenue: 100 });
+    // Both reported the quarter: the current registrant's number wins, gaps are filled.
+    expect(merged.find((r) => r.cik === 2115436 && r.period === "CY2026Q2")).toMatchObject({ revenue: 116, sharesDiluted: 7 });
+  });
+
+  it("fills the one line a stored fourth quarter is missing from the year", () => {
+    // Target-style: the 10-K quarter has net income but no revenue.
+    const q4 = { ...fq("CY2025Q4", "2025-10-01", "2025-12-31", 17), revenue: null };
+    const year = [fq("CY2025Q1", "2025-01-01", "2025-03-31", 10), fq("CY2025Q2", "2025-04-01", "2025-06-30", 11), fq("CY2025Q3", "2025-07-01", "2025-09-30", 12), q4, fy("CY2025", "2025-01-01", "2025-12-31", 50)];
+    const expected = year[4].revenue! - year[0].revenue! - year[1].revenue! - year[2].revenue!;
+    const qs = quarters(year);
+    expect(qs).toHaveLength(4);
+    expect(qs[0]).toMatchObject({ period: "CY2025Q4", derived: false, netIncome: 17, revenue: expected });
+    expect(computeMetrics(year, 10).revenueTtm).toBe(year[4].revenue);
+  });
+});
+
+describe("quarters from a company's own facts", () => {
+  const fact = (start: string, end: string, val: number, form = "10-Q", filed = end): Fact => ({ start, end, val, accn: `a-${end}`, form, filed });
+  const usd = (tag: string, facts: Fact[]) => ({ "us-gaap": { [tag]: { units: { USD: facts } } } });
+
+  it("derives a quarter the API never got from the next year-to-date figure (Dow, 2026)", () => {
+    const facts = usd("NetIncomeLoss", [
+      fact("2026-01-01", "2026-03-31", -533),
+      fact("2026-01-01", "2026-09-30", 646),
+      fact("2026-07-01", "2026-09-30", 458),
+      fact("2026-01-01", "2026-09-30", 9, "DEF 14A"), // a proxy figure is never used
+    ]);
+    const stored = [
+      { period: "CY2026Q1", periodStart: "2026-01-01", periodEnd: "2026-03-31", netIncome: -533 },
+      { period: "CY2026Q3", periodStart: "2026-07-01", periodEnd: "2026-09-30", netIncome: 458 },
+    ];
+    const out = quartersFromFacts(7, facts, stored, "2025-01-01");
+    expect(out).toEqual([{ cik: 7, period: "CY2026Q2", periodStart: "2026-04-01", periodEnd: "2026-06-30", accession: "a-2026-09-30", netIncome: 646 + 533 - 458 }]);
+  });
+
+  it("builds quarters from cumulative cash flow: six months less the first quarter", () => {
+    const facts = usd("NetCashProvidedByUsedInOperatingActivities", [fact("2026-01-01", "2026-03-31", 100), fact("2026-01-01", "2026-06-30", 250), fact("2026-01-01", "2026-09-30", 450)]);
+    const stored = [
+      { period: "CY2026Q1", periodStart: "2026-01-01", periodEnd: "2026-03-31", operatingCashFlow: 100 },
+      { period: "CY2026Q2", periodStart: "2026-04-01", periodEnd: "2026-06-30", operatingCashFlow: null },
+      { period: "CY2026Q3", periodStart: "2026-07-01", periodEnd: "2026-09-30", operatingCashFlow: null },
+    ];
+    const out = quartersFromFacts(7, facts, stored, "2025-01-01");
+    // Stored quarters keep their names and dates; only the blank line is sent.
+    expect(out).toEqual([
+      { cik: 7, period: "CY2026Q2", operatingCashFlow: 150 },
+      { cik: 7, period: "CY2026Q3", operatingCashFlow: 200 },
+    ]);
+  });
+
+  it("names the second 12-week quarter in a calendar quarter with a b (AutoZone)", () => {
+    const facts = usd("NetIncomeLoss", [fact("2025-11-23", "2026-02-14", 480), fact("2026-02-15", "2026-05-09", 641)]);
+    const stored = [{ period: "CY2026Q1", periodStart: "2026-02-15", periodEnd: "2026-05-09", netIncome: 641 }];
+    const out = quartersFromFacts(7, facts, stored, "2025-01-01");
+    expect(out).toEqual([{ cik: 7, period: "CY2026Q1b", periodStart: "2025-11-23", periodEnd: "2026-02-14", accession: "a-2026-02-14", netIncome: 480 }]);
+    // And the metrics read it as a quarter.
+    const qs = quarters([row({ period: "CY2026Q1", periodStart: "2026-02-15", periodEnd: "2026-05-09", netIncome: 641 }), row({ ...out[0] })]);
+    expect(qs.map((q) => q.period)).toEqual(["CY2026Q1", "CY2026Q1b"]);
+  });
+
+  it("leaves a matching stored value alone, and takes a restated figure over the original", () => {
+    const facts = usd("NetIncomeLoss", [fact("2026-01-01", "2026-03-31", 10, "10-Q", "2026-04-20"), fact("2026-01-01", "2026-03-31", 12, "10-Q", "2027-04-20")]);
+    expect(quartersFromFacts(7, facts, [{ period: "CY2026Q1", periodStart: "2026-01-01", periodEnd: "2026-03-31", netIncome: 10 }], "2025-01-01")).toEqual([{ cik: 7, period: "CY2026Q1", netIncome: 12 }]);
+    expect(quartersFromFacts(7, facts, [{ period: "CY2026Q1", periodStart: "2026-01-01", periodEnd: "2026-03-31", netIncome: 12 }], "2025-01-01")).toEqual([]);
+    expect(quartersFromFacts(7, facts, [], "2025-01-01")[0].netIncome).toBe(12);
+  });
+
+  it("corrects a stored row that mixes two fiscal quarters (Costco, early 2026)", () => {
+    // The frames gave the row the second quarter's dates and revenue but the third quarter's net income.
+    const facts = { "us-gaap": {
+      NetIncomeLoss: { units: { USD: [fact("2025-11-24", "2026-02-15", 2035), fact("2026-02-16", "2026-05-10", 2192)] } },
+      Revenues: { units: { USD: [fact("2025-11-24", "2026-02-15", 69597), fact("2026-02-16", "2026-05-10", 70527)] } },
+    } };
+    const stored = [{ period: "CY2026Q1", periodStart: "2025-11-24", periodEnd: "2026-02-15", revenue: 69597, netIncome: 2192 }];
+    expect(quartersFromFacts(7, facts, stored, "2025-01-01")).toEqual([
+      { cik: 7, period: "CY2026Q1", netIncome: 2035 },
+      { cik: 7, period: "CY2026Q1b", periodStart: "2026-02-16", periodEnd: "2026-05-10", accession: "a-2026-05-10", revenue: 70527, netIncome: 2192 },
+    ]);
+  });
+
+  it("joins a quarter to a stored row that has only balance-sheet values and no dates", () => {
+    const facts = usd("NetIncomeLoss", [fact("2025-01-01", "2025-03-31", 506)]);
+    const out = quartersFromFacts(7, facts, [{ period: "CY2025Q1", periodStart: null, periodEnd: null }], "2025-01-01");
+    expect(out).toEqual([{ cik: 7, period: "CY2025Q1", periodStart: "2025-01-01", periodEnd: "2025-03-31", accession: "a-2025-03-31", netIncome: 506 }]);
+  });
+});
+
+describe("two annual rows over the same hole", () => {
+  it("fills the derived quarter's blank lines from the second year row (Amazon's trailing twelve months)", () => {
+    const set = [
+      fq("CY2025Q1", "2025-01-01", "2025-03-31", 10), fq("CY2025Q2", "2025-04-01", "2025-06-30", 11), fq("CY2025Q3", "2025-07-01", "2025-09-30", 12),
+      fq("CY2026Q1", "2026-01-01", "2026-03-31", 13), fq("CY2026Q2", "2026-04-01", "2026-06-30", 14), fq("CY2026Q3", "2026-07-01", "2026-09-30", 15),
+      // October 2025 to September 2026, net income only; listed first so it is read first.
+      row({ period: "CY2026", periodStart: "2025-10-01", periodEnd: "2026-09-30", netIncome: 59 }),
+      fy("CY2025", "2025-01-01", "2025-12-31", 50),
+    ];
+    const q4 = quarters(set).find((q) => q.period === "CY2025Q4")!;
+    expect(q4).toMatchObject({ derived: true, netIncome: 17, revenue: 500 - 100 - 110 - 120 });
+    expect(quarters(set).filter((q) => q.period === "CY2025Q4")).toHaveLength(1);
   });
 });
