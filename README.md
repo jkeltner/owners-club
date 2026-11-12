@@ -2,7 +2,7 @@
 
 **Beat the market, then beat your friends.**
 
-Owners Club is a stock-picking game for kids and their friends that rewards understanding businesses, not betting on prices. Every player starts with $10,000 in the S&P 500. Each pick is a deliberate bet against the index, made with a written thesis and a prediction that gets checked against what actually happens. An AI coach asks the questions a good investor would, and a learning tracker makes sure every player meets the concepts that matter: valuation, diversification, luck vs. skill, and more.
+Owners Club is a stock-picking game for teens (13 and up) and their friends that rewards understanding businesses, not betting on prices. Every player starts with $10,000 in the S&P 500. Each pick is a deliberate bet against the index, made with a written thesis and a prediction that gets checked against what actually happens. An AI coach asks the questions a good investor would, and a learning tracker makes sure every player meets the concepts that matter: valuation, diversification, luck vs. skill, and more.
 
 Most stock games rank players by raw return, which rewards betting everything on one stock. Owners Club is designed around the opposite lesson. See [the product concept](docs/concept.md) for the rules and the simulations behind them.
 

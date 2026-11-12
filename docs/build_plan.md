@@ -6,7 +6,7 @@ The prototype did its job: seven playtest rounds, five outside testers, the rule
 
 ## Goal
 
-A pilot that one club of real kids can play for a school year: a parent creates the club, kids join from an invite link on their phones, picks fill at real closing prices, the coach is Claude, and the leaderboard updates every night. Everything in the concept doc's "How the game works" table, measured against the real S&P 500.
+A pilot that one club of real kids can play for a school year: someone creates the club, players join from an invite link on their phones, picks fill at real closing prices, the coach is Claude, and the leaderboard updates every night. Everything in the concept doc's "How the game works" table, measured against the real S&P 500.
 
 **Not the goal yet:** many clubs, a native app, a public sign-up page, payments. The data layer and accounts are built so those can come later without a rewrite.
 
@@ -29,7 +29,7 @@ Decided 2026-11-09, with the reasons. The Neon-or-Supabase comparison that settl
 | --- | --- | --- |
 | Framework | **Next.js (App Router) on Vercel**, one app in `web/`. Server Actions and route handlers for the API; no separate backend service. | The deployed, working pattern from Deep Thoughts, so the setup, the gotchas and the tooling are already known. One deploy, one repo. The prototype's React components port with little change. |
 | Database | **Neon Postgres** through the Vercel Marketplace, **Drizzle ORM** for the schema and migrations (decided 2026-11-09 over Supabase). | Same as Deep Thoughts. Marketplace install provisions the database and the environment variables in one step. Postgres covers lots, theses, progress records and the market-data cache with plain tables; no second datastore. Local dev uses PGlite over a socket, as Deep Thoughts does. |
-| Sign-in | **Google sign-in and email one-time codes, no passwords** (decided 2026-11-08). Parents create accounts; kids join through an invite link (see Accounts below). Library: Better Auth, with Resend through the Marketplace sending the codes. | Open source and self-hosted suits an MIT project other people may run: no per-user pricing, no third-party sign-in page. Better Auth is already proven on Deep Thoughts. Clerk considered and dropped: a paid, hosted dependency in every self-hosted copy. |
+| Sign-in | **Google sign-in and email one-time codes, no passwords** (decided 2026-11-08). Players join through an invite link (see Accounts below). Library: Better Auth, with Resend through the Marketplace sending the codes. | Open source and self-hosted suits an MIT project other people may run: no per-user pricing, no third-party sign-in page. Better Auth is already proven on Deep Thoughts. Clerk considered and dropped: a paid, hosted dependency in every self-hosted copy. |
 | Club chat | Polling (on focus and every 30 s) in the pilot; no realtime layer. | The game updates once a day on purpose; chat is secondary. A realtime layer would be a second stack to run. Revisit if the pilot shows kids actually chatting in the app. |
 | Scheduled jobs | **Vercel Cron**: one nightly job after the close (prices, fills, portfolios, leaderboard, earnings checks) and one weekly job (recap, club replay, new listings). Each job is idempotent and re-runnable by hand. | Matches the game's once-a-day rhythm. On Pro the crons can run on any schedule, so the nightly job can be re-run and earnings checks can run on report days without a hand run. No queue until something needs retries; Deep Thoughts made the same call. |
 | AI | **Anthropic SDK direct.** Coach and weekly recap on `claude-opus-5-5`; concept tagger on `claude-haiku-5-5` (decided 2026-11-08, with cost tracking from day one so the coach model can be revisited; see "Tracking AI cost" below). Model ids are environment variables. | One vendor for all three jobs, as the build spec proposes. Opus for the conversations because the coaching quality is the product; Haiku for the tagger because it's a classification call on every thesis. Rough cost: a three-question coach conversation is about 10K input and under 1K output tokens, roughly 5¢ before caching; a club of eight kids making two picks a week is a couple of dollars a month. Server-side refusal fallback on, since kids type unpredictable things. |
@@ -42,11 +42,12 @@ Decided 2026-11-09, with the reasons. The Neon-or-Supabase comparison that settl
 
 The build spec's open question, settled 2026-11-08 (sign-in method) with the rest proposed:
 
-- **A parent (any adult) creates the club** and gets the owner account. Club settings (fee, tax rates, hold, cap) are theirs to change, with the concept doc's defaults.
-- **Kids join from an invite link** (a code in the URL, expiring, revocable). On joining they pick a display name and avatar, sign in with Google or an email code (decided: no passwords, no phone sign-in in the pilot), and answer the experience question. No birthdate is asked; the parent's invitation is what gates age (13+, as decided).
-- **Each kid is a player in exactly one club** for the pilot. The schema allows many clubs per player (a `memberships` table) so this can relax later.
-- **Access rule, enforced in every query:** a player sees only their own club. Clubmates' holdings are visible as shares of the whole, a week late, exactly as the concept doc says; dollars never leave the owner's own screens.
-- **Parent nugget stays opt-in and unbuilt** in the first phases; the parent account exists, so when the kid opts in the weekly job has somewhere to send it (build spec open question).
+- **Anyone 13 or older creates a club** and becomes its organizer (revised 2026-11-12: we can't verify an adult, and a school club should be able to start itself). Club settings (fee, tax rates, hold, cap) are the organizers' to change, with the concept doc's defaults. An organizer can play or only watch (a teacher); a club can have more than one.
+- **Organizers who don't play see the whole club:** every player's holdings, trades, theses, returns and concept progress, in dollars and live. An organizer who also plays sees what any player sees, so they can't copy trades. Coach conversations stay private to the player.
+- **Kids join from an invite link** (a code in the URL, expiring, revocable). On joining they pick a display name and avatar, sign in with Google or an email code (decided: no passwords, no phone sign-in in the pilot), and answer the experience question. No birthdate is asked. Sign-up shows "By clicking Agree you confirm you are 13 or older and accept the Terms and Privacy Policy", and stores when and which version. The terms say the money is pretend and the coach is an AI. An account found to belong to someone under 13 is removed with its data.
+- **Each person is in one club in the pilot's screens, but the schema is built for many.** A membership (one person in one club) is the player: every portfolio table hangs off it, so two clubs mean two separate $10,000 portfolios. Concept progress and rank belong to the person and carry across clubs.
+- **Access rule, enforced in every query:** a player sees only their own club. Clubmates' holdings are visible to other players as shares of the whole, a week late, exactly as the concept doc says; dollars are seen only by the player and the club's non-playing organizers.
+- **Parent nugget is left alone for now** (Jeff, 2026-11-12): unbuilt, and no parent account is assumed.
 - **Data kept to a minimum:** name, email (or Google id), avatar, experience, club. Coach conversations are kept for the season and deleted after it unless the retention question is answered differently.
 
 ## Data model
@@ -57,19 +58,20 @@ The build spec's data model, made concrete. Table names are proposals.
 
 | Table | Holds |
 | --- | --- |
-| `users`, `sessions`, `accounts` | Better Auth's tables |
-| `clubs` | name, owner, settings (fee, short/long tax, hold months, cap %), season start |
-| `memberships` | user ↔ club, display name, avatar, experience, joined at, role (owner / player) |
+| `users`, `sessions`, `accounts` | Better Auth's tables; the experience answer lives on the user |
+| `clubs` | name, created by, settings (fee, short/long tax, hold months, cap %), season start |
+| `memberships` | user ↔ club, display name, avatar, joined at, role (organizer / member), plays (yes / no). **This is "the player" in every table below marked membership.** |
+| `agreements` | user, terms version, agreed at (the 13-or-older and terms click) |
 | `invites` | club, code, created by, expires, used by |
-| `orders` | player, club, ticker (or `SPX` for the index), side, amount in dollars, placed at, fill date, fill price, fee, status |
-| `lots` | player, ticker, shares, cost basis, bought at (from a filled order); what makes hold periods and the 6-month tax line computable |
-| `theses` | player, ticker, three parts (does well / happens next / number watched), prediction (metric, value, unit), kind (pick / scouting report), linked order, created at; scored at earnings |
+| `orders` | membership, ticker (or `SPX` for the index), side, amount in dollars, placed at, fill date, fill price, fee, status |
+| `lots` | membership, ticker, shares, cost basis, bought at (from a filled order); what makes hold periods and the 6-month tax line computable |
+| `theses` | membership, ticker, three parts (does well / happens next / number watched), prediction (metric, value, unit), kind (pick / scouting report), linked order, created at; scored at earnings |
 | `thesis_results` | thesis, earnings date, reported value, hit or miss, coach debrief id |
-| `conversations`, `messages` | coach conversations by mode, player, ticker, thesis; **every turn written as it happens** (issue #5: a refresh must resume mid-conversation) |
-| `concept_progress` | player, concept slug, encountered / explained / applied timestamps, evidence (message or thesis id) |
-| `comments`, `votes` | feed comments on theses; showdown votes (player, thesis, holds / breaks, hidden until the report) |
+| `conversations`, `messages` | coach conversations by mode, membership, ticker, thesis; readable only by that player; **every turn written as it happens** (issue #5: a refresh must resume mid-conversation) |
+| `concept_progress` | user (the person, not the membership: learning carries across clubs), concept slug, encountered / explained / applied timestamps, evidence (message or thesis id) |
+| `comments`, `votes` | feed comments on theses; showdown votes (membership, thesis, holds / breaks, hidden until the report) |
 | `club_weeks` | per club per week: recap text, replay slug and reason, Bell holder, generated at |
-| `portfolio_days` | per player per day: total value, after-tax value, unrealized tax, fees and taxes paid to date, largest position %, holdings count, weighted P/E; what the leaderboard and the drift chart read |
+| `portfolio_days` | per membership per day: total value, after-tax value, unrealized tax, fees and taxes paid to date, largest position %, holdings count, weighted P/E; what the leaderboard and the drift chart read |
 | `app_events` | monitoring |
 
 **Market-data cache** (written only by jobs)
@@ -130,7 +132,7 @@ Each phase ends with something Jeff can click on a preview URL, and a short note
 
 **Phase 2: accounts, clubs, the first 15 minutes (2 weeks)**
 
-- Parent creates a club; invite link; kid joins (Google or email code); experience question; profile.
+- Anyone creates a club and is its organizer; invite link; player joins (Google or email code); the Agree click (13 or older, terms, privacy); experience question; profile. Plain Terms and Privacy pages. The organizer's view of the club.
 - Port the onboarding flow against real companies and numbers: market screen, curiosity, company card, private-company path, scripted coach (still the script), three-part thesis, size the pick, done.
 - Orders fill at the next close by the nightly job; lots, fees, the cap and hold enforced server-side.
 - Done when Jeff and one kid can each join a test club from a phone and make a real pick that fills the next evening.
@@ -194,7 +196,7 @@ Settled 2026-11-09:
 
 Settled 2026-11-08:
 
-- **Accounts:** parent creates the club; kids join by invite with Google or an email code; no passwords; no phone sign-in in the pilot.
+- **Accounts:** anyone 13 or older creates the club (revised 2026-11-12); players join by invite with Google or an email code; no passwords; no phone sign-in in the pilot. Memberships carry the portfolio; organizers who don't play see the club.
 - **Models:** Opus 5.5 for the coach and recap, Haiku 5.5 for the tagger, with the cost tracking above so the coach model can be revisited after phase 4.
 - **Prototype:** the coach-refresh bug (issue #5) is fixed and shipped (commit df3ba54, `docs/playtests/2026-11-08_outside_tester_5.md`).
 

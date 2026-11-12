@@ -1,10 +1,10 @@
-# Owners Club: A Stock-Picking Game for Kids
+# Owners Club: A Stock-Picking Game for Teens
 
 Jeff Keltner · last updated Oct 18, 2026 · companion: [build spec](build_spec.md)
 
 ## Summary
 
-This is a stock-picking game for kids and their friends that rewards understanding businesses, not betting on prices. Players manage a virtual portfolio over a school year, with basic fundamentals data and an AI coach that stress-tests their reasoning before each trade.
+This is a stock-picking game for teens (13 and up) and their friends that rewards understanding businesses, not betting on prices. Players manage a virtual portfolio over a school year, with basic fundamentals data and an AI coach that stress-tests their reasoning before each trade.
 
 The core bet is that the learning comes from playing, not from winning. So the design spends its effort on making each trade a thinking exercise, and makes short-term gambling visibly expensive rather than banning it.
 
@@ -157,7 +157,9 @@ Players join a private league, get $10,000 in virtual cash, and build a portfoli
 
 | Rule | How it works | Why |
 | --- | --- | --- |
-| Private leagues | A parent creates a league and invites players, ages 13 and up. | Kids play with people they know; the social part is what keeps them playing. |
+| Private clubs | Anyone 13 or older can create a club and invite players by link: a parent, a teacher, or a teen starting one at school. The people who run a club are its organizers; an organizer can play or only watch. Everyone confirms they are 13 or older when they agree to the terms. | Kids play with people they know; the social part is what keeps them playing. We can't tell who is an adult, so requiring a parent was a rule we couldn't enforce. |
+| One portfolio per club | A player in two clubs has a separate $10,000 portfolio in each, under each club's settings. What they've learned (concepts and rank) belongs to the person and carries across clubs. | Clubs start at different times with different rules, so one portfolio can't serve two. Learning is the player's own. |
+| Organizers see the club | Organizers who don't play can see every player's holdings, trades, theses, returns and concept progress, in dollars and without the weekly lag. An organizer who also plays sees what any player sees. Coach conversations stay private to the player. Players are told this when they join. | A teacher or parent running a club needs to see how it's going; a playing organizer with that view could copy trades. Kids will be less honest with the coach if someone else can read it. |
 | Join anytime | New players can join mid-season. Everyone starts with $10,000 in an S&P 500 index fund (see The first 15 minutes). | It will take time to get friends on board. Trailing-return scoring (below) keeps late joiners comparable. |
 | Curated stock list | Players can buy from the S&P 500, not any ticker. | Keeps out penny stocks and meme names, and guarantees clean fundamentals data for everything buyable. It's also the parent pitch: no leverage, no penny stocks, no crypto, no options. A parent of a target-age kid called that the game's biggest differentiator, so the limit is a feature to say out loud, not a constraint to apologize for. (Widening to any NYSE or Nasdaq stock above a size floor was considered and dropped.) |
 | Basic fundamentals | Each stock shows price history, revenue, earnings, EPS, P/E, margins and growth. | Enough to reason about a business; far short of a Bloomberg terminal. |
@@ -166,7 +168,7 @@ Players join a private league, get $10,000 in virtual cash, and build a portfoli
 | Trading fee | 0.5% of each trade's value, shown before the player confirms. | Churning costs returns, and the cost is the same whether you hold 4 positions or 12. |
 | Capital gains tax | 40% on gains held under 6 months, 20% on gains held longer. Losses offset gains. | Close to real top-bracket rates, and the 20-point gap rewards patience. The real-world threshold is 12 months; 6 matches the game's timescale. |
 | Shared theses | A player's reasoning is visible to the league when they buy. Comments attach to the thesis and are written right under it in the feed. Tapping a player on the leaderboard shows their portfolio: each holding's share of the whole (never dollars), as of last Friday's close, with the thesis it was bought with. | The social activity becomes arguing about businesses, not prices. |
-| Delayed positions | Holdings are revealed with a lag (weekly), not in real time. | Prevents everyone from copying whoever is in first place. |
+| Delayed positions | Holdings are revealed to other players with a lag (weekly), not in real time. Organizers who don't play are the exception (above). | Prevents everyone from copying whoever is in first place. |
 
 All of these settings start at the values above and can be changed per league.
 
