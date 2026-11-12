@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseEarningsCalendar, parseAvTime } from "@/market/alpha_vantage";
+import { earningsLookupWindow, parseEarningsCalendar, parseAvTime } from "@/market/alpha_vantage";
+import { peLabel } from "@/lib/format";
 import { instantFrameFor, recentQuarterFrames, recentYearFrames, storedValue } from "@/market/edgar";
 import { lensFor } from "@/market/lens";
 import { weekdaysBetween } from "@/market/massive";
@@ -365,5 +366,24 @@ describe("off-calendar fiscal years", () => {
     expect(contiguous([{ periodStart: "2025-10-01", periodEnd: "2025-12-31" }, { periodStart: "2025-07-01", periodEnd: "2025-09-30" }])).toBe(true);
     expect(contiguous([{ periodStart: "2025-10-01", periodEnd: "2025-12-31" }, { periodStart: "2025-04-01", periodEnd: "2025-06-30" }])).toBe(false);
     expect(contiguous([{ periodStart: "2024-12-29", periodEnd: "2025-03-29" }, { periodStart: "2024-09-29", periodEnd: "2024-12-28" }])).toBe(true);
+  });
+});
+
+describe("earnings lookup window", () => {
+  it("leaves out today: at 1 am Eastern nobody reporting today has reported", () => {
+    // The run of 2026-11-12 06:00 UTC asked for AMAT and CSCO, both dated 2026-11-12.
+    const w = earningsLookupWindow(new Date("2026-11-12T06:00:10Z"));
+    expect(w).toEqual({ from: "2026-11-05", before: "2026-11-12" });
+    expect("2026-11-12" < w.before).toBe(false);
+    expect("2026-11-11" < w.before).toBe(true);
+  });
+});
+
+describe("P/E as shown", () => {
+  it("shows the number up to 100 and 'over 100' above it", () => {
+    expect(peLabel(38.8)).toBe("38.8");
+    expect(peLabel(100)).toBe("100.0");
+    expect(peLabel(312.4)).toBe("over 100");
+    expect(peLabel(null)).toBeNull();
   });
 });

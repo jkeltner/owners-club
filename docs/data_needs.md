@@ -74,7 +74,7 @@ Source guesses follow the free stack in the [build spec](build_spec.md#market-da
 - **Drugmakers and biotech:** drug pipeline and patents.
 - **Aerospace and defense:** backlog. EDGAR may cover it as "remaining performance obligations"; check.
 
-**Not needed:** analyst estimates. PEG uses past growth, and predictions are scored against what the company reports, so we never show forecasts.
+**Not needed:** analyst estimates. PEG uses past growth, and predictions are scored against what the company reports, so we never show forecasts. That includes forward P/E: the game shows trailing P/E only, and "over 100" above 100 (decided 2026-11-12, see the decision log).
 
 ## C. Computed by us (no extra data)
 

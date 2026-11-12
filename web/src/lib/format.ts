@@ -23,3 +23,16 @@ export const pct = (n: number, digits = 0) => `${n.toFixed(digits)}%`;
 export const signedPct = (n: number, digits = 1) => `${n > 0 ? "+" : n < 0 ? "−" : "±"}${Math.abs(n).toFixed(digits)}%`;
 
 export const signedUsd = (n: number) => `${n >= 0 ? "+" : "−"}${usd(Math.abs(n))}`;
+
+// A P/E above this is shown as "over 100", not the number. Profit that small
+// against the price makes the exact figure noise (312 or 480 says the same
+// thing), and the useful question is why: an expensive stock, or a year when
+// something unusual hit profit. Decision log: "P/E shown to players".
+export const PE_SHOWN_UP_TO = 100;
+
+export function peLabel(pe: number | null | undefined): string | null {
+  if (pe == null) return null;
+  return pe > PE_SHOWN_UP_TO ? `over ${PE_SHOWN_UP_TO}` : pe.toFixed(1);
+}
+
+export const isPeOffScale = (pe: number | null | undefined) => pe != null && pe > PE_SHOWN_UP_TO;
