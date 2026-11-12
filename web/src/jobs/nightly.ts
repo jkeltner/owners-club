@@ -6,7 +6,7 @@
 import { and, eq, gte, inArray, isNull, lt, max, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { companies, earningsDates, financials, prices } from "@/db/schema";
-import { alphaVantagePause, fetchEarningsCalendar, fetchReportedEarnings } from "@/market/alpha_vantage";
+import { alphaVantagePause, earningsLookupWindow, fetchEarningsCalendar, fetchReportedEarnings } from "@/market/alpha_vantage";
 import { fetchFinancialsForFrame, fetchSecTickers, recentQuarterFrames, recentYearFrames, type FinancialUpsert } from "@/market/edgar";
 import { fetchGroupedDaily, INDEX_FUND_TICKER, massiveFreeTierPause, weekdaysBetween } from "@/market/massive";
 import { fetchSp500Members, toSecTicker } from "@/market/sp500";
@@ -123,7 +123,7 @@ export async function upsertFinancials(rows: FinancialUpsert[]): Promise<number>
   return n;
 }
 
-/** Upcoming report dates for members (one call), then the numbers for members that reported yesterday or today. */
+/** Upcoming report dates for members (one call), then the numbers for members whose report date was in the last week, up to yesterday. */
 export async function refreshEarnings(maxLookups = 12): Promise<StepResult> {
   if (!process.env.ALPHA_VANTAGE_API_KEY) return { skipped: "ALPHA_VANTAGE_API_KEY is not set" };
   const members = new Set((await db.select({ ticker: companies.ticker }).from(companies).where(eq(companies.status, "active"))).map((c) => c.ticker));
@@ -136,10 +136,11 @@ export async function refreshEarnings(maxLookups = 12): Promise<StepResult> {
       .onConflictDoNothing();
   }
   // Companies whose date has passed but whose numbers we don't have yet.
+  const window = earningsLookupWindow(now);
   const due = await db
     .select({ ticker: earningsDates.ticker, date: earningsDates.date })
     .from(earningsDates)
-    .where(and(lt(earningsDates.date, daysAgo(-1)), gte(earningsDates.date, daysAgo(7)), isNull(earningsDates.reportedEps), inArray(earningsDates.status, ["estimated", "confirmed"])))
+    .where(and(lt(earningsDates.date, window.before), gte(earningsDates.date, window.from), isNull(earningsDates.reportedEps), inArray(earningsDates.status, ["estimated", "confirmed"])))
     .limit(maxLookups);
   let reported = 0;
   const unresolved: string[] = [];

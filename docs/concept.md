@@ -84,6 +84,8 @@ The game should leave every player understanding the concepts below. Half of the
 
 **Different businesses, different yardsticks.** A reviewer in wealth management pointed out that the right metric depends on how a company makes money: P/E means little for a bank, a young software company or a biotech with no profits yet. So each stock page gets a small sector lens showing the two or three numbers that matter most for that kind of company, plus one to be careful with. The coach uses the same lens, for example when a player justifies a biotech purchase with its P/E.
 
+**Which P/E, and when it stops being a number.** The game shows one P/E: today's price against the profit the company reported over the last four quarters. It never shows a forecast, so there is no "forward" P/E built on analysts' guesses about next year. When that P/E is above 100, the screen says "over 100" instead of the figure, with a plain line: profit over the last year was very small compared with the price. A P/E of 312 and one of 480 say the same thing, and the useful question is why. Sometimes investors are paying a lot for growth they expect; sometimes a one-time cost wiped out most of a year's profit. The coach asks which, and the player can answer from the quarterly numbers on the page.
+
 | Kind of company | Look at first | Then | Be careful with |
 | --- | --- | --- | --- |
 | Software | Revenue growth plus free-cash-flow margin (Rule of 40) | Gross margin, customer retention | P/E for young, unprofitable companies |

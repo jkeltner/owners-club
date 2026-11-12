@@ -4,7 +4,7 @@ import { desc, inArray, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { companies, earningsDates, financials, jobRuns, prices } from "@/db/schema";
-import { bigUsd, usd } from "@/lib/format";
+import { bigUsd, isPeOffScale, peLabel, usd } from "@/lib/format";
 import { getSession, isAdminEmail } from "@/lib/session";
 import { computeMetrics, onePerCompany, peBand, type CompanyMetrics } from "@/market/metrics";
 import { INDEX_FUND_TICKER } from "@/market/massive";
@@ -131,7 +131,7 @@ export default async function Admin() {
                     {m.marketCap != null ? bigUsd(m.marketCap / 1e9) : "·"}
                     {m.marketCap != null && m.sharesSource !== "reported" && <SharesMark source={m.sharesSource} />}
                   </td>
-                  <td>{m.pe ?? "·"}</td>
+                  <td>{m.pe == null ? "·" : isPeOffScale(m.pe) ? `${peLabel(m.pe)} (${m.pe})` : m.pe}</td>
                   <td>{m.revenueTtm != null ? bigUsd(m.revenueTtm / 1e9) : "·"}</td>
                   <td>{m.revenueGrowth != null ? `${m.revenueGrowth}%` : "·"}</td>
                   <td>{m.grossMargin != null ? `${m.grossMargin}%` : "·"}</td>

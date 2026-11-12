@@ -125,3 +125,14 @@ function splitCsv(line: string): string[] {
 
 /** The free key allows 25 calls a day and about one a second; wait between consecutive calls. */
 export const alphaVantagePause = () => sleep(1300);
+
+/**
+ * Which report dates the nightly job looks up reported numbers for: the last
+ * seven days, up to yesterday (UTC). Today is left out: the job runs at 1 am
+ * Eastern, before anyone reporting today has reported, and each lookup spends
+ * one of the free key's 25 calls a day.
+ */
+export function earningsLookupWindow(now = new Date()): { from: string; before: string } {
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  return { from: iso(new Date(now.getTime() - 7 * 86_400_000)), before: iso(now) };
+}
