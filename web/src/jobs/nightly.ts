@@ -7,7 +7,9 @@ import { and, eq, gte, inArray, isNull, lt, max, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { companies, earningsDates, financials, prices } from "@/db/schema";
 import { alphaVantagePause, earningsLookupWindow, fetchEarningsCalendar, fetchReportedEarnings } from "@/market/alpha_vantage";
-import { fetchFinancialsForFrame, fetchSecTickers, recentQuarterFrames, recentYearFrames, type FinancialUpsert } from "@/market/edgar";
+import { fetchFinancialsForFrame, fetchSecTickers, recentQuarterFrames, recentYearFrames, withPredecessors, type FinancialUpsert } from "@/market/edgar";
+import { fetchCompanyFacts, quartersFromFacts } from "@/market/edgar_facts";
+import { computeMetrics, onePerCompany } from "@/market/metrics";
 import { fetchGroupedDaily, INDEX_FUND_TICKER, massiveFreeTierPause, weekdaysBetween } from "@/market/massive";
 import { fetchSp500Members, toSecTicker } from "@/market/sp500";
 import { runJob, type Step, type StepResult } from "./runner";
@@ -94,11 +96,44 @@ export async function refreshFinancials(opts: { quarters: number; years: number;
   let rows = 0;
   const perFrame: Record<string, number> = {};
   for (const frame of frames) {
-    const upserts = await fetchFinancialsForFrame(frame, ciks);
+    const upserts = await fetchFinancialsForFrame(frame, withPredecessors(ciks));
     perFrame[frame] = upserts.length;
     rows += await upsertFinancials(upserts);
   }
-  return { frames: perFrame, rows, companies: ciks.size };
+  const gaps = await fillFinancialGaps(today);
+  return { frames: perFrame, rows, companies: ciks.size, gaps };
+}
+
+/**
+ * For companies whose trailing revenue or profit is blank, reads the company's
+ * own facts and stores the quarters and lines the frames left out (see
+ * edgar_facts.ts). A company that can't be filled (a spinoff with under a year
+ * of filings) is looked up again each night; there are about a dozen. So are
+ * the 12-week filers (a period named like "CY2026Q1b"): the frames step
+ * rewrites their mixed rows every night, and this puts them right again.
+ */
+export async function fillFinancialGaps(today = new Date(), maxCompanies = 80): Promise<StepResult> {
+  const members = onePerCompany(await db.select({ ticker: companies.ticker, cik: companies.cik }).from(companies).where(eq(companies.status, "active")));
+  const byCik = new Map<number, (typeof financials.$inferSelect)[]>();
+  for (const r of await db.select().from(financials)) byCik.set(r.cik, [...(byCik.get(r.cik) ?? []), r]);
+  const blank = members.filter((m) => {
+    const rows = m.cik ? (byCik.get(m.cik) ?? []) : [];
+    if (!rows.length) return false;
+    const metrics = computeMetrics(rows, null);
+    return metrics.revenueTtm == null || metrics.netIncomeTtm == null || rows.some((r) => r.period.endsWith("b"));
+  });
+  const since = isoDate(new Date(today.getTime() - 900 * 86_400_000)); // about ten quarters
+  const filled: string[] = [];
+  let rows = 0;
+  for (const m of blank.slice(0, maxCompanies)) {
+    const facts = await fetchCompanyFacts(m.cik!);
+    if (!facts) continue;
+    const upserts = quartersFromFacts(m.cik!, facts.facts, byCik.get(m.cik!) ?? [], since);
+    if (!upserts.length) continue;
+    rows += await upsertFinancials(upserts);
+    filled.push(m.ticker);
+  }
+  return { blank: blank.length, lookedUp: Math.min(blank.length, maxCompanies), filled, rows };
 }
 
 /**

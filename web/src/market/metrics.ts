@@ -13,7 +13,9 @@ const FLOWS: Flow[] = ["revenue", "netIncome", "grossProfit", "operatingIncome",
 
 export type Quarter = Pick<FinancialRow, "period" | "periodStart" | "periodEnd" | Flow> & { derived: boolean };
 
-const isQuarter = (period: string) => /^CY\d{4}Q[1-4]$/.test(period);
+// "CY2026Q1b" is a second fiscal quarter that falls in the same calendar
+// quarter as another (12-week quarters; see edgar_facts.ts).
+const isQuarter = (period: string) => /^CY\d{4}Q[1-4]b?$/.test(period);
 const isYear = (period: string) => /^CY\d{4}$/.test(period);
 
 /** Frame name of the calendar quarter a date falls in. */
@@ -48,26 +50,66 @@ const SLACK_DAYS = 7;
 export function quarters(rows: FinancialRow[]): Quarter[] {
   const qs: Quarter[] = rows.filter((r) => isQuarter(r.period) && r.periodStart && r.periodEnd).map((r) => ({ ...pick(r), derived: false }));
   for (const y of rows.filter((r) => isYear(r.period) && r.periodStart && r.periodEnd)) {
+    fillFromYear(y, qs.filter((q) => !q.derived));
     const gap = missingQuarter(y, qs.filter((q) => !q.derived));
     if (!gap) continue;
     const { inside, periodStart, periodEnd } = gap;
     const period = frameForPeriod(periodStart, periodEnd);
-    // Already have it: a reported quarter overlapping the hole, or the same frame.
-    if (qs.some((q) => q.period === period || overlaps(q, periodStart, periodEnd))) continue;
-    const derived: Quarter = { period, periodStart, periodEnd, derived: true, ...emptyFlows() };
+    // A reported quarter already overlaps the hole: nothing to derive.
+    if (qs.some((q) => !q.derived && (q.period === period || overlaps(q, periodStart, periodEnd)))) continue;
+    // Another annual row may have derived it already with some lines blank.
+    // Amazon also files a trailing-twelve-month net income (October to
+    // September) that has no revenue; the calendar year fills the rest.
+    const earlier = qs.find((q) => q.derived && (q.period === period || overlaps(q, periodStart, periodEnd)));
+    const derived: Quarter = earlier ?? { period, periodStart, periodEnd, derived: true, ...emptyFlows() };
     for (const f of FLOWS) {
       const yearVal = y[f];
-      if (yearVal == null || inside.some((q) => q[f] == null)) continue;
-      const sum = inside.reduce((a, q) => a + (q[f] as number), 0);
-      // A year a thousand times smaller than three of its quarters is a filer
-      // tagging the 10-K in millions without the scale (FedEx's net income is
-      // filed as 4,433). Subtracting from it would invent a multi-billion loss.
-      if (f !== "epsDiluted" && Math.abs(sum) > 1e6 && Math.abs(yearVal) < Math.abs(sum) / 1000) continue;
-      derived[f] = f === "epsDiluted" ? round2(yearVal - sum) : yearVal - sum;
+      if (derived[f] != null || yearVal == null || inside.some((q) => q[f] == null)) continue;
+      const rest = yearLess(f, yearVal, inside);
+      if (rest != null) derived[f] = rest;
     }
-    qs.push(derived);
+    if (!earlier) qs.push(derived);
   }
   return qs.sort((a, b) => (a.periodEnd! < b.periodEnd! ? 1 : -1));
+}
+
+/** A year's figure minus three of its quarters, or null when the subtraction can't be trusted. */
+function yearLess(f: Flow, yearVal: number, three: Quarter[]): number | null {
+  const sum = three.reduce((a, q) => a + (q[f] as number), 0);
+  // A year a thousand times smaller than three of its quarters is a figure
+  // filed in millions without the scale (see fixProxyScale in edgar.ts, which
+  // repairs the ones it can). Subtracting from it would invent a multi-billion loss.
+  if (f !== "epsDiluted" && Math.abs(sum) > 1e6 && Math.abs(yearVal) < Math.abs(sum) / 1000) return null;
+  return f === "epsDiluted" ? round2(yearVal - sum) : yearVal - sum;
+}
+
+/** The reported quarters that sit inside a fiscal year's dates, oldest first. */
+function quartersInside(y: FinancialRow, reported: Quarter[]): Quarter[] {
+  return reported
+    .filter((q) => daysBetween(y.periodStart!, q.periodStart!) >= -SLACK_DAYS && daysBetween(q.periodEnd!, y.periodEnd!) >= -SLACK_DAYS)
+    .sort((a, b) => (a.periodStart! < b.periodStart! ? -1 : 1));
+}
+
+/**
+ * When all four quarters of a year are stored but one is missing a line, fills
+ * it as the year minus the other three. The 10-K quarter often arrives this
+ * way: Target's fourth quarter has net income but no revenue, Caterpillar's
+ * has revenue but no net income.
+ */
+function fillFromYear(y: FinancialRow, reported: Quarter[]): void {
+  const yearDays = daysBetween(y.periodStart!, y.periodEnd!) + 1;
+  if (yearDays < 365 - SLACK_DAYS || yearDays > 371 + SLACK_DAYS) return;
+  const inside = quartersInside(y, reported);
+  if (inside.length !== 4) return;
+  for (let i = 1; i < 4; i++) if (!follows(inside[i - 1].periodEnd!, inside[i].periodStart!)) return;
+  if (Math.abs(daysBetween(y.periodStart!, inside[0].periodStart!)) > SLACK_DAYS || Math.abs(daysBetween(inside[3].periodEnd!, y.periodEnd!)) > SLACK_DAYS) return;
+  for (const f of FLOWS) {
+    const yearVal = y[f];
+    const blank = inside.filter((q) => q[f] == null);
+    if (yearVal == null || blank.length !== 1) continue;
+    const rest = yearLess(f, yearVal, inside.filter((q) => q !== blank[0]));
+    if (rest != null) blank[0][f] = rest;
+  }
 }
 
 /** The three reported quarters of a fiscal year and the dates of the one left to derive, or null. */
@@ -76,9 +118,7 @@ function missingQuarter(y: FinancialRow, reported: Quarter[]) {
   const yEnd = y.periodEnd!;
   const yearDays = daysBetween(yStart, yEnd) + 1;
   if (yearDays < 365 - SLACK_DAYS || yearDays > 371 + SLACK_DAYS) return null; // not a twelve-month year
-  const inside = reported
-    .filter((q) => daysBetween(yStart, q.periodStart!) >= -SLACK_DAYS && daysBetween(q.periodEnd!, yEnd) >= -SLACK_DAYS)
-    .sort((a, b) => (a.periodStart! < b.periodStart! ? -1 : 1));
+  const inside = quartersInside(y, reported);
   if (inside.length !== 3) return null;
   if (!inside.every((q) => isQuarterLength(q.periodStart!, q.periodEnd!))) return null;
   for (let i = 1; i < 3; i++) if (!follows(inside[i - 1].periodEnd!, inside[i].periodStart!)) return null;
