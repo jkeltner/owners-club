@@ -56,3 +56,28 @@ After two full backfills and the new step: 493 of 500 companies have trailing pr
 **Found and not fixed.** Only 30 companies have trailing free cash flow: cash flow is filed year to date, so the frames have almost no quarterly figures. The new step derives them, but only for the companies it looks up; doing it for all 500 is the fix and matters if price to free cash flow goes beside the P/E. L3Harris's fourth-quarter row holds the full year's revenue ($21.9B), so its trailing revenue is $39.5B, not about $23B. Booking's trailing EPS (168) mixes pre-split and post-split quarters; its P/E is from net income and is fine. Merck's P/E of 148 is real as filed (two loss quarters in 2026). Waters now shows 471 for the same reason. Until this branch is merged, each nightly run on main puts the unscaled proxy figures and Costco's mixed row back.
 
 **Still to do in this phase.** The five clean nights (two so far, 2026-11-11 and 2026-11-12); quarterly cash flow for every company; the open items from the cleanup check above plus the earlier list (banks with no gross profit, restated quarters, basic-only EPS filers); joining price history across ticker changes; the part-A reference numbers.
+
+## Phase 2: accounts, clubs, the first 15 minutes (started 2026-11-12)
+
+### Slice a: accounts and clubs (2026-11-12)
+
+What a person can now do, start to finish:
+
+- **Sign in** at `/sign-in` with Google or a 6-digit code by email. The email option only shows online once `RESEND_API_KEY` and `EMAIL_FROM` are set.
+- **Agree** at `/welcome`, once: 13 or older, Terms, Privacy. Every player page sends you there first if you haven't.
+- **Start a club** at `/clubs/new`: club name, your name and avatar, whether you play or only run it, the experience question, and the game rules (the usual ones filled in; the minimum hold can be set from 0 to 365 days).
+- **Invite** from the club page: make a link, copy it, turn it off. A link works for 14 days.
+- **Join** at `/join/<code>`: signed out it shows the club's name; signed in it asks name, avatar and experience.
+- **Club page** at `/clubs/<id>`: who's in, the rules, your name and avatar. Organizers also get the invite link, the rule editor and "make organizer".
+- **Terms** and **Privacy** at `/terms` and `/privacy`, plain and short.
+
+Under it: tables `clubs`, `memberships`, `agreements`, `invites` and an `experience` column on the user (migration 0003); `web/src/clubs/` holds the logic and the who-sees-what rule (`access.ts`), with tests. The old status page moved to `/status`.
+
+Checked by walking two invented people through the whole flow against the local app with real pages and form posts. Not yet looked at in a browser by eye, and not yet run online.
+
+Waiting on Jeff:
+
+- Resend: install it for `owners-club-web` and set `RESEND_API_KEY` and `EMAIL_FROM`, or the beta is Google-only.
+- A contact address for the Privacy page (deletion requests); it currently points at the club organizer and the public repository.
+- The beta club's minimum hold.
+- Previews share the production database and don't run migrations, so this slice can only be clicked online once it's on `main`.

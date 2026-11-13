@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Owners Club",
-  description: "A stock-picking game for kids and their friends that rewards understanding businesses, not betting on prices.",
+  description: "A stock-picking game for teens (13 and up) and their friends that rewards understanding businesses, not betting on prices.",
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#f6f1e7" };

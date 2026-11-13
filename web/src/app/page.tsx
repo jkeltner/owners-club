@@ -1,76 +1,37 @@
-// Phase 0 status page: proves the deploy, the database and the content bundle
-// are wired together. Replaced by the real app as the phases land.
-import { sql } from "drizzle-orm";
-import { db } from "@/db";
-import { concepts, lessons, scenarios, lenses, glossary } from "@/content";
+// The front door. Signed in goes straight to your club; signed out sees what
+// the game is and the two ways in (start a club, or open an invite link).
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-async function databaseStatus() {
-  if (!process.env.DATABASE_URL) return { ok: false as const, error: "no database attached to this deployment yet" };
-  try {
-    const rows = (await db.execute(sql`select now() as now, version() as version`)) as unknown as { rows: { now: Date; version: string }[] };
-    const row = rows.rows?.[0];
-    return { ok: true as const, now: new Date(row.now).toISOString(), version: row.version.split(" on ")[0] };
-  } catch (err) {
-    return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
-  }
-}
-
 export default async function Home() {
-  const dbStatus = await databaseStatus();
-  const commit = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local";
-  const env = process.env.VERCEL_ENV ?? "development";
-
+  const session = await getSession();
+  if (session) redirect("/clubs");
   return (
     <main className="status">
       <h1>Owners Club</h1>
-      <p className="sub">The real build, phase 0. Nothing to play yet.</p>
+      <p className="sub">A stock-picking game for you and your friends that rewards understanding businesses, not betting on prices.</p>
 
-      <section className="card">
-        <h2>Content</h2>
-        <dl>
-          <dt>Concepts</dt>
-          <dd>{concepts.length}</dd>
-          <dt>Lessons</dt>
-          <dd>{lessons.length}</dd>
-          <dt>Time machine scenarios</dt>
-          <dd>{scenarios.length}</dd>
-          <dt>Sector lenses</dt>
-          <dd>{lenses.length}</dd>
-          <dt>Glossary terms</dt>
-          <dd>{glossary.length}</dd>
-        </dl>
+      <section className="card stack">
+        <p>
+          Everyone starts with $10,000 of pretend money in the S&amp;P 500, a basket of 500 big American companies. You make picks you can explain, and an AI coach
+          asks questions that test your reasoning. The club&apos;s leaderboard measures everyone against that basket.
+        </p>
+        <p>
+          <Link className="button" href="/clubs/new">
+            Start a club
+          </Link>{" "}
+          <Link className="button secondary" href="/sign-in">
+            Sign in
+          </Link>
+        </p>
+        <p className="muted small">Got an invite link from a friend? Open that link to join their club.</p>
       </section>
 
-      <section className="card">
-        <h2>Database</h2>
-        {dbStatus.ok ? (
-          <dl>
-            <dt>Connected</dt>
-            <dd>yes</dd>
-            <dt>Server time</dt>
-            <dd>{dbStatus.now}</dd>
-            <dt>Engine</dt>
-            <dd>{dbStatus.version}</dd>
-          </dl>
-        ) : (
-          <p>Not connected: {dbStatus.error}</p>
-        )}
-      </section>
-
-      <section className="card">
-        <h2>Deploy</h2>
-        <dl>
-          <dt>Environment</dt>
-          <dd>{env}</dd>
-          <dt>Commit</dt>
-          <dd>{commit}</dd>
-        </dl>
-      </section>
-
-      <p className="sub">
-        The playtest prototype is still at <a href="https://owners-club-alpha.vercel.app">owners-club-alpha.vercel.app</a>.
+      <p className="muted small">
+        No real money is involved. <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link>
       </p>
     </main>
   );

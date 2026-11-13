@@ -62,7 +62,7 @@ The build spec's data model, made concrete. Table names are proposals.
 | `clubs` | name, created by, settings (fee, short/long tax, hold months, cap %), season start |
 | `memberships` | user ↔ club, display name, avatar, joined at, role (organizer / member), plays (yes / no). **This is "the player" in every table below marked membership.** |
 | `agreements` | user, terms version, agreed at (the 13-or-older and terms click) |
-| `invites` | club, code, created by, expires, used by |
+| `invites` | club, code, created by, expires, revoked at; one link serves the whole club, and each membership records the link it came through |
 | `orders` | membership, ticker (or `SPX` for the index), side, amount in dollars, placed at, fill date, fill price, fee, status |
 | `lots` | membership, ticker, shares, cost basis, bought at (from a filled order); what makes hold periods and the 6-month tax line computable |
 | `theses` | membership, ticker, three parts (does well / happens next / number watched), prediction (metric, value, unit), kind (pick / scouting report), linked order, created at; scored at earnings |
@@ -137,6 +137,8 @@ Each phase ends with something Jeff can click on a preview URL, and a short note
 - Orders fill at the next close by the nightly job; lots, fees, the cap and hold enforced server-side.
 - Done when Jeff and one kid can each join a test club from a phone and make a real pick that fills the next evening.
 
+Built in three slices, each one clickable on its own: (a) accounts and clubs, (b) onboarding against real companies up to a placed order, (c) fills by the nightly job.
+
 **Phase 3: portfolio, leaderboard, feed (2 weeks)**
 
 - Nightly `portfolio_days`; portfolio screen with after-tax value, drift chart, gain split; sell flow with the sell-now-vs-wait card and the 3-month lock.
@@ -176,7 +178,9 @@ Jeff's addition (2026-11-09): before any kid plays, a club of adults plays the g
 - Retire the prototype deployment; the prototype folder stays in the repo as history.
 - The first kids' club, grown from the adult club if it went well (Jeff's call, with the adult club's numbers in hand).
 
-Roughly eight to nine weeks of part-time work to the adult club, then four to six weeks of adult play before the first kids' club, if the data layer behaves. Phases 2 and 3 are where the prototype pays back; phase 1 and the license are where the surprises are.
+**Pace (Jeff, 2026-11-12).** The week counts above were written at a human part-time pace. With the code written by Claude Code and Jeff reviewing three or four sessions a week, the aim is real working code in adult hands in two to three weeks: the waiting periods (five clean nights, a test club's week) overlap with building the next phase, and the adult club can start on a shorter hold so sells happen inside the beta.
+
+Originally: roughly eight to nine weeks of part-time work to the adult club, then four to six weeks of adult play before the first kids' club, if the data layer behaves. Phases 2 and 3 are where the prototype pays back; phase 1 and the license are where the surprises are.
 
 ## Working agreement
 
