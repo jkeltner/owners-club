@@ -75,9 +75,11 @@ Under it: tables `clubs`, `memberships`, `agreements`, `invites` and an `experie
 
 Checked by walking two invented people through the whole flow against the local app with real pages and form posts. Not yet looked at in a browser by eye, and not yet run online.
 
+**Merged 2026-11-13** (PR #12); live on `owners-club-web.vercel.app`, migration `0003` applied by the production build. Jeff set the beta club's minimum hold at 14 days.
+
+**Leaving and deleting (2026-11-13, branch `phase2/leave-and-delete`, not merged).** Leave a club, delete your account, and an organizer's "Remove" on the roster; the Privacy page now says how. No migration: the tables already cascade.
+
 Waiting on Jeff:
 
-- Resend: install it for `owners-club-web` and set `RESEND_API_KEY` and `EMAIL_FROM`, or the beta is Google-only.
-- A contact address for the Privacy page (deletion requests); it currently points at the club organizer and the public repository.
-- The beta club's minimum hold.
-- Previews share the production database and don't run migrations, so this slice can only be clicked online once it's on `main`.
+- Resend: install it for `owners-club-web` and set `RESEND_API_KEY` and `EMAIL_FROM`, or the beta is Google-only. It needs a domain we own to send to anyone but the account holder.
+- A look at the pages by eye; they have only been checked by script.

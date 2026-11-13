@@ -1,9 +1,10 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { db, dbReady } from "@/db";
-import { user } from "@/db/schema";
+import { agreements, clubs, user } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { seesDollars, viewOf } from "@/clubs/access";
 import {
-  createClub, createInvite, findInvite, hasAgreed, joinClub, liveInvites, makeOrganizer, membershipIn, membershipsOf,
+  createClub, createInvite, deleteAccount, findInvite, leaveClub, removeMember, hasAgreed, joinClub, liveInvites, makeOrganizer, membershipIn, membershipsOf,
   recordAgreement, revokeInvite, roster, setExperience, updateProfile, updateSettings,
 } from "@/clubs/clubs";
 import { cleanSettings } from "@/clubs/settings";
@@ -111,5 +112,38 @@ describe("who sees what", () => {
     expect(seesDollars("own")).toBe(true);
     expect(seesDollars("organizer")).toBe(true);
     expect(seesDollars("clubmate")).toBe(false);
+  });
+
+  it("lets people leave, organizers remove, and anyone delete their account", async () => {
+    await db.insert(user).values(["eli", "fay", "gus"].map((p) => ({ id: p, name: p, email: `${p}@example.test` })));
+    await recordAgreement("fay");
+    const { club } = await createClub("eli", { name: "Bus Stop", displayName: "Eli", plays: true });
+    const invite = await createInvite("eli", club.id);
+    const fay = await joinClub("fay", invite.code, { displayName: "Fay" });
+    const gus = await joinClub("gus", invite.code, { displayName: "Gus" });
+
+    // A member can't remove anyone; an organizer can, but not themselves.
+    await expect(removeMember("fay", club.id, gus.id)).rejects.toThrow(/organizer/);
+    const eli = (await membershipIn("eli", club.id))!.membership;
+    await expect(removeMember("eli", club.id, eli.id)).rejects.toThrow(/leave/);
+    await removeMember("eli", club.id, gus.id);
+    expect(await membershipIn("gus", club.id)).toBeNull();
+
+    // The only organizer can't walk out on the others, or delete their account.
+    await expect(leaveClub("eli", club.id)).rejects.toThrow(/organizer first/);
+    await expect(deleteAccount("eli")).rejects.toThrow(/Bus Stop/);
+    expect(await membershipIn("eli", club.id)).not.toBeNull();
+
+    // Once there's another organizer, they can.
+    await makeOrganizer("eli", club.id, fay.id);
+    await leaveClub("eli", club.id);
+    expect((await roster(club.id)).map((m) => m.displayName)).toEqual(["Fay"]);
+
+    // Deleting the account takes the sign-in, the Agree record and, as the last one in, the club.
+    await deleteAccount("fay");
+    expect(await db.select().from(user).where(eq(user.id, "fay"))).toHaveLength(0);
+    expect(await db.select().from(agreements).where(eq(agreements.userId, "fay"))).toHaveLength(0);
+    expect(await db.select().from(clubs).where(eq(clubs.id, club.id))).toHaveLength(0);
+    expect(await findInvite(invite.code)).toBeNull();
   });
 });

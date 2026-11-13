@@ -8,15 +8,16 @@ import { baseURL } from "@/lib/auth_options";
 import { requireUser } from "@/lib/session";
 import { AvatarPicker } from "../../components/pickers";
 import { SettingsFields } from "../../components/settings_fields";
-import { newInvite, promote, saveProfile, saveSettings, turnOffInvite } from "../actions";
+import { leave, newInvite, promote, remove, saveProfile, saveSettings, turnOffInvite } from "../actions";
 
 export const dynamic = "force-dynamic";
 
 const day = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 const pct = (n: number) => `${Math.round(n * 10000) / 100}%`;
 
-export default async function ClubPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ClubPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ problem?: string }> }) {
   const { id } = await params;
+  const { problem } = await searchParams;
   const me = await requireUser(`/clubs/${id}`);
   const mine = await membershipIn(me.id, id);
   if (!mine) notFound(); // not your club: it doesn't exist as far as you can tell
@@ -32,6 +33,7 @@ export default async function ClubPage({ params }: { params: Promise<{ id: strin
         <Link href="/me">Me</Link>
       </div>
       <h1>{club.name}</h1>
+      {problem && <p className="problem">{problem}</p>}
       <p className="sub">
         {members.length === 1 ? "Just you so far." : `${members.length} people.`} The game itself (picks, portfolios, the board) is being built; this is the club
         and its rules.
@@ -55,6 +57,17 @@ export default async function ClubPage({ params }: { params: Promise<{ id: strin
                   <input type="hidden" name="membershipId" value={m.id} />
                   <button className="button quiet">Make organizer</button>
                 </form>
+              )}
+              {organizer && m.id !== membership.id && (
+                <details className="confirm">
+                  <summary>Remove</summary>
+                  <form action={remove} className="stack">
+                    <input type="hidden" name="clubId" value={club.id} />
+                    <input type="hidden" name="membershipId" value={m.id} />
+                    <p className="muted small">This deletes everything {m.displayName} has done in this club. It can&apos;t be undone.</p>
+                    <button className="button danger">Remove {m.displayName}</button>
+                  </form>
+                </details>
               )}
             </li>
           ))}
@@ -128,6 +141,21 @@ export default async function ClubPage({ params }: { params: Promise<{ id: strin
           <AvatarPicker value={membership.avatar} />
           <button className="button secondary">Save</button>
         </form>
+        <details className="confirm" style={{ marginTop: 16 }}>
+          <summary>Leave this club</summary>
+          <form action={leave} className="stack">
+            <input type="hidden" name="clubId" value={club.id} />
+            <p className="muted small">
+              {members.length === 1
+                ? "You're the only one here, so leaving deletes the club."
+                : "Leaving deletes everything you've done in this club. It can't be undone."}
+            </p>
+            <label className="check">
+              <input type="checkbox" name="sure" value="yes" required /> I understand
+            </label>
+            <button className="button danger">Leave {club.name}</button>
+          </form>
+        </details>
       </section>
     </main>
   );
