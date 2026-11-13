@@ -98,3 +98,12 @@ fieldset.picker legend { font-weight: 600; padding: 0; margin-bottom: 4px; }
 .prose h2 { font-size: 1.1rem; margin: 24px 0 4px; }
 .prose p, .prose li { margin: 0 0 8px; }
 .error { color: #a23b2a; }
+
+/* Things that can't be undone sit behind a fold and ask twice. */
+.button.danger { background: #a23b2a; }
+details.confirm summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+details.confirm form { margin-top: 10px; }
+.roster details.confirm[open] { flex-basis: 100%; }
+.roster li { flex-wrap: wrap; }
+label.check { display: flex; align-items: center; gap: 8px; }
+.problem { background: #fbeeea; border: 1px solid #e6c3ba; border-radius: 10px; padding: 10px 12px; }

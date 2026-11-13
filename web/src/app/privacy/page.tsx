@@ -45,9 +45,22 @@ export default function Privacy() {
 
       <h2>How long we keep it</h2>
       <p>
-        Game data is kept while your club is active. Coach conversations are kept for the season and then deleted. You can ask us to delete your account and its
-        data at any time.
+        Game data is kept while your club is active. Coach conversations are kept for the season and then deleted.
       </p>
+
+      <h2>Deleting your data</h2>
+      <ul>
+        <li>
+          <b>Leave a club</b> from its page, and everything you did in that club is deleted.
+        </li>
+        <li>
+          <b>Delete your account</b> from the Me page, and your sign-in and everything you did in every club is deleted.
+        </li>
+        <li>
+          <b>A club&apos;s organizer</b> can remove a member, which deletes what that member did in the club.
+        </li>
+      </ul>
+      <p>Deleting is immediate and can&apos;t be undone. Copies in our database host&apos;s backups age out on their schedule.</p>
 
       <h2>Under 13</h2>
       <p>Owners Club is for people 13 and older. If we learn an account belongs to someone younger, we delete the account and its data.</p>

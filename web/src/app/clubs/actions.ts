@@ -3,7 +3,9 @@
 // asking; the club functions re-check that they're an organizer where it matters.
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClub, createInvite, joinClub, makeOrganizer, revokeInvite, setExperience, updateProfile, updateSettings } from "@/clubs/clubs";
+import {
+  createClub, createInvite, deleteAccount, joinClub, leaveClub, makeOrganizer, removeMember, revokeInvite, setExperience, updateProfile, updateSettings,
+} from "@/clubs/clubs";
 import { requireUser } from "@/lib/session";
 
 const str = (f: FormData, key: string) => String(f.get(key) ?? "");
@@ -77,4 +79,40 @@ export async function saveExperience(f: FormData) {
   const me = await requireUser("/me");
   await setExperience(me.id, str(f, "experience"));
   revalidatePath("/me");
+}
+
+// These three can be refused (a club needs an organizer); the reason goes back
+// to the page in the address so it shows without JavaScript.
+const reason = (err: unknown) => encodeURIComponent(err instanceof Error ? err.message : "That didn't work");
+
+export async function remove(f: FormData) {
+  const clubId = str(f, "clubId");
+  const me = await requireUser(`/clubs/${clubId}`);
+  await removeMember(me.id, clubId, str(f, "membershipId"));
+  revalidatePath(`/clubs/${clubId}`);
+}
+
+export async function leave(f: FormData) {
+  const clubId = str(f, "clubId");
+  const me = await requireUser(`/clubs/${clubId}`);
+  if (str(f, "sure") !== "yes") redirect(`/clubs/${clubId}`);
+  let problem = "";
+  try {
+    await leaveClub(me.id, clubId);
+  } catch (err) {
+    problem = reason(err);
+  }
+  redirect(problem ? `/clubs/${clubId}?problem=${problem}` : "/clubs");
+}
+
+export async function deleteMe(f: FormData) {
+  const me = await requireUser("/me");
+  if (str(f, "sure") !== "yes") redirect("/me");
+  let problem = "";
+  try {
+    await deleteAccount(me.id);
+  } catch (err) {
+    problem = reason(err);
+  }
+  redirect(problem ? `/me?problem=${problem}` : "/");
 }

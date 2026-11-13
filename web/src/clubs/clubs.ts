@@ -2,7 +2,7 @@
 // a server action does to these tables goes through here, so the access rule
 // ("a player sees only their own club") lives in one place.
 import { randomInt } from "node:crypto";
-import { and, asc, desc, eq, gt, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNull, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { agreements, clubs, invites, memberships, user } from "@/db/schema";
 import type { GameSettings } from "@/lib/rules";
@@ -116,6 +116,61 @@ export async function makeOrganizer(userId: string, clubId: string, membershipId
     .update(memberships)
     .set({ role: "organizer" })
     .where(and(eq(memberships.id, membershipId), eq(memberships.clubId, clubId)));
+}
+
+// ---- Leaving, removing and deleting ----
+//
+// A membership is the player, so deleting it deletes that player's game data
+// in the club (the tables that hang off it cascade). A club with members
+// always keeps an organizer; the last person out takes the club with them.
+
+async function othersIn(clubId: string, membershipId: string) {
+  return db
+    .select({ id: memberships.id, role: memberships.role })
+    .from(memberships)
+    .where(and(eq(memberships.clubId, clubId), ne(memberships.id, membershipId)));
+}
+
+const NEEDS_ORGANIZER = "Make someone else an organizer first: a club needs one";
+
+/** Leave a club. The last person to leave deletes the club. */
+export async function leaveClub(userId: string, clubId: string) {
+  const mine = await membershipIn(userId, clubId);
+  if (!mine) return;
+  const others = await othersIn(clubId, mine.membership.id);
+  if (!others.length) {
+    await db.delete(clubs).where(eq(clubs.id, clubId));
+    return;
+  }
+  if (mine.membership.role === "organizer" && !others.some((o) => o.role === "organizer")) throw new Error(NEEDS_ORGANIZER);
+  await db.delete(memberships).where(eq(memberships.id, mine.membership.id));
+}
+
+/** An organizer removes someone else from the club, with their data in it. */
+export async function removeMember(userId: string, clubId: string, membershipId: string) {
+  const mine = await requireOrganizer(userId, clubId);
+  if (mine.membership.id === membershipId) throw new Error("To take yourself out, leave the club");
+  await db.delete(memberships).where(and(eq(memberships.id, membershipId), eq(memberships.clubId, clubId)));
+}
+
+/**
+ * Deletes the person: their sign-in, their memberships and everything under
+ * them. Refused while they are the only organizer of a club other people are in.
+ */
+export async function deleteAccount(userId: string) {
+  const mine = await membershipsOf(userId);
+  const alone: string[] = [];
+  for (const { membership, club } of mine) {
+    const others = await othersIn(club.id, membership.id);
+    if (!others.length) alone.push(club.id);
+    else if (membership.role === "organizer" && !others.some((o) => o.role === "organizer")) {
+      throw new Error(`${NEEDS_ORGANIZER} (${club.name})`);
+    }
+  }
+  await db.transaction(async (tx) => {
+    for (const clubId of alone) await tx.delete(clubs).where(eq(clubs.id, clubId));
+    await tx.delete(user).where(eq(user.id, userId));
+  });
 }
 
 // ---- Invite links ----
