@@ -16,6 +16,9 @@ export function authOptions(database: BetterAuthOptions["database"]) {
     baseURL,
     database,
     emailAndPassword: { enabled: false },
+    // The experience answer (new / some / lots) lives on the person, not the
+    // membership: it follows them across clubs. Set by our own actions only.
+    user: { additionalFields: { experience: { type: "string" as const, required: false, input: false } } },
     socialProviders: googleEnabled
       ? {
           google: {

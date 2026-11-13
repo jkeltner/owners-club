@@ -2,7 +2,9 @@
 // model"). Phase 0: sign-in and monitoring. Phase 1: the market-data cache,
 // written only by jobs; every screen reads from these tables and never calls a
 // provider. Better Auth's tables are generated into auth_schema.ts.
-import { bigint, boolean, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
+import { bigint, boolean, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import type { GameSettings } from "@/lib/rules";
+import { user } from "./auth_schema";
 
 export * from "./auth_schema";
 
@@ -173,3 +175,74 @@ export const reference = pgTable("reference", {
   asOf: date("as_of"),
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// ---- Accounts and clubs (phase 2) ----
+
+
+// A club is a private group playing one game with one set of rules.
+export const clubs = pgTable("clubs", {
+  id: id(),
+  name: text("name").notNull(),
+  createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+  // The club's game settings; the concept doc's defaults unless an organizer changes them.
+  settings: jsonb("settings").$type<GameSettings>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type MemberRole = "organizer" | "member";
+
+// One person in one club. This is "the player": every portfolio table hangs
+// off a membership, so the same person in two clubs has two portfolios.
+export const memberships = pgTable(
+  "memberships",
+  {
+    id: id(),
+    clubId: text("club_id")
+      .notNull()
+      .references(() => clubs.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    displayName: text("display_name").notNull(),
+    avatar: text("avatar").notNull(),
+    role: text("role").$type<MemberRole>().notNull().default("member"),
+    // An organizer can run a club without playing (a teacher). Non-playing
+    // organizers see the whole club in dollars; playing ones see what a player sees.
+    plays: boolean("plays").notNull().default(true),
+    inviteId: text("invite_id"),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("memberships_club_user_idx").on(t.clubId, t.userId), index("memberships_user_idx").on(t.userId)],
+);
+
+// The Agree click: 13 or older, the Terms and the Privacy Policy, by version.
+export const agreements = pgTable(
+  "agreements",
+  {
+    id: id(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    termsVersion: text("terms_version").notNull(),
+    agreedAt: timestamp("agreed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("agreements_user_version_idx").on(t.userId, t.termsVersion)],
+);
+
+// An invite link. One link serves the whole club until it expires or an
+// organizer turns it off; each membership records the link it came through.
+export const invites = pgTable(
+  "invites",
+  {
+    id: id(),
+    clubId: text("club_id")
+      .notNull()
+      .references(() => clubs.id, { onDelete: "cascade" }),
+    code: text("code").notNull().unique(),
+    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (t) => [index("invites_club_idx").on(t.clubId)],
+);
