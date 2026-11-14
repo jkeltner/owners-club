@@ -8,6 +8,7 @@ import {
   recordAgreement, revokeInvite, roster, setExperience, updateProfile, updateSettings,
 } from "@/clubs/clubs";
 import { cleanSettings } from "@/clubs/settings";
+import { signInLink } from "@/lib/email";
 import { DEFAULT_SETTINGS } from "@/lib/rules";
 
 // Invented people.
@@ -145,5 +146,14 @@ describe("who sees what", () => {
     expect(await db.select().from(agreements).where(eq(agreements.userId, "fay"))).toHaveLength(0);
     expect(await db.select().from(clubs).where(eq(clubs.id, club.id))).toHaveLength(0);
     expect(await findInvite(invite.code)).toBeNull();
+  });
+
+  it("builds a sign-in link that keeps the email and code out of the request", () => {
+    const link = new URL(signInLink("ana+test@example.test", "123456"));
+    expect(link.pathname).toBe("/sign-in");
+    expect(link.search).toBe(""); // nothing a server or its logs would see
+    const after = new URLSearchParams(link.hash.slice(1));
+    expect(after.get("email")).toBe("ana+test@example.test");
+    expect(after.get("code")).toBe("123456");
   });
 });

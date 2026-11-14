@@ -79,7 +79,21 @@ Checked by walking two invented people through the whole flow against the local 
 
 **Leaving and deleting (2026-11-13, branch `phase2/leave-and-delete`, not merged).** Leave a club, delete your account, and an organizer's "Remove" on the roster; the Privacy page now says how. No migration: the tables already cascade.
 
-Waiting on Jeff:
+**Domain and email (2026-11-13).** The app lives at `https://playownersclub.com` (bought at Cloudflare, DNS there, records set to DNS only; `www` redirects to the apex). `BETTER_AUTH_URL` in production is that address, and the Google OAuth client has its callback. Resend is verified for the domain; `RESEND_API_KEY` and `EMAIL_FROM` are set, and Jeff has signed in both ways. The code email also carries a one-click "Sign in" button (same code, after the `#`).
 
-- Resend: install it for `owners-club-web` and set `RESEND_API_KEY` and `EMAIL_FROM`, or the beta is Google-only. It needs a domain we own to send to anyone but the account holder.
-- A look at the pages by eye; they have only been checked by script.
+Left over from this slice:
+
+- The old address `owners-club-web.vercel.app` still serves pages, but Google sign-in from it fails (the app only calls itself `playownersclub.com`). Redirect it to the new address.
+- Jeff is walking the test list: "Owners Club: what to test" (https://claude.ai/artifact/EfErJpBoCyHPcYTJfv1UtQ). Add each new slice's checks to that doc.
+- Terms and Privacy were written by Claude; no lawyer has read them.
+
+**Slice b groundwork (2026-11-13; nothing built yet).** What the real data looks like, for whoever ports the onboarding screens from `prototype/src/screens/onboarding/`:
+
+- `companies.one_liner` is empty for all 503 members. Write the lines for the 24 theme companies in `content/themes.yaml` (all 24 are in the index, TTWO, SBUX and PEP included); others fall back to the GICS sub-industry.
+- 177 companies have a sector lens; the other 326 get the company card without the "what matters" panel. Meta's lens is "Media and streaming", not "Software" as in the prototype.
+- The `reference` table is empty. The market screen needs the top-10 share of the index, the count of US-listed companies, the S&P 500's share of the US market, the long-run index return and the public "1 in N" figure, each with a source (`docs/data_needs.md` part A).
+- The prototype's lens panel showed made-up values (same-store sales, retention, backlog, subscribers). Only what `computeMetrics` returns is real: Rule of 40, margins, free cash flow, cash conversion, return on equity. Metrics we can't compute are named without a value.
+- Earnings dates: 76 upcoming, all "estimated", through 2027-02-10. A company without a date says so instead of counting down.
+- The market P/E is computed on the admin page (`sumPe`); the prototype hard-codes 23.
+- New tables this slice needs: `orders`, `theses`, `conversations` and `messages` (the scripted coach writes every turn, so a refresh resumes), per the data model in `docs/build_plan.md`. Orders are saved as waiting; slice c fills them.
+- Scripts that import `scripts/env` talk to the production database (`.env.local` holds its URL); `npm run dev` uses an empty local one. Local screens need market data copied in or a seed.
