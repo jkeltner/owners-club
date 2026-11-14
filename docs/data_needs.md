@@ -25,9 +25,19 @@ Source guesses follow the free stack in the [build spec](build_spec.md#market-da
 | Share of the S&P 500 in its 10 biggest companies | Market screen square grid and copy; index fund glossary | Monthly | Compute from member market caps (part C) or S&P Dow Jones Indices fact sheet | `MARKET_FACTS.top10Pct = 40` |
 | S&P 500's share of the total US stock market's value | "What's the market?" card | Yearly | S&P Dow Jones Indices ("about 80% of available market cap") | `MARKET_FACTS.sp500CoverPct = 80` |
 | Number of US companies on the stock market, today and in 1996 | "What's the market?" card ("about half as many as in 1996") | Yearly | World Bank listed domestic companies, or the Wilshire/CRSP count | `MARKET_FACTS.usListed = 4000`; from a tester note, needs a source check |
-| Share of US companies with $100M+ yearly sales that are public | "What's the market?" card ("about 1 in 8") | Yearly | S&P Capital IQ counts of public vs. private companies (cited by Apollo) | `MARKET_FACTS.publicOneIn = 8`; from a tester note ("13%"), needs a source check |
+| Share of US companies with $100M+ yearly sales that are public | "What's the market?" card ("about 1 in 5") | Yearly | S&P Capital IQ counts of public vs. private companies (cited by Apollo) | `MARKET_FACTS.publicOneIn = 8`; from a tester note ("13%"), needs a source check |
 | Which big companies are in the Dow and listed on the Nasdaq | "What's the market?" card; Dow and Nasdaq glossary examples | When the Dow changes | Dow member list (S&P Dow Jones Indices); exchange per ticker from the price source | Hand-written |
 | Private companies (OpenAI, Anthropic, SpaceX): latest valuation, and which public companies own a stake | 🔒 cards; private-company lesson | When news breaks | Hand-curated, with a source link per fact | Hand-written |
+
+**Where the real app gets these (phase 2 slice b, 2026-11-13).**
+
+- **Computed every night from stored rows** (`web/src/market/read.ts`, `marketSnapshot`): the S&P 500 P/E today, each kind's usual P/E range (middle half of its members; the rough range in `content/sector_lenses.yaml` when a kind has under eight), and the top-10 share of the index. The top-10 share is by whole-company market value, not S&P's float-adjusted weights, so it can differ from the fact sheet by a point or two.
+- **Looked up, with a source and a date, in `content/market_facts.yaml`:** US-listed companies today (about 3,900) and in 1996 (8,090), the S&P 500's share of the US market (about 80%), the long-run yearly return (about 10%), and the share of $100M+ companies that are public (about 1 in 5, was "1 in 8": Apollo's count moved from 87% private in April 2024 to 81% in February 2026; read from a summary of the chart book, accepted by Jeff 2026-11-14). The long-run return should become our own computation from index history.
+- **Still words, not numbers:** the share of professional pickers who trail the index ("most"; SPIVA has the figure).
+- **Plain "what it does" lines:** written for the 24 theme companies in `content/company_lines.yaml`; the other 479 show their industry.
+- **Sector numbers from company reports** (same-store sales, subscribers, backlog, retention, organic growth): not shown. The lens names the metric and says we don't have the number yet.
+- **Quarterly free cash flow for every company** is now visible to players as a gap: the lens panel's free-cash-flow lines are blank for most companies until phase 1 derives it for all 500.
+- **Last quarter's numbers for the prediction screen** (sales growth against the same quarter a year before, profit per share, profit per $1 of sales) come from the stored quarters (`lastQuarter` in `web/src/market/metrics.ts`).
 
 ### Time machine scenarios (stored with each scenario, once)
 

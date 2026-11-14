@@ -23,8 +23,25 @@ npm run dev
 - `src/db/`: Drizzle schema (`schema.ts`, with Better Auth's tables in `auth_schema.ts`) and the connection (`index.ts`).
 - `src/lib/`: game rules (`rules.ts`), ranks (`ranks.ts`), formatting, sign-in (`auth*.ts`), monitoring (`events.ts`).
 - `src/content/`: the shared catalogs from `../content`, bundled by `scripts/build_content.ts` into a gitignored `generated.json`.
-- `scripts/`: local dev server, migrations, content build.
+- `src/market/`: the market-data adapters and the nightly job's steps; `read.ts` is the only thing player screens read market data through.
+- `src/coach/`: the scripted coach (`script.ts`, pure) and its stored conversations (`conversations.ts`).
+- `src/game/`: picks: the thesis and order rules (`picks.ts`) and the words around a thesis (`thesis_text.ts`).
+- `src/app/clubs/[id]/(game)/`: the game screens, with their own stylesheet (`game.css`, scoped under `.game`).
+- `scripts/`: local dev server, migrations, content build, backfills.
 - `tests/`: vitest.
+
+## Real companies on your machine
+
+A fresh local database has no companies, so the game screens have nothing to show. Load it from the public sources (not from production) while `npm run dev` is running:
+
+```
+export DATABASE_URL='postgres://postgres:postgres@127.0.0.1:54331/postgres?sslmode=disable'
+npx tsx scripts/backfill.ts sp500                              # the member list, a second
+npx tsx scripts/backfill.ts financials                         # SEC filings, about four minutes
+npx tsx scripts/backfill.ts prices --from 2026-10-20 --days 30 # needs MASSIVE_API_KEY; five days a minute
+```
+
+Setting `DATABASE_URL` on the command line matters: the scripts read `.env.local`, which may point at production. Leave the `earnings` step alone locally; it spends the 25 Alpha Vantage calls a day the nightly job needs.
 
 ## Deploying
 

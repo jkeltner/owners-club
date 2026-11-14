@@ -97,3 +97,54 @@ Left over from this slice:
 - The market P/E is computed on the admin page (`sumPe`); the prototype hard-codes 23.
 - New tables this slice needs: `orders`, `theses`, `conversations` and `messages` (the scripted coach writes every turn, so a refresh resumes), per the data model in `docs/build_plan.md`. Orders are saved as waiting; slice c fills them.
 - Scripts that import `scripts/env` talk to the production database (`.env.local` holds its URL); `npm run dev` uses an empty local one. Local screens need market data copied in or a seed.
+
+### Slice b: the first 15 minutes, up to a placed order (2026-11-13, branch `phase2/onboarding`, not merged)
+
+What a player can now do, start to finish, on real companies and real numbers:
+
+- **You already own the market** at `/clubs/<id>/start`: the $10,000 in the index, the 100 squares with the 10 biggest companies in gold, the two fold-out explainers, who's playing. New joiners land here straight from the invite link.
+- **Start from curiosity** at `/clubs/<id>/pick`: search all 503 members by name, ticker or what they're known for ("youtube" finds Alphabet), or open one of the five themes. SpaceX, OpenAI and Anthropic lead to the private-company lesson. Clubmates' theses show under "Why your clubmates bought" once there are any.
+- **The company card** at `/clubs/<id>/company/<ticker>`: last close and about a year of prices, market cap, P/E, trailing revenue and profit, "What buyers expect" against the whole index and the company's kind, the sector lens, the next earnings date. Every term opens its plain explanation.
+- **The coach** at `.../coach`: the prototype's script, run on the server with the company's real numbers, saved one message at a time. Close the page mid-conversation and it picks up where it was.
+- **The thesis** at `.../thesis`: three parts in the player's own words and one prediction, compared with last quarter's real number.
+- **How much?** at `.../size`: the slider, with this club's cap, fee and hold.
+- **Done** at `/clubs/<id>/orders/<order>`: Shareholder on the first pick, the countdown to earnings, the thesis. The club page lists "Your picks".
+
+Orders are saved as **waiting**. Nothing fills them yet: that is slice c.
+
+Under it: tables `orders`, `theses`, `conversations` and `messages` (migration 0004). `web/src/market/read.ts` is what screens read from the cache (a company with its computed numbers; index-wide numbers computed once per new close and kept in memory). `web/src/coach/` holds the script and the stored conversations. `web/src/game/picks.ts` holds the thesis and order rules, checked on the server whatever the screen allowed: a written thesis, the club's cap counting what is already in that company, no more than is left in the index, only current members, only people who play. A refused order is logged as `trade.rejected` without the player's words. The game screens use the prototype's stylesheet, scoped under `.game` so the account and club pages keep theirs.
+
+**What changed from the prototype, because the data is real.**
+
+- **Numbers a screen can't back are gone.** The lens panel shows a value only where filings give one (gross and operating margin, Rule of 40, free cash flow, cash conversion, return on equity, debt) and says "we don't have this number yet" for the rest (same-store sales, subscribers, backlog, retention). Free cash flow is blank for most companies until quarterly cash flow is derived for all 500 (phase 1's open item).
+- **The market's own numbers are computed.** The market P/E (22 to 24 on recent closes, where the prototype said 23), each kind's usual P/E range (the middle half of its members, falling back to the rough range in `sector_lenses.yaml` under eight members) and the top-10 share of the index (42% on the local data) come from the stored rows.
+- **The looked-up facts have sources**, in `content/market_facts.yaml`: about 3,900 US-listed companies (World Bank, 2025), half the 1996 count, the S&P 500 at about 80% of the US market, about 10% a year since 1957. **One changed: "about 1 in 8" large companies are public is now "about 1 in 5".** Apollo's count moved from 87% private (April 2024) to 81% (February 2026). I read that figure from a search summary of Apollo's chart book, not the PDF itself; Jeff accepted "about 1 in 5" on 2026-11-14.
+- **P/E over 100** shows "over 100", the scale pinned at "100+", and the last four quarters' profit, so the player can see whether it was one bad quarter. The coach asks which.
+- **No P/E** has three different honest reasons: a loss, under a year of reports, or no share count (Berkshire, Visa and three more).
+- **Time words.** "Last year" became "over the last 12 months"; the prediction is compared with "last quarter", using the latest quarter against the same quarter a year before.
+- **The club's own rules.** The size screen quotes this club's cap, fee and hold (the beta's 14 days reads "this club set a shorter wait than the usual 3 months").
+- **The coach no longer calls a P/E near the market's "a lot of growth".** The script now has three cases (well above, about the same, well below a typical company), the same bands the company card uses. The prototype had two.
+- **"Start from my answers"** no longer glues the company's name onto a short answer ("Nvidia I use their stuff.").
+- **Names.** 24 companies have a hand-written name and line (`content/company_lines.yaml`); the rest show the member list's name, tidied ("Nike, Inc." to "Nike"), and their industry.
+
+**Left out of this slice, on purpose.**
+
+- **Concept progress.** The coach's marks, the check question in a term's sheet, "You used: P/E" on the done screen and the toasts all need `concept_progress` and the tagger (phases 4 and 6). A term's sheet shows the explanation, what's normal and an example. Shareholder is shown on the first order because that is its whole rule.
+- **Scouting reports** ("Scout it" on a company card) and turning one into a pick: Learn tab, phase 6.
+- **The mock microphone**, the ✎ feedback button (phase 3) and the mini leaderboard on the market screen (no returns until orders fill).
+- **The organizer's view of players' picks.** A non-playing organizer still sees only the roster.
+
+**Added 2026-11-14: cancelling a waiting order.** Jeff's call: yes. The done screen has "Cancel this order" (two taps) while the order waits. Cancelling costs nothing, because nothing was bought: the money counts as back in the index, the thesis becomes a draft again, the coach conversation reopens, clubmates stop seeing the thesis, and the order shows as cancelled on the club page. A cancelled order doesn't count as a first pick. The rule is in `docs/concept.md`.
+
+**Checked.** 132 tests pass, with three new files (the script across every kind of company and player, including a check that no line recommends; conversations resuming; every pick rule; the read layer on fixture rows). Walked in a browser against the local app as one invented player: club, market screen, search, themes, Nvidia's card, the coach with a reload in the middle, thesis, size, order, the club page, a second visit to the coach (a new conversation), Tesla (P/E over 100), Berkshire (no share count), SpaceX.
+
+**Not checked.** Nothing has run online: a preview build can't, because previews share the production database and don't apply migrations, so the four new tables don't exist until this is merged and a production build runs. Not looked at on a phone. Earnings countdowns were only seen in tests (the local database has no earnings dates). A production build (`next build`) passes on the Mac mini; it fetches the display font from Google at build time, which hasn't been tried on Vercel.
+
+**Local data.** The local database is loaded from the public sources, not copied from production: with `npm run dev` running, `DATABASE_URL='postgres://postgres:postgres@127.0.0.1:54331/postgres?sslmode=disable' npx tsx scripts/backfill.ts sp500`, then `financials` (about four minutes), then `prices --from 2025-10-20 --days 400` (about an hour at the free tier's pace; a few weeks is enough to see the screens). Skip `earnings` locally: it spends the same 25 Alpha Vantage calls a day the nightly job needs.
+
+**Found, for other phases.**
+
+- Apple has no lens (GICS files it under "Technology Hardware, Storage & Peripherals"); the prototype showed it as a consumer brand.
+- Orders placed before slice c ships are tests (Jeff, 2026-11-14: nobody is invited until fills work). Slice c clears them, with their theses and conversations, before its first fill run; it does not fill them.
+- Two buys sent at the same instant are each checked against the cap before either is saved, so together they could pass it. Slice c's fill step should re-check the cap, which closes this.
+- A company removed from the index stops being reachable (`companyView` returns only current members); held positions in a removed company need a path in phase 3.

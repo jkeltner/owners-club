@@ -37,7 +37,8 @@ export async function join(f: FormData) {
   const me = await requireUser(`/join/${code}`);
   await setExperience(me.id, str(f, "experience"));
   const membership = await joinClub(me.id, code, { displayName: str(f, "displayName"), avatar: str(f, "avatar") });
-  redirect(`/clubs/${membership.clubId}`);
+  // A new player goes straight into the first 15 minutes: the market, then a first pick.
+  redirect(`/clubs/${membership.clubId}/start`);
 }
 
 export async function newInvite(f: FormData) {

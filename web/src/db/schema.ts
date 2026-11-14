@@ -246,3 +246,108 @@ export const invites = pgTable(
   },
   (t) => [index("invites_club_idx").on(t.clubId)],
 );
+
+// ---- Picks (phase 2, slice b) ----
+
+export type OrderSide = "buy" | "sell";
+// "cancelled": the player took a waiting order back before it filled.
+export type OrderStatus = "waiting" | "filled" | "rejected" | "cancelled";
+
+// A trade a player asked for. Buys move money out of the index holding into a
+// company; the order waits for the next market close, when the nightly job
+// fills it (price, fee, the lot it creates). `amount` is dollars moved.
+export const orders = pgTable(
+  "orders",
+  {
+    id: id(),
+    membershipId: text("membership_id")
+      .notNull()
+      .references(() => memberships.id, { onDelete: "cascade" }),
+    ticker: text("ticker").notNull(), // a member's ticker, or "SPX" for the index holding
+    side: text("side").$type<OrderSide>().notNull(),
+    amount: doublePrecision("amount").notNull(),
+    status: text("status").$type<OrderStatus>().notNull().default("waiting"),
+    placedAt: timestamp("placed_at", { withTimezone: true }).notNull().defaultNow(),
+    // Set by the nightly job when the order fills.
+    fillDate: date("fill_date"),
+    fillPrice: doublePrecision("fill_price"),
+    fee: doublePrecision("fee"),
+  },
+  (t) => [index("orders_membership_idx").on(t.membershipId, t.placedAt), index("orders_status_idx").on(t.status)],
+);
+
+export type ThesisKind = "pick" | "scout";
+export type ThesisStatus = "draft" | "final";
+export type PredictionMetric = "revenue_growth" | "eps" | "margin";
+
+// The reason written when buying (or scouting) a company, in three parts, plus
+// one prediction that is checked at the next earnings report. A draft is a
+// thesis the player has written but not yet attached to an order: it lets the
+// "how much?" screen survive a refresh. Clubmates only ever see final ones.
+export const theses = pgTable(
+  "theses",
+  {
+    id: id(),
+    membershipId: text("membership_id")
+      .notNull()
+      .references(() => memberships.id, { onDelete: "cascade" }),
+    ticker: text("ticker").notNull(),
+    kind: text("kind").$type<ThesisKind>().notNull().default("pick"),
+    status: text("status").$type<ThesisStatus>().notNull().default("draft"),
+    doesWell: text("does_well").notNull(), // what the business does well
+    happensNext: text("happens_next").notNull(), // what the player thinks happens next
+    numberWatched: text("number_watched").notNull(), // the number they're watching
+    predictionMetric: text("prediction_metric").$type<PredictionMetric>().notNull(),
+    predictionValue: doublePrecision("prediction_value").notNull(), // "this much or more"
+    predictionUnit: text("prediction_unit").notNull(), // "%" or "$"
+    orderId: text("order_id").references(() => orders.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("theses_membership_idx").on(t.membershipId, t.ticker), index("theses_order_idx").on(t.orderId)],
+);
+
+export type CoachMode = "pick" | "private" | "sell" | "debrief" | "explain" | "lesson" | "scout";
+// What the coach last offered, so a refresh shows the same tap replies.
+export type CoachState = { chips?: string[]; tickers?: string[] };
+
+// A coach conversation. Private to the player: no one else's query reads these
+// tables. `topic` is what it is about when that isn't a ticker (a private
+// company's name). Every turn is written as it happens (`messages`), so a
+// refresh resumes mid-conversation (tester note, issue #5).
+export const conversations = pgTable(
+  "conversations",
+  {
+    id: id(),
+    membershipId: text("membership_id")
+      .notNull()
+      .references(() => memberships.id, { onDelete: "cascade" }),
+    mode: text("mode").$type<CoachMode>().notNull(),
+    ticker: text("ticker"),
+    topic: text("topic"),
+    thesisId: text("thesis_id").references(() => theses.id, { onDelete: "set null" }),
+    turn: integer("turn").notNull().default(0), // coach replies given so far
+    done: boolean("done").notNull().default(false),
+    state: jsonb("state").$type<CoachState>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("conversations_membership_idx").on(t.membershipId, t.mode, t.updatedAt)],
+);
+
+export type MessageFrom = "coach" | "player";
+
+export const messages = pgTable(
+  "messages",
+  {
+    id: id(),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    seq: integer("seq").notNull(),
+    from: text("from").$type<MessageFrom>().notNull(),
+    text: text("text").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("messages_conversation_seq_idx").on(t.conversationId, t.seq)],
+);

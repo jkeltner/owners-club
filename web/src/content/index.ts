@@ -55,6 +55,11 @@ export type Scenario = {
   debrief_questions: string[];
 };
 
+// The name players see and one plain line on what a company does (content/company_lines.yaml).
+export type CompanyLine = { name: string; line: string };
+// A looked-up number with where it came from (content/market_facts.yaml).
+export type MarketFact = { value: number; says: string; source: string; url: string; as_of: string };
+
 type Generated = {
   concepts: Concept[];
   rank_thresholds: Record<string, string>;
@@ -64,6 +69,8 @@ type Generated = {
   scenarios: Scenario[];
   glossary: GlossaryTerm[];
   lessons: Lesson[];
+  company_lines: Record<string, CompanyLine>;
+  market_facts: Record<string, MarketFact>;
 };
 
 const raw = generated as unknown as Generated;
@@ -125,3 +132,12 @@ export function concept(slug: string): Concept {
 export const sectorPlural = (kind: string) => (kind.endsWith("s") ? kind.toLowerCase() : `${kind.toLowerCase()} companies`);
 
 export const lens = (kind: string): Lens | undefined => lenses.find((l) => l.kind === kind);
+
+export const companyLines: Record<string, CompanyLine> = raw.company_lines ?? {};
+export const marketFacts: Record<string, MarketFact> = raw.market_facts ?? {};
+
+export function marketFact(key: string): number {
+  const f = marketFacts[key];
+  if (!f) throw new Error(`Unknown market fact: ${key}`);
+  return f.value;
+}

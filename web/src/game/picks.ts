@@ -1,0 +1,230 @@
+// Picks: the thesis a player writes, and the order that moves money out of the
+// index holding into a company. Everything a screen or a server action does to
+// `theses` and `orders` goes through here, so the rules (a written thesis, the
+// purchase cap, the money actually left in the index) are checked in one
+// place, on the server, whatever the screen allowed.
+import { and, desc, eq, inArray, isNull, ne } from "drizzle-orm";
+import { db } from "@/db";
+import { companies, conversations, memberships, orders, theses } from "@/db/schema";
+import { logEvent } from "@/lib/events";
+import { maxPurchase, round2, STARTING_VALUE, tradeFee, type GameSettings } from "@/lib/rules";
+import type { LastQuarter } from "@/market/metrics";
+import { joinParts, MAX_PART, metricById, written, type Parts, type PredictionMetric } from "./thesis_text";
+
+export type Thesis = typeof theses.$inferSelect;
+export type Order = typeof orders.$inferSelect;
+
+/** A rule said no. The message is written for the player. */
+export class PickError extends Error {}
+
+// ---- The thesis ----
+
+export type ThesisInput = { parts: Parts; metric: string; value: number };
+
+/** The last quarter's number for a prediction metric: what the player's guess is compared with on screen. */
+export function predictionRef(metric: PredictionMetric, last: LastQuarter | null): number | null {
+  if (!last) return null;
+  return metric === "revenue_growth" ? last.revenueGrowth : metric === "eps" ? last.eps : last.netMargin;
+}
+
+const clean = (s: string) => s.replace(/\s+/g, " ").trim().slice(0, MAX_PART);
+
+/** Checks a thesis the way the screen does: three parts in the player's own words and one measurable prediction. */
+export function checkThesis(input: ThesisInput, starters: string[] = []) {
+  const parts = input.parts.map(clean) as Parts;
+  for (let i = 0; i < 3; i++) if (!written(parts, i, starters)) throw new PickError(`Part ${i + 1} of your thesis needs a few more words of your own`);
+  const metric = metricById(input.metric);
+  if (!metric) throw new PickError("Pick one number to predict");
+  const value = Number(input.value);
+  if (!Number.isFinite(value) || value < metric.min || value > metric.max) throw new PickError("That prediction is outside what we can check");
+  return { parts, metric, value: round2(value) };
+}
+
+/**
+ * Saves the thesis a player has written for a company they haven't bought yet.
+ * One draft per player per company: writing it again replaces it.
+ */
+export async function saveDraft(membershipId: string, ticker: string, input: ThesisInput, starters: string[] = []): Promise<Thesis> {
+  const { parts, metric, value } = checkThesis(input, starters);
+  const values = {
+    doesWell: parts[0],
+    happensNext: parts[1],
+    numberWatched: parts[2],
+    predictionMetric: metric.id,
+    predictionValue: value,
+    predictionUnit: metric.unit,
+    updatedAt: new Date(),
+  };
+  const existing = await draftFor(membershipId, ticker);
+  if (existing) {
+    const [updated] = await db.update(theses).set(values).where(eq(theses.id, existing.id)).returning();
+    return updated;
+  }
+  const [created] = await db
+    .insert(theses)
+    .values({ membershipId, ticker, kind: "pick", status: "draft", ...values })
+    .returning();
+  return created;
+}
+
+export async function draftFor(membershipId: string, ticker: string): Promise<Thesis | null> {
+  const [row] = await db
+    .select()
+    .from(theses)
+    .where(and(eq(theses.membershipId, membershipId), eq(theses.ticker, ticker), eq(theses.kind, "pick"), eq(theses.status, "draft")))
+    .orderBy(desc(theses.updatedAt))
+    .limit(1);
+  return row ?? null;
+}
+
+export const thesisParts = (t: Pick<Thesis, "doesWell" | "happensNext" | "numberWatched">): Parts => [t.doesWell, t.happensNext, t.numberWatched];
+export const thesisText = (t: Pick<Thesis, "doesWell" | "happensNext" | "numberWatched">) => joinParts(thesisParts(t));
+
+// ---- Money ----
+
+export type Money = {
+  portfolio: number; // what the cap is a share of
+  inPicks: number; // already moved, or waiting to move, out of the index
+  indexLeft: number; // still in the index holding
+  inThisCompany: number; // already in (or on its way into) this company
+  cap: number; // the most one company can take at purchase
+  max: number; // the most this order can be
+};
+
+/**
+ * What a player can put into a company right now. Until orders fill and
+ * holdings are valued each night (the next slices), the portfolio is the
+ * starting $10,000 and every buy order counts at the dollars it asked for.
+ * A cancelled order counts for nothing: its money never left the index.
+ */
+export async function moneyFor(membershipId: string, settings: GameSettings, ticker?: string): Promise<Money> {
+  const rows = await db
+    .select({ ticker: orders.ticker, amount: orders.amount })
+    .from(orders)
+    .where(and(eq(orders.membershipId, membershipId), eq(orders.side, "buy"), inArray(orders.status, ["waiting", "filled"])));
+  const inPicks = round2(rows.reduce((a, o) => a + o.amount, 0));
+  const inThisCompany = round2(rows.filter((o) => o.ticker === ticker).reduce((a, o) => a + o.amount, 0));
+  const portfolio = STARTING_VALUE;
+  const indexLeft = round2(Math.max(0, portfolio - inPicks));
+  const cap = maxPurchase(portfolio, settings);
+  return { portfolio, inPicks, indexLeft, inThisCompany, cap, max: Math.max(0, Math.floor(Math.min(cap - inThisCompany, indexLeft))) };
+}
+
+// ---- The order ----
+
+type Buyer = { id: string; clubId: string; plays: boolean };
+
+/**
+ * Places a buy: moves `amount` dollars from the index holding into the company
+ * the player has a written thesis for. The order waits for the next market
+ * close. Refused (and logged, without the player's words) when a rule says no.
+ */
+export async function placeBuy(buyer: Buyer, settings: GameSettings, ticker: string, amount: number): Promise<{ order: Order; thesis: Thesis; first: boolean }> {
+  const refuse = async (message: string, detail: Record<string, unknown> = {}): Promise<never> => {
+    await logEvent({ level: "info", kind: "trade.rejected", message, detail: { membershipId: buyer.id, ticker, amount, ...detail } });
+    throw new PickError(message);
+  };
+  if (!buyer.plays) await refuse("You're running this club, not playing in it, so you don't have a portfolio");
+  const [company] = await db
+    .select({ ticker: companies.ticker })
+    .from(companies)
+    .where(and(eq(companies.ticker, ticker), eq(companies.status, "active")));
+  if (!company) await refuse("That company isn't in the game");
+  const draft = await draftFor(buyer.id, ticker);
+  if (!draft) await refuse("Write your thesis first: every pick needs a reason");
+  const dollars = round2(Number(amount));
+  if (!Number.isFinite(dollars) || dollars < 1) await refuse("Choose how much to move into this pick");
+  const money = await moneyFor(buyer.id, settings, ticker);
+  if (dollars > money.indexLeft) await refuse("That's more than you have left in your index fund", { indexLeft: money.indexLeft });
+  if (dollars > money.max) await refuse(`That's over this club's limit for one company`, { cap: money.cap, inThisCompany: money.inThisCompany });
+
+  return db.transaction(async (tx) => {
+    // A cancelled order was never a pick, so the next one can still be the first.
+    const already = await tx.$count(orders, and(eq(orders.membershipId, buyer.id), ne(orders.status, "cancelled")));
+    const [order] = await tx.insert(orders).values({ membershipId: buyer.id, ticker, side: "buy", amount: dollars }).returning();
+    const [thesis] = await tx.update(theses).set({ status: "final", orderId: order.id, updatedAt: new Date() }).where(eq(theses.id, draft!.id)).returning();
+    // The coach conversation that led here now belongs to this thesis; the next pick of this company starts a new one.
+    const [talk] = await tx
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(and(eq(conversations.membershipId, buyer.id), eq(conversations.mode, "pick"), eq(conversations.ticker, ticker), isNull(conversations.thesisId)))
+      .orderBy(desc(conversations.updatedAt))
+      .limit(1);
+    if (talk) await tx.update(conversations).set({ thesisId: thesis.id }).where(eq(conversations.id, talk.id));
+    return { order, thesis, first: already === 0 };
+  });
+}
+
+/**
+ * Takes back an order that hasn't filled. Nothing was bought, so there is no
+ * fee and no hold: the money never left the index. The thesis goes back to a
+ * draft and the coach conversation reopens, so the player can pick it up again.
+ */
+export async function cancelOrder(orderId: string, membershipId: string): Promise<Order> {
+  const cancelled = await db.transaction(async (tx) => {
+    const [order] = await tx
+      .update(orders)
+      .set({ status: "cancelled" })
+      .where(and(eq(orders.id, orderId), eq(orders.membershipId, membershipId), eq(orders.status, "waiting")))
+      .returning();
+    if (!order) return null;
+    const freed = await tx.update(theses).set({ status: "draft", orderId: null }).where(eq(theses.orderId, order.id)).returning({ id: theses.id });
+    if (freed.length) await tx.update(conversations).set({ thesisId: null }).where(inArray(conversations.thesisId, freed.map((t) => t.id)));
+    return order;
+  });
+  if (!cancelled) throw new PickError("This order can't be cancelled: it has already gone through, or it isn't yours");
+  await logEvent({ level: "info", kind: "trade.cancelled", message: "A waiting order was cancelled", detail: { membershipId, orderId, ticker: cancelled.ticker, amount: cancelled.amount } });
+  return cancelled;
+}
+
+/** The fee an order will pay when it fills, at the club's rate. */
+export const feeFor = (amount: number, settings: GameSettings) => tradeFee(amount, settings);
+
+// ---- Reading picks ----
+
+/** A player's orders, newest first, each with the thesis written for it. */
+export async function ordersOf(membershipId: string) {
+  return db
+    .select({ order: orders, thesis: theses, name: companies.name })
+    .from(orders)
+    .leftJoin(theses, eq(theses.orderId, orders.id))
+    .leftJoin(companies, eq(companies.ticker, orders.ticker))
+    .where(eq(orders.membershipId, membershipId))
+    .orderBy(desc(orders.placedAt));
+}
+
+/** One order with its thesis, only for the player who placed it. */
+export async function orderOf(orderId: string, membershipId: string) {
+  const [row] = await db
+    .select({ order: orders, thesis: theses })
+    .from(orders)
+    .leftJoin(theses, eq(theses.orderId, orders.id))
+    .where(and(eq(orders.id, orderId), eq(orders.membershipId, membershipId)));
+  return row ?? null;
+}
+
+export async function orderCount(membershipId: string) {
+  return db.$count(orders, eq(orders.membershipId, membershipId));
+}
+
+/**
+ * Why clubmates bought what they bought: final theses from the same club,
+ * newest first. Theses are written to be read by the club; the dollars behind
+ * them are not shown here.
+ */
+export async function clubTheses(clubId: string, exceptMembershipId: string, limit = 8) {
+  const mates = await db
+    .select({ id: memberships.id, displayName: memberships.displayName, avatar: memberships.avatar })
+    .from(memberships)
+    .where(and(eq(memberships.clubId, clubId), ne(memberships.id, exceptMembershipId)));
+  if (!mates.length) return [];
+  const rows = await db
+    .select({ thesis: theses, name: companies.name })
+    .from(theses)
+    .leftJoin(companies, eq(companies.ticker, theses.ticker))
+    .where(and(inArray(theses.membershipId, mates.map((m) => m.id)), eq(theses.status, "final"), eq(theses.kind, "pick")))
+    .orderBy(desc(theses.updatedAt))
+    .limit(limit);
+  const byId = new Map(mates.map((m) => [m.id, m]));
+  return rows.map((r) => ({ who: byId.get(r.thesis.membershipId)!, ticker: r.thesis.ticker, officialName: r.name ?? r.thesis.ticker, text: thesisText(r.thesis) }));
+}

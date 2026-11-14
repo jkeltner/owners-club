@@ -1,0 +1,35 @@
+# Company lines
+#
+# The name players see and one plain line on what the company does, for the
+# companies the onboarding themes point at (content/themes.yaml). Every other
+# company in the game shows its official name, tidied, and its industry until
+# it gets a line here.
+#
+# Rules for a line: what you'd recognize the company by, in a few words. No
+# opinion, no numbers that go stale, nothing that sounds like a reason to buy.
+
+companies:
+  NVDA: { name: Nvidia, line: Makes the chips that power AI }
+  MSFT: { name: Microsoft, line: "Windows, Xbox, and the cloud behind ChatGPT" }
+  GOOGL: { name: Alphabet (Google), line: "Google search, YouTube, and Gemini AI" }
+  META: { name: Meta, line: "Instagram, WhatsApp, Facebook and Meta AI" }
+  AMZN: { name: Amazon, line: "Online shopping, Prime Video and the AWS cloud" }
+  AVGO: { name: Broadcom, line: Custom AI chips and networking gear }
+  AMD: { name: AMD, line: "Chips for gaming PCs, consoles and AI" }
+  LMT: { name: Lockheed Martin, line: "Fighter jets, missiles and spacecraft" }
+  NOC: { name: Northrop Grumman, line: "Stealth bombers, satellites and the James Webb telescope" }
+  RTX: { name: RTX, line: Jet engines and defense systems }
+  BA: { name: Boeing, line: "Passenger planes, plus rockets and space capsules" }
+  NKE: { name: Nike, line: "Sneakers, jerseys and sports gear" }
+  EA: { name: Electronic Arts, line: "EA Sports FC, Madden and The Sims" }
+  TTWO: { name: Take-Two Interactive, line: "Grand Theft Auto, NBA 2K and Red Dead Redemption" }
+  DIS: { name: Disney, line: "Marvel, Pixar, Disney+ and theme parks" }
+  MCD: { name: McDonald's, line: Burgers and fries in 100+ countries }
+  CMG: { name: Chipotle, line: Burritos and bowls }
+  SBUX: { name: Starbucks, line: Coffee shops in more than 80 countries }
+  KO: { name: Coca-Cola, line: "Coke, Sprite, and 200 other drink brands" }
+  PEP: { name: PepsiCo, line: "Pepsi, Gatorade, Doritos and Lay's" }
+  AAPL: { name: Apple, line: "iPhone, Mac, AirPods and the App Store" }
+  COST: { name: Costco, line: Warehouse stores with paid memberships }
+  NFLX: { name: Netflix, line: "Streaming shows, movies and live sports" }
+  TGT: { name: Target, line: Big-box stores for almost everything }
