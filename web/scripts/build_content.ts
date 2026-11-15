@@ -17,6 +17,8 @@ const themes = read("themes.yaml");
 const scenarios = read("scenarios.yaml");
 const glossary = read("glossary.yaml");
 const lessons = read("lessons.yaml");
+const companyLines = read("company_lines.yaml");
+const marketFacts = read("market_facts.yaml");
 
 const generated = {
   concepts: concepts.concepts,
@@ -27,6 +29,8 @@ const generated = {
   scenarios: scenarios.scenarios,
   glossary: glossary.terms,
   lessons: lessons.lessons,
+  company_lines: companyLines.companies,
+  market_facts: marketFacts.facts,
 };
 
 mkdirSync(path.dirname(outFile), { recursive: true });

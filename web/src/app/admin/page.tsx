@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { companies, earningsDates, financials, jobRuns, prices } from "@/db/schema";
 import { bigUsd, isPeOffScale, peLabel, usd } from "@/lib/format";
 import { getSession, isAdminEmail } from "@/lib/session";
-import { computeMetrics, onePerCompany, peBand, type CompanyMetrics } from "@/market/metrics";
+import { computeMetrics, indexPe as sumPe, onePerCompany, peBand, type CompanyMetrics } from "@/market/metrics";
 import { INDEX_FUND_TICKER } from "@/market/massive";
 import { RunStepForm } from "./run_step";
 
@@ -153,12 +153,4 @@ function SharesMark({ source }: { source: CompanyMetrics["sharesSource"] }) {
   if (source === "diluted") return <sup title="Share count is the weighted-average diluted shares, not shares outstanding">ᵈ</sup>;
   if (source === "derived") return <sup title="Share count estimated as trailing net income ÷ trailing diluted EPS">ᵉ</sup>;
   return null;
-}
-
-function sumPe(ms: CompanyMetrics[]) {
-  const withBoth = ms.filter((m) => m.marketCap != null && m.netIncomeTtm != null);
-  if (withBoth.length < 50) return null;
-  const cap = withBoth.reduce((a, m) => a + m.marketCap!, 0);
-  const earnings = withBoth.reduce((a, m) => a + m.netIncomeTtm!, 0);
-  return earnings > 0 ? Math.round((cap / earnings) * 10) / 10 : null;
 }

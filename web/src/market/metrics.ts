@@ -247,6 +247,68 @@ export function computeMetrics(rows: FinancialRow[], price: number | null): Comp
   };
 }
 
+/**
+ * The latest reported quarter on its own, for the prediction screen: a player
+ * predicts one number for the next report, so the comparison is the last one.
+ * Sales growth is against the same quarter a year earlier (four quarters back,
+ * with no quarter missing in between).
+ */
+export type LastQuarter = {
+  period: string;
+  periodEnd: string | null;
+  revenue: number | null;
+  netIncome: number | null;
+  revenueGrowth: number | null; // % vs. the same quarter a year earlier
+  eps: number | null; // diluted, for the quarter
+  netMargin: number | null; // %
+};
+
+export function lastQuarter(rows: FinancialRow[]): LastQuarter | null {
+  const qs = quarters(rows);
+  const q = qs[0];
+  if (!q) return null;
+  const yearAgo = qs.length >= 5 && contiguous(qs.slice(0, 5)) ? qs[4] : null;
+  const growth = q.revenue != null && yearAgo?.revenue ? round1(((q.revenue - yearAgo.revenue) / yearAgo.revenue) * 100) : null;
+  return {
+    period: q.period,
+    periodEnd: q.periodEnd,
+    revenue: q.revenue,
+    netIncome: q.netIncome,
+    revenueGrowth: growth,
+    eps: q.epsDiluted != null ? round2(q.epsDiluted) : null,
+    netMargin: q.netIncome != null && q.revenue ? round1((q.netIncome / q.revenue) * 100) : null,
+  };
+}
+
+/** Profit for each of the last four quarters, newest first: what a P/E "over 100" is explained from. */
+export function recentProfits(rows: FinancialRow[]): { periodEnd: string; netIncome: number }[] {
+  return quarters(rows)
+    .slice(0, 4)
+    .filter((q) => q.netIncome != null && q.periodEnd)
+    .map((q) => ({ periodEnd: q.periodEnd!, netIncome: q.netIncome! }));
+}
+
+/**
+ * The whole index's P/E: every member's market value over every member's
+ * trailing profit (losses included), one row per company. Null until most of
+ * the index has both numbers.
+ */
+export function indexPe(ms: Pick<CompanyMetrics, "marketCap" | "netIncomeTtm">[]): number | null {
+  const withBoth = ms.filter((m) => m.marketCap != null && m.netIncomeTtm != null);
+  if (withBoth.length < 50) return null;
+  const cap = withBoth.reduce((a, m) => a + m.marketCap!, 0);
+  const earnings = withBoth.reduce((a, m) => a + m.netIncomeTtm!, 0);
+  return earnings > 0 ? round1(cap / earnings) : null;
+}
+
+/** Share of the index's value in its `n` biggest companies, in percent. */
+export function topShare(ms: Pick<CompanyMetrics, "marketCap">[], n = 10): number | null {
+  const caps = ms.map((m) => m.marketCap).filter((c): c is number => c != null && c > 0).sort((a, b) => b - a);
+  if (caps.length < 50) return null;
+  const total = caps.reduce((a, c) => a + c, 0);
+  return round1((caps.slice(0, n).reduce((a, c) => a + c, 0) / total) * 100);
+}
+
 /** The share count for the market cap, and where it came from (see CompanyMetrics). */
 export function shareCount(rows: FinancialRow[], netIncomeTtm: number | null, epsTtm: number | null): { count: number; source: SharesSource } | null {
   const newest = (f: "sharesOutstanding" | "sharesDiluted", keep: (r: FinancialRow) => boolean = () => true) =>

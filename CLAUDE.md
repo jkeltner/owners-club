@@ -18,6 +18,8 @@ A stock-picking game for teens (13 and up) and their friends that rewards unders
   - `themes.yaml`: onboarding themes
   - `glossary.yaml`: plain definitions for on-screen terms that aren't concepts
   - `lessons.yaml`: the three-round lesson for each concept that has one
+  - `company_lines.yaml`: the name players see and one plain line for the companies the themes point at
+  - `market_facts.yaml`: the few looked-up numbers on the market screen, each with its source and date
 - `prototype/`: the clickable prototype (create it here).
 - `docs/playtests/`: one dated Markdown file per playtest session.
 - `docs/feedback_review.md`: how tester notes become GitHub issues and get a daily Claude review (`scripts/review_feedback.sh`, skill `.claude/skills/review-feedback/`).
@@ -26,7 +28,7 @@ A stock-picking game for teens (13 and up) and their friends that rewards unders
 
 ## Current task
 
-The clickable prototype in `prototype/` is done and live at owners-club-alpha.vercel.app; tester notes still arrive as GitHub issues and get the daily review. The next task is the real build in `web/`, by the phases in `docs/build_plan.md`. Its decisions were settled on 2026-11-09; phase 0 shipped the same day and phase 1 (the market-data layer: `web/src/market/`, `web/src/jobs/`, the `/admin` data page) is under way. Progress notes go in `docs/build_log.md`, one section per phase.
+The clickable prototype in `prototype/` is done and live at owners-club-alpha.vercel.app; tester notes still arrive as GitHub issues and get the daily review. The next task is the real build in `web/`, by the phases in `docs/build_plan.md`. Its decisions were settled on 2026-11-09; phase 0 shipped the same day and phase 1 (the market-data layer: `web/src/market/`, `web/src/jobs/`, the `/admin` data page) is under way. Phase 2 (accounts, clubs, the first 15 minutes) is built in three slices: (a) accounts and clubs is live at playownersclub.com; (b) the onboarding screens up to a placed order (`web/src/app/clubs/[id]/(game)/`, `web/src/coach/`, `web/src/game/`, `web/src/market/read.ts`); (c) fills by the nightly job. Progress notes go in `docs/build_log.md`, one section per phase.
 
 ## Product rules the code must respect
 

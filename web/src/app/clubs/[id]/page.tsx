@@ -1,10 +1,13 @@
-// The club's page: who's in it, the invite link and the rules. The portfolio,
-// board and feed land here in the next phases.
+// The club's page: your picks, who's in it, the invite link and the rules.
+// The portfolio, board and feed land here in the next phases.
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { canManageClub } from "@/clubs/access";
 import { INVITE_DAYS, liveInvites, membershipIn, roster } from "@/clubs/clubs";
+import { ordersOf } from "@/game/picks";
 import { baseURL } from "@/lib/auth_options";
+import { usd } from "@/lib/format";
+import { displayName } from "@/market/names";
 import { requireUser } from "@/lib/session";
 import { AvatarPicker } from "../../components/pickers";
 import { SettingsFields } from "../../components/settings_fields";
@@ -23,7 +26,7 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
   if (!mine) notFound(); // not your club: it doesn't exist as far as you can tell
   const { club, membership } = mine;
   const organizer = canManageClub(membership);
-  const [members, invites] = await Promise.all([roster(club.id), organizer ? liveInvites(club.id) : []]);
+  const [members, invites, picks] = await Promise.all([roster(club.id), organizer ? liveInvites(club.id) : [], membership.plays ? ordersOf(membership.id) : []]);
   const s = club.settings;
 
   return (
@@ -35,9 +38,37 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
       <h1>{club.name}</h1>
       {problem && <p className="problem">{problem}</p>}
       <p className="sub">
-        {members.length === 1 ? "Just you so far." : `${members.length} people.`} The game itself (picks, portfolios, the board) is being built; this is the club
-        and its rules.
+        {members.length === 1 ? "Just you so far." : `${members.length} people.`} You can make picks now. Your portfolio and the club&apos;s board are being built.
       </p>
+
+      {membership.plays && (
+        <section className="card stack">
+          <h2>Your picks</h2>
+          {picks.length === 0 ? (
+            <p>
+              You start with $10,000 of pretend money in the S&amp;P 500, a basket of 500 big American companies. A pick moves some of it into one company you can
+              explain.
+            </p>
+          ) : (
+            <ul className="roster">
+              {picks.map(({ order, name }) => (
+                <li key={order.id}>
+                  <span className="who">
+                    <Link href={`/clubs/${club.id}/orders/${order.id}`}>{displayName(order.ticker, name ?? order.ticker)}</Link>
+                    <span className="tag">
+                      {order.status === "waiting" ? "buys at the next market close" : order.status === "filled" ? `bought ${order.fillDate}` : order.status === "cancelled" ? "cancelled" : "didn't go through"}
+                    </span>
+                  </span>
+                  <span>{usd(order.amount)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link className="button" href={`/clubs/${club.id}/${picks.length ? "pick" : "start"}`}>
+            {picks.length ? "Make another pick" : "Make your first pick"}
+          </Link>
+        </section>
+      )}
 
       <section className="card">
         <h2>Who&apos;s in</h2>

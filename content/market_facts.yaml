@@ -1,0 +1,49 @@
+# Market facts
+#
+# The few numbers on the "You already own the market" screen that we look up
+# rather than compute (docs/data_needs.md, part A). Each one carries its source
+# and the date it was true, so a reviewer can check it and a yearly refresh
+# knows what to replace. The screens say "about", and round.
+#
+# Not here, because the app computes them from its own data every night:
+# the S&P 500's P/E, each sector's usual P/E range, and the share of the
+# S&P 500 in its 10 biggest companies.
+
+facts:
+
+  us_listed_companies:
+    value: 3900
+    says: US companies whose shares trade on a US stock market
+    source: World Bank, listed domestic companies (3,908 in 2025)
+    url: https://data.worldbank.org/indicator/CM.MKT.LDOM.NO?locations=US
+    as_of: 2025-12-31
+
+  us_listed_companies_1996:
+    value: 8090
+    says: the same count at its peak, in 1996
+    source: World Bank, listed domestic companies
+    url: https://data.worldbank.org/indicator/CM.MKT.LDOM.NO?locations=US
+    as_of: 1996-12-31
+
+  sp500_share_of_us_market_pct:
+    value: 80
+    says: the S&P 500's share of the value of all US stocks
+    source: S&P Dow Jones Indices ("covers approximately 80% of available market capitalization")
+    url: https://www.spglobal.com/spdji/en/indices/equity/sp-500/
+    as_of: 2026-11-13
+
+  long_run_return_pct:
+    value: 10
+    says: the S&P 500's average yearly return since 1957, with dividends put back in
+    source: Widely published history of the index's total return (about 10.4% a year, April 1957 to April 2025); to be replaced by our own computation from index history
+    url: https://www.spglobal.com/spdji/en/indices/equity/sp-500/
+    as_of: 2025-04-30
+
+  # Apollo's count has moved: 87% private in April 2024, 86% in November 2024,
+  # 81% in the February 2026 chart book. 81% private is 19% public: about 1 in 5.
+  public_one_in:
+    value: 5
+    says: of US companies with more than $100 million in yearly sales, about 1 in this many sells shares to the public
+    source: Apollo, "Public vs. private" chart book, February 2026 (S&P Capital IQ counts; 81% of such firms are private)
+    url: https://www.apolloacademy.com/wp-content/uploads/2026/02/020726_Public-VS-Private_Chart-Book_v3.pdf
+    as_of: 2026-02-07
