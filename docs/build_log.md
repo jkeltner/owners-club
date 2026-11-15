@@ -173,3 +173,30 @@ Under it: tables `orders`, `theses`, `conversations` and `messages` (migration 0
 - Market holidays aren't known ahead of time, so on a holiday (Thanksgiving, say) an order placed that day locks at 4 pm but fills at the next open day's close. Jeff, 2026-11-15: known quirk, no fix for now. The order page names the next weekday and adds "or the next day the market is open"; the fill step waits for a day that has closes. Days the market closes early (1 pm) are treated as 4 pm.
 - A company with no close on a day the market was open (a trading halt) waits for its next close.
 - Two runs of the job at the same moment could both read a player's lots before either writes. The cron runs once a night and a hand run is one click, so this is left alone; each order still fills only once.
+
+## Phase 3: portfolio, board, feed (started 2026-11-15)
+
+### Slice a: the portfolio page and selling (2026-11-15, branch `phase3/portfolio_and_selling`)
+
+Jeff's call (2026-11-15): portfolio and selling first, the board and the feed after. He is testing alone before anyone else is invited.
+
+**What a player gets.**
+
+- **Portfolio** (`/clubs/[id]/portfolio`, linked from the club page): what it's worth at the last close, the tax if it were all sold, the after-tax value; that return beside the same $10,000 left in the index; fees and taxes paid; every holding with its share of the whole, its gain, the tax selling it would cost, when it unlocks and when its tax rate drops; orders waiting for the close; a chart of how the mix has changed day by day; the list of trades.
+- **Selling** (`/clubs/[id]/company/[ticker]/sell`, from the "Sell?" button on an unlocked holding): a slider in dollars at the last close, the lines of what the sale would cost (fee, tax or tax back, what goes into the index), and the "sell now vs. wait" pair when waiting for the 6-month line would lower the tax. The order waits for the close like a buy, can be cancelled until then, and its page shows the real lines afterwards.
+
+**How it works.**
+
+- **A sell is placed in shares.** The dollars on the slider become shares at the last close; the close decides what they bring in.
+- **Oldest shares first, and only shares past the hold.** A holding bought in two goes can be partly locked; the screen says how much and until when.
+- **The money goes back to the index** as a new lot dated that day, after the fee and the tax.
+- **Buys and sells fill together, oldest order first.**
+- **One row a day per player** (`portfolio_days`, migration `0006`), written at the end of the fills step from the same function the page uses.
+
+**Not in this slice.** The board, clubmates' portfolios, the feed. On the portfolio page: the weighted P/E line on the drift chart, "what drove each gain", per-holding price charts, and the coach's prompt when a hold ends. A coach conversation before selling (the prototype had one) waits for the live coach in phase 4.
+
+**Known gaps.**
+
+- The drift chart starts the night this ships; it has no days before that, and a night the job misses leaves a gap.
+- The hold is counted in calendar days from the day a pick filled, so a pick can unlock on a weekend and be sold at Monday's close.
+- "After tax" doesn't subtract the 0.5% fee a full sale would cost.

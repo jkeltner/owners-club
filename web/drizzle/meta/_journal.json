@@ -43,6 +43,13 @@
       "when": 1794704108369,
       "tag": "0005_secret_korvac",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794782154096,
+      "tag": "0006_green_korg",
+      "breakpoints": true
     }
   ]
 }

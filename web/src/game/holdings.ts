@@ -1,8 +1,9 @@
 // What a player holds and what it is worth at a close. Lots are written only
 // by the fill step (fills.ts); everything else reads them through here.
-import { and, desc, eq, gt, lte } from "drizzle-orm";
+import { and, desc, eq, gt, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { lots, prices } from "@/db/schema";
+import { lots, orders, prices } from "@/db/schema";
+import type { Realized } from "./ledger";
 import { INDEX_TICKER, round2 } from "@/lib/rules";
 import { INDEX_FUND_TICKER } from "@/market/massive";
 
@@ -56,4 +57,18 @@ export async function holdingsOf(membershipId: string, date?: string, from: Read
   const holdings = [...byTicker.values()].map((h) => ({ ...h, cost: round2(h.cost), value: round2(h.price == null ? h.cost : h.shares * h.price) }));
   const dates = [...closes.values()].map((c) => c.date).sort();
   return { holdings, total: round2(holdings.reduce((a, h) => a + h.value, 0)), asOf: dates.at(-1) ?? null };
+}
+
+/** Gains made real, and tax and fees paid, by a player's filled orders so far. */
+export async function taxLedger(membershipId: string, from: Reader = db): Promise<{ realized: Realized; paid: number; fees: number }> {
+  const [row] = await from
+    .select({
+      short: sql<number>`coalesce(sum(${orders.gainShort}), 0)`,
+      long: sql<number>`coalesce(sum(${orders.gainLong}), 0)`,
+      paid: sql<number>`coalesce(sum(${orders.tax}), 0)`,
+      fees: sql<number>`coalesce(sum(${orders.fee}), 0)`,
+    })
+    .from(orders)
+    .where(and(eq(orders.membershipId, membershipId), eq(orders.status, "filled")));
+  return { realized: { short: Number(row.short), long: Number(row.long) }, paid: Number(row.paid), fees: Number(row.fees) };
 }

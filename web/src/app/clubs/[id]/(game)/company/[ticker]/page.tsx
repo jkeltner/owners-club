@@ -32,7 +32,7 @@ export default async function Company({ params }: { params: Promise<{ id: string
   const range = usualPe(l?.kind, market);
   const kind = l ? sectorPlural(l.kind) : undefined;
   const lensRows = l ? [l.look_first, ...l.then] : [];
-  const waiting = mine.filter((o) => o.order.ticker === c.ticker && o.order.status === "waiting").reduce((a, o) => a + o.order.amount, 0);
+  const waiting = mine.filter((o) => o.order.ticker === c.ticker && o.order.status === "waiting" && o.order.side === "buy").reduce((a, o) => a + o.order.amount, 0);
   const owned = mineHeld.holdings.find((h) => h.ticker === c.ticker);
   const first = c.series[0];
   const change = first && c.price != null && c.series.length > 1 ? (c.price / first.close - 1) * 100 : null;
@@ -45,7 +45,7 @@ export default async function Company({ params }: { params: Promise<{ id: string
       <p className="muted">{c.line}</p>
       {owned && (
         <p className="notice">
-          You own {usd(owned.value)} of {c.name} at the last close. You put in {usd(owned.cost)}.
+          You own {usd(owned.value)} of {c.name} at the last close. You put in {usd(owned.cost)}. <Link href={clubPath(id, "/portfolio")}>See it in your portfolio</Link>
         </p>
       )}
       {waiting > 0 && (

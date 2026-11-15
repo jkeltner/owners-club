@@ -14,5 +14,4 @@ export async function requirePlayer(clubId: string, path: string) {
   return { user, experience, club: mine.club, membership: mine.membership };
 }
 
-export const clubPath = (clubId: string, rest = "") => `/clubs/${clubId}${rest}`;
-export const companyPath = (clubId: string, ticker: string, rest = "") => `/clubs/${clubId}/company/${encodeURIComponent(ticker)}${rest}`;
+export { clubPath, companyPath } from "./paths";

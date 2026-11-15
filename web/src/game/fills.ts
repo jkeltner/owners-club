@@ -9,8 +9,9 @@ import { clubs, companies, conversations, lots, memberships, orders, prices, the
 import { logEvent } from "@/lib/events";
 import { INDEX_TICKER, STARTING_VALUE, type GameSettings } from "@/lib/rules";
 import { INDEX_FUND_TICKER } from "@/market/massive";
-import { holdingsOf, openLots } from "./holdings";
-import { fillDay, planBuy, type Realized } from "./ledger";
+import { holdingsOf, openLots, taxLedger } from "./holdings";
+import { fillDay, planBuy, planSell } from "./ledger";
+import { snapshotDay } from "./portfolio";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -47,15 +48,6 @@ export async function openPortfolios(): Promise<{ opened: number; waitingForAClo
   return { opened, waitingForAClose: fresh.length - opened };
 }
 
-/** Gains made real and tax paid by a player's fills so far. */
-async function taxLedger(tx: Tx, membershipId: string): Promise<{ realized: Realized; paid: number }> {
-  const [row] = await tx
-    .select({ short: sql<number>`coalesce(sum(${orders.gainShort}), 0)`, long: sql<number>`coalesce(sum(${orders.gainLong}), 0)`, paid: sql<number>`coalesce(sum(${orders.tax}), 0)` })
-    .from(orders)
-    .where(and(eq(orders.membershipId, membershipId), eq(orders.status, "filled")));
-  return { realized: { short: Number(row.short), long: Number(row.long) }, paid: Number(row.paid) };
-}
-
 /** An order that can't go through: marked, and its thesis handed back as a draft with its conversation. */
 export async function releaseThesis(tx: Tx, orderId: string) {
   const freed = await tx.update(theses).set({ status: "draft", orderId: null }).where(eq(theses.orderId, orderId)).returning({ id: theses.id });
@@ -66,14 +58,14 @@ const dollars = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDi
 
 export type FillSummary = { filled: number; trimmed: number; rejected: number; stillWaiting: number };
 
-/** Fills waiting buy orders, oldest first, each at the first close after it was placed. */
+/** Fills waiting orders, buys and sells together, oldest first, each at the first close after it was placed. */
 export async function fillOrders(): Promise<FillSummary> {
   const waiting = await db
     .select({ order: orders, settings: clubs.settings })
     .from(orders)
     .innerJoin(memberships, eq(memberships.id, orders.membershipId))
     .innerJoin(clubs, eq(clubs.id, memberships.clubId))
-    .where(and(eq(orders.status, "waiting"), eq(orders.side, "buy")))
+    .where(eq(orders.status, "waiting"))
     .orderBy(asc(orders.placedAt));
   const out: FillSummary = { filled: 0, trimmed: 0, rejected: 0, stillWaiting: 0 };
   for (const { order, settings } of waiting) {
@@ -82,7 +74,8 @@ export async function fillOrders(): Promise<FillSummary> {
       out.stillWaiting++;
       continue;
     }
-    const result = await fillBuy(order, settings, day.date, day.closes.get(order.ticker)!, day.closes.get(INDEX_FUND_TICKER)!);
+    const fill = order.side === "sell" ? fillSell : fillBuy;
+    const result = await fill(order, settings, day.date, day.closes.get(order.ticker)!, day.closes.get(INDEX_FUND_TICKER)!);
     out[result]++;
     if (result === "trimmed") out.filled++;
   }
@@ -103,7 +96,7 @@ async function fillBuy(order: typeof orders.$inferSelect, settings: GameSettings
     const indexLots = open.filter((l) => l.ticker === INDEX_TICKER && l.boughtOn <= date);
     if (!indexLots.length) return "stillWaiting" as const; // the portfolio hasn't opened yet; openPortfolios runs first
     const { holdings, total } = await holdingsOf(order.membershipId, date, tx);
-    const ledger = await taxLedger(tx, order.membershipId);
+    const ledger = await taxLedger(order.membershipId, tx);
     const plan = planBuy({
       amount: order.amount,
       price,
@@ -137,9 +130,50 @@ async function fillBuy(order: typeof orders.$inferSelect, settings: GameSettings
   return outcome;
 }
 
-/** The whole step, in order: portfolios open before orders fill against them. */
+const sharesText = (n: number) => n.toFixed(3);
+
+async function fillSell(order: typeof orders.$inferSelect, settings: GameSettings, date: string, price: number, indexPrice: number): Promise<"filled" | "trimmed" | "rejected" | "stillWaiting"> {
+  const outcome = await db.transaction(async (tx) => {
+    const reject = async (note: string) => {
+      const done = await tx.update(orders).set({ status: "rejected", fillDate: date, note }).where(and(eq(orders.id, order.id), eq(orders.status, "waiting"))).returning({ id: orders.id });
+      return done.length ? ("rejected" as const) : ("stillWaiting" as const);
+    };
+    const open = (await openLots(order.membershipId, tx)).filter((l) => l.ticker === order.ticker && l.boughtOn <= date);
+    const ledger = await taxLedger(order.membershipId, tx);
+    const plan = planSell({ shares: order.askedShares ?? 0, price, indexPrice, lots: open, date, realizedBefore: ledger.realized, taxPaid: ledger.paid, settings });
+    if (!plan.ok) return reject(plan.reason);
+    const note = plan.trimmed ? `You asked to sell ${sharesText(order.askedShares ?? 0)} shares. At that close ${sharesText(plan.shares)} could be sold, so that is what sold.` : null;
+    const done = await tx
+      .update(orders)
+      .set({ status: "filled", fillDate: date, fillPrice: price, fee: plan.fee, filledAmount: plan.proceeds, shares: plan.shares, gainShort: plan.realized.short, gainLong: plan.realized.long, tax: plan.tax, note })
+      .where(and(eq(orders.id, order.id), eq(orders.status, "waiting")))
+      .returning({ id: orders.id });
+    if (!done.length) return "stillWaiting" as const;
+    for (const c of plan.changes) await tx.update(lots).set({ shares: c.shares, cost: c.cost }).where(eq(lots.id, c.id));
+    // What the sale brought in, less the fee and the tax, goes back into the index as money that arrived today.
+    await tx.insert(lots).values({ membershipId: order.membershipId, ticker: INDEX_TICKER, shares: plan.indexShares, cost: plan.into, boughtOn: date, orderId: order.id });
+    return plan.trimmed ? ("trimmed" as const) : ("filled" as const);
+  });
+  if (outcome === "rejected") await logEvent({ level: "info", kind: "trade.rejected", message: "A sell didn't go through at the close", detail: { membershipId: order.membershipId, orderId: order.id, ticker: order.ticker, shares: order.askedShares, date } });
+  return outcome;
+}
+
+/** Writes each open portfolio's row for the latest close: what the board and the drift chart read. */
+export async function snapshotPortfolios(): Promise<{ snapshots: number }> {
+  const players = await db
+    .select({ id: memberships.id, settings: clubs.settings })
+    .from(memberships)
+    .innerJoin(clubs, eq(clubs.id, memberships.clubId))
+    .where(and(eq(memberships.plays, true), sql`exists (select 1 from ${lots} where ${lots.membershipId} = ${memberships.id})`));
+  let snapshots = 0;
+  for (const p of players) if (await snapshotDay(p.id, p.settings)) snapshots++;
+  return { snapshots };
+}
+
+/** The whole step, in order: portfolios open before orders fill against them, and the day is recorded last. */
 export async function runFills() {
   const portfolios = await openPortfolios();
   const fills = await fillOrders();
-  return { ...portfolios, ...fills };
+  const days = await snapshotPortfolios();
+  return { ...portfolios, ...fills, ...days };
 }

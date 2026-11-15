@@ -108,3 +108,23 @@ export function PeScale({ pe, market, range, sector }: { pe: number; market: num
     </div>
   );
 }
+
+// How the mix changed: one stacked band per holding, each day's bands adding
+// up to the whole portfolio. `order` is bottom to top.
+export function DriftChart({ days, order, colors }: { days: { date: string; shares: Record<string, number> }[]; order: string[]; colors: Record<string, string> }) {
+  const w = 340;
+  const h = 150;
+  const n = days.length;
+  const x = (i: number) => (n === 1 ? w : (i / (n - 1)) * w);
+  return (
+    <svg className="chart" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" role="img" aria-label="How much of your money was in each holding, day by day">
+      {order.map((key, li) => {
+        const lower = days.map((d) => order.slice(0, li).reduce((a, k) => a + (d.shares[k] ?? 0), 0));
+        const upper = days.map((d, i) => lower[i] + (d.shares[key] ?? 0));
+        const top = upper.map((v, i) => `${x(i)},${h - v * h}`);
+        const bottom = lower.map((v, i) => `${x(i)},${h - v * h}`).reverse();
+        return <polygon key={key} points={[...top, ...bottom].join(" ")} fill={colors[key]} />;
+      })}
+    </svg>
+  );
+}
