@@ -5,7 +5,7 @@
 import { redirect } from "next/navigation";
 import { coachTurn, openConversation, type Turn } from "@/coach/conversations";
 import { numberStarters, type Parts } from "@/game/thesis_text";
-import { cancelOrder, PickError, placeBuy, saveDraft } from "@/game/picks";
+import { cancelOrder, PickError, placeBuy, placeSell, saveDraft } from "@/game/picks";
 import { companyCards, companyView, searchCards, type CompanyCard } from "@/market/read";
 import { clubPath, companyPath, requirePlayer } from "./_lib/player";
 
@@ -83,4 +83,19 @@ export async function cancelWaitingOrder(_prev: FormState, f: FormData): Promise
     throw err;
   }
   redirect(here);
+}
+
+/** Places a sell order. It waits for the next market close, like a buy. */
+export async function sell(_prev: FormState, f: FormData): Promise<FormState> {
+  const clubId = str(f, "clubId");
+  const ticker = str(f, "ticker");
+  const { membership, club } = await requirePlayer(clubId, companyPath(clubId, ticker, "/sell"));
+  let orderId: string;
+  try {
+    orderId = (await placeSell(membership, club.settings, ticker, Number(str(f, "amount")))).id;
+  } catch (err) {
+    if (err instanceof PickError) return { problem: err.message };
+    throw err;
+  }
+  redirect(clubPath(clubId, `/orders/${orderId}`));
 }

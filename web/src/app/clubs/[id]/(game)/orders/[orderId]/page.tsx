@@ -30,6 +30,75 @@ export default async function Done({ params, searchParams }: { params: Promise<{
   const locked = waiting && closeHasPassed(order.placedAt);
   const day = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
 
+  if (order.side === "sell") {
+    const gain = (order.gainShort ?? 0) + (order.gainLong ?? 0);
+    const back = (order.filledAmount ?? 0) - (order.fee ?? 0) - (order.tax ?? 0);
+    return (
+      <Page className="done-screen">
+        <Card>
+          <p className="eyebrow">
+            {order.status === "filled" ? "Sold" : order.status === "cancelled" ? "Sell cancelled" : order.status === "rejected" ? "Sell didn't go through" : "Selling"}
+          </p>
+          <h1>
+            {order.status === "filled" ? `${usd(order.filledAmount ?? 0, true)} of ${name}` : `About ${usd(order.amount)} of ${name}`}
+          </h1>
+          {order.status === "filled" && order.fillDate && (
+            <>
+              <dl className="fill-lines">
+                <div>
+                  <dt>
+                    Sold {(order.shares ?? 0).toFixed(3)} shares at {usd(order.fillPrice ?? 0, true)}
+                  </dt>
+                  <dd>{usd(order.filledAmount ?? 0, true)}</dd>
+                </div>
+                <div>
+                  <dt>Fee</dt>
+                  <dd>−{usd(order.fee ?? 0, true)}</dd>
+                </div>
+                <div>
+                  <dt>
+                    {(order.tax ?? 0) > 0
+                      ? `Tax on the ${usd(gain, true)} these shares gained`
+                      : (order.tax ?? 0) < 0
+                        ? `Tax back, because these shares lost ${usd(-gain, true)} and you'd paid tax on gains before`
+                        : gain > 0
+                          ? `No tax: your earlier losses covered the ${usd(gain, true)} gain`
+                          : gain < 0
+                            ? `No tax: these shares lost ${usd(-gain, true)}, which will lower the tax on later gains`
+                            : "No tax: these shares hadn't gained"}
+                  </dt>
+                  <dd>
+                    {(order.tax ?? 0) > 0 ? "−" : (order.tax ?? 0) < 0 ? "+" : ""}
+                    {usd(Math.abs(order.tax ?? 0), true)}
+                  </dd>
+                </div>
+                <div className="fill-total">
+                  <dt>Went back into your S&amp;P 500 index fund</dt>
+                  <dd>{usd(back, true)}</dd>
+                </div>
+              </dl>
+              <p className="muted small">Sold at the close on {day(order.fillDate)}.</p>
+            </>
+          )}
+          {order.note && <p className="notice">{order.note}</p>}
+          {order.status === "waiting" && (
+            <p className="muted">
+              {locked
+                ? "The market has closed on this order. It goes through overnight, at that closing price."
+                : `Your sell goes through at the market close on ${day(fillDay(order.placedAt))} (4 pm in New York), or the next day the market is open. You're selling ${(order.askedShares ?? 0).toFixed(3)} shares at whatever the price is then, so the dollars will be a little different. Until then you still own them, and you can still cancel.`}
+            </p>
+          )}
+          {order.status === "cancelled" && <p className="muted">You cancelled this before the market closed, so nothing was sold. You still own the shares, and there was no fee or tax.</p>}
+          {order.status === "rejected" && <p className="muted">Nothing was sold, so you still own what you had, and there was no fee or tax.</p>}
+        </Card>
+        <Link className="btn btn-primary" href={clubPath(id, "/portfolio")}>
+          Back to your portfolio
+        </Link>
+        {waiting && !locked && <CancelForm clubId={id} orderId={order.id} amount={usd(order.amount)} name={name} selling />}
+      </Page>
+    );
+  }
+
   if (order.status === "cancelled") {
     return (
       <Page className="done-screen">
@@ -139,8 +208,8 @@ export default async function Done({ params, searchParams }: { params: Promise<{
         </p>
       </Card>
 
-      <Link className="btn btn-primary" href={clubPath(id)}>
-        Back to the club
+      <Link className="btn btn-primary" href={clubPath(id, "/portfolio")}>
+        See your portfolio
       </Link>
       <Link className="btn btn-ghost" href={clubPath(id, "/pick")}>
         Make another pick

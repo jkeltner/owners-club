@@ -38,12 +38,12 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
       <h1>{club.name}</h1>
       {problem && <p className="problem">{problem}</p>}
       <p className="sub">
-        {members.length === 1 ? "Just you so far." : `${members.length} people.`} You can make picks now. Your portfolio and the club&apos;s board are being built.
+        {members.length === 1 ? "Just you so far." : `${members.length} people.`} You can make picks and see your portfolio now. The club&apos;s board is being built.
       </p>
 
       {membership.plays && (
         <section className="card stack">
-          <h2>Your picks</h2>
+          <h2>Your picks and trades</h2>
           {picks.length === 0 ? (
             <p>
               You start with $10,000 of pretend money in the S&amp;P 500, a basket of 500 big American companies. A pick moves some of it into one company you can
@@ -56,7 +56,15 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
                   <span className="who">
                     <Link href={`/clubs/${club.id}/orders/${order.id}`}>{displayName(order.ticker, name ?? order.ticker)}</Link>
                     <span className="tag">
-                      {order.status === "waiting" ? "buys at the next market close" : order.status === "filled" && order.fillDate ? `bought ${new Date(`${order.fillDate}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}` : order.status === "cancelled" ? "cancelled" : "didn't go through"}
+                      {order.side === "sell"
+                        ? order.status === "waiting"
+                          ? "sells at the next market close"
+                          : order.status === "filled" && order.fillDate
+                            ? `sold ${new Date(`${order.fillDate}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`
+                            : order.status === "cancelled"
+                              ? "sell cancelled"
+                              : "sell didn't go through"
+                        : order.status === "waiting" ? "buys at the next market close" : order.status === "filled" && order.fillDate ? `bought ${new Date(`${order.fillDate}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}` : order.status === "cancelled" ? "cancelled" : "didn't go through"}
                     </span>
                   </span>
                   <span>{usd(order.filledAmount ?? order.amount)}</span>
@@ -64,6 +72,9 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
               ))}
             </ul>
           )}
+          <Link className="button secondary" href={`/clubs/${club.id}/portfolio`}>
+            See your portfolio
+          </Link>
           <Link className="button" href={`/clubs/${club.id}/${picks.length ? "pick" : "start"}`}>
             {picks.length ? "Make another pick" : "Make your first pick"}
           </Link>

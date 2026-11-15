@@ -394,3 +394,36 @@
 .game .fill-lines dt { color: var(--muted, #6b6b76); }
 .game .fill-lines dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .game .fill-lines .fill-total dt { color: inherit; font-weight: 700; }
+
+/* ---- Portfolio and selling ---- */
+.game .three-numbers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; padding: 14px 8px; }
+.game .three-numbers small { display: block; font-size: 12px; color: var(--ink-2); font-weight: 700; }
+.game .three-numbers b { font-family: var(--display); font-size: 21px; font-weight: 800; }
+.game .three-numbers .key { background: var(--primary-2); border-radius: 12px; padding: 6px 2px; }
+.game .three-numbers .key b { color: var(--primary); }
+.game .vs-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 5px 0; }
+.game .vs-row b { font-family: var(--display); font-size: 18px; white-space: nowrap; }
+.game .vs-row.total { border-top: 1.5px solid var(--line); margin-top: 4px; padding-top: 9px; }
+.game .vs-row.total b { color: var(--primary); font-size: 22px; }
+.game .holding { padding: 12px 14px; margin: 8px 0; }
+.game .holding-top { display: flex; align-items: center; gap: 10px; }
+.game .swatch { width: 12px; height: 36px; border-radius: 6px; flex: none; }
+.game .holding-name, .game .holding-value { display: flex; flex-direction: column; }
+.game .holding-name { flex: 1; }
+.game .holding-value { text-align: right; }
+.game .holding small { color: var(--ink-2); font-size: 13px; }
+.game .holding-tax { font-size: 13.5px; margin: 8px 0 0; color: var(--ink-2); }
+.game .holding-tax b { color: var(--ink); }
+.game .holding-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.game .tag { font-size: 12px; font-weight: 700; background: var(--bg); border-radius: 8px; padding: 4px 8px; color: var(--ink-2); }
+.game .tag.lock { background: var(--gold-2); color: #9a6400; }
+.game .holding .btn { padding: 10px; font-size: 16px; margin-top: 10px; }
+.game .trade-list { list-style: none; margin: 0; padding: 0; }
+.game .trade-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.game .trade-list li:last-child { border-bottom: 0; }
+.game .sell-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.game .sell-option { text-align: center; padding: 16px 10px; margin: 8px 0; }
+.game .sell-option small { font-weight: 800; text-transform: uppercase; font-size: 12px; letter-spacing: .05em; color: var(--ink-2); }
+.game .sell-option .keep { font-family: var(--display); font-size: 30px; font-weight: 800; margin-top: 6px; }
+.game .sell-option p { margin: 0 0 8px; color: var(--ink-2); }
+.game .sell-option.later { border-color: var(--mint); }

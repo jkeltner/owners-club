@@ -154,3 +154,97 @@ export function planBuy(b: BuyInput): BuyPlan {
   if (into <= 0) return { ok: false, reason: "The fee and tax would have used up the whole amount" };
   return { ok: true, moved, trimmedBy, fee, tax, realized: sale.realized, into, shares: into / b.price, indexChanges: sale.changes };
 }
+
+// ---- A sell ----
+
+const addDaysTo = (date: string, n: number) => new Date(Date.parse(`${date}T00:00:00Z`) + n * DAY).toISOString().slice(0, 10);
+
+/** The first day a lot can be sold: its purchase day plus the club's minimum hold. */
+export const unlockDay = (boughtOn: string, s: GameSettings) => addDaysTo(boughtOn, s.minHoldDays);
+/** The first day a lot's gain is taxed at the lower rate. */
+export const longTermDay = (boughtOn: string, s: GameSettings) => addDaysTo(boughtOn, s.longTermAfterDays);
+
+/** The lots whose minimum hold is over by `onDate`. */
+export const sellableLots = <L extends { boughtOn: string }>(lots: L[], onDate: string, s: GameSettings) => lots.filter((l) => unlockDay(l.boughtOn, s) <= onDate);
+
+/** The lots with `shares` taken off the oldest first: what is left to sell once a waiting sell has its share. */
+export function lessShares(lots: OpenLot[], shares: number): OpenLot[] {
+  const left: OpenLot[] = [];
+  let taken = Math.max(0, shares);
+  for (const l of [...lots].sort((a, b) => a.boughtOn.localeCompare(b.boughtOn))) {
+    const out = Math.min(l.shares, taken);
+    taken -= out;
+    if (l.shares - out > 1e-9) left.push({ id: l.id, shares: l.shares - out, cost: l.cost * (1 - out / l.shares), boughtOn: l.boughtOn });
+  }
+  return left;
+}
+
+export type SellInput = {
+  shares: number; // what the player asked to sell
+  price: number; // the company's close
+  indexPrice: number; // the index fund's close
+  lots: OpenLot[]; // every open lot of the company
+  date: string;
+  realizedBefore: Realized;
+  taxPaid: number;
+  settings: GameSettings;
+};
+
+export type SellPlan =
+  | { ok: false; reason: string }
+  | {
+      ok: true;
+      shares: number; // sold
+      trimmed: boolean; // fewer than asked: the rest was still inside its hold, or already sold
+      proceeds: number;
+      fee: number;
+      tax: number; // negative when tax comes back against a loss
+      realized: Realized;
+      into: number; // what goes back into the index: proceeds, less the fee and the tax
+      indexShares: number;
+      changes: LotChange[];
+    };
+
+/**
+ * Selling shares of a company at one close. The oldest lots go first, and only
+ * lots past the club's minimum hold can go. Like a buy it is one trade: the
+ * fee is charged once, on what the shares sold for; the tax on the gain comes
+ * out too (or comes back, on a loss that offsets gains already taxed), and the
+ * rest goes into the index fund.
+ */
+export function planSell(b: SellInput): SellPlan {
+  const s = b.settings;
+  const free = sellableLots(b.lots, b.date, s);
+  const available = free.reduce((a, l) => a + l.shares, 0);
+  if (available <= 0) return { ok: false, reason: b.lots.length ? "These shares were still inside this club's minimum hold at that close" : "You didn't own any of this company at that close" };
+  // Asking for all but a sliver sells it all, so no dust is left behind.
+  const shares = b.shares >= available - 1e-6 ? available : b.shares;
+  if (shares * b.price < 0.01) return { ok: false, reason: "There was nothing to sell at that close" };
+  const sale = sellOldestFirst(free, shares * b.price, b.price, b.date, s);
+  const fee = tradeFee(sale.proceeds, s);
+  const tax = taxForSale(b.realizedBefore, b.taxPaid, sale.realized, s);
+  const into = round2(sale.proceeds - fee - tax);
+  if (into <= 0) return { ok: false, reason: "The fee and tax would have used up everything the sale brought in" };
+  return { ok: true, shares, trimmed: b.shares > available + 1e-6, proceeds: sale.proceeds, fee, tax, realized: sale.realized, into, indexShares: into / b.indexPrice, changes: sale.changes };
+}
+
+// ---- If sold today ----
+
+/** Gains not yet made real, split the way a sale on `onDate` would split them. */
+export function unrealized(lots: { cost: number; value: number; boughtOn: string }[], onDate: string, s: GameSettings): Realized {
+  const r: Realized = { short: 0, long: 0 };
+  for (const l of lots) {
+    if (longTermDay(l.boughtOn, s) <= onDate) r.long += l.value - l.cost;
+    else r.short += l.value - l.cost;
+  }
+  return { short: round2(r.short), long: round2(r.long) };
+}
+
+/**
+ * The tax still owed if everything were sold on `onDate`: tax on all gains,
+ * real and not yet real, less the tax already paid. Negative when the
+ * portfolio is sitting on losses that would bring earlier tax back.
+ */
+export function taxIfAllSold(lots: { cost: number; value: number; boughtOn: string }[], onDate: string, before: Realized, paid: number, s: GameSettings): number {
+  return taxForSale(before, paid, unrealized(lots, onDate, s), s);
+}

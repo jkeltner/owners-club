@@ -4,7 +4,7 @@
 import { useActionState, useState } from "react";
 import { cancelWaitingOrder, type FormState } from "../../actions";
 
-export function CancelForm({ clubId, orderId, amount, name }: { clubId: string; orderId: string; amount: string; name: string }) {
+export function CancelForm({ clubId, orderId, amount, name, selling = false }: { clubId: string; orderId: string; amount: string; name: string; selling?: boolean }) {
   const [state, action, pending] = useActionState<FormState, FormData>(cancelWaitingOrder, {});
   const [asking, setAsking] = useState(false);
 
@@ -20,7 +20,10 @@ export function CancelForm({ clubId, orderId, amount, name }: { clubId: string; 
       <input type="hidden" name="clubId" value={clubId} />
       <input type="hidden" name="orderId" value={orderId} />
       <p>
-        <b>Cancel your {name} order?</b> The {amount} stays in your index fund and there&apos;s no fee, because nothing was bought. Your thesis is kept as a draft.
+        <b>Cancel your {name} order?</b>{" "}
+        {selling
+          ? "You keep the shares and there's no fee or tax, because nothing was sold."
+          : `The ${amount} stays in your index fund and there's no fee, because nothing was bought. Your thesis is kept as a draft.`}
       </p>
       {state.problem && <p className="notice">{state.problem}</p>}
       <button className="btn btn-primary" disabled={pending}>

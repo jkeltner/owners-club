@@ -266,6 +266,9 @@ export const orders = pgTable(
     ticker: text("ticker").notNull(), // a member's ticker, or "SPX" for the index holding
     side: text("side").$type<OrderSide>().notNull(),
     amount: doublePrecision("amount").notNull(),
+    // A sell is asked for in shares (the price isn't known until the close); `amount` is then what
+    // those shares were worth at the last close before the order was placed.
+    askedShares: doublePrecision("asked_shares"),
     status: text("status").$type<OrderStatus>().notNull().default("waiting"),
     placedAt: timestamp("placed_at", { withTimezone: true }).notNull().defaultNow(),
     // Set by the nightly job when the order fills.
@@ -304,6 +307,29 @@ export const lots = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("lots_membership_idx").on(t.membershipId, t.ticker, t.boughtOn)],
+);
+
+export type DayHolding = { ticker: string; value: number };
+
+// One row per player per market day, written by the nightly job after the
+// fills: what the portfolio was worth at that close, the tax still owed if it
+// were all sold that day, and the same $10,000 left alone in the index (also
+// after tax). The board and the drift chart read these; nothing else writes them.
+export const portfolioDays = pgTable(
+  "portfolio_days",
+  {
+    id: id(),
+    membershipId: text("membership_id")
+      .notNull()
+      .references(() => memberships.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    value: doublePrecision("value").notNull(),
+    taxOwed: doublePrecision("tax_owed").notNull(),
+    afterTax: doublePrecision("after_tax").notNull(),
+    indexAfterTax: doublePrecision("index_after_tax").notNull(),
+    holdings: jsonb("holdings").$type<DayHolding[]>().notNull(),
+  },
+  (t) => [uniqueIndex("portfolio_days_membership_date_idx").on(t.membershipId, t.date)],
 );
 
 export type ThesisKind = "pick" | "scout";

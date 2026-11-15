@@ -12,6 +12,7 @@ import type { LastQuarter } from "@/market/metrics";
 import { releaseThesis } from "./fills";
 import { holdingsOf } from "./holdings";
 import { closeHasPassed } from "./ledger";
+import { portfolioOf } from "./portfolio";
 import { joinParts, MAX_PART, metricById, written, type Parts, type PredictionMetric } from "./thesis_text";
 
 export type Thesis = typeof theses.$inferSelect;
@@ -190,6 +191,42 @@ export async function cancelOrder(orderId: string, membershipId: string, now = n
   if (!cancelled) throw new PickError("This order can't be cancelled: it has already gone through, or it isn't yours");
   await logEvent({ level: "info", kind: "trade.cancelled", message: "A waiting order was cancelled", detail: { membershipId, orderId, ticker: cancelled.ticker, amount: cancelled.amount } });
   return cancelled;
+}
+
+// ---- Selling ----
+
+/**
+ * Places a sell: `dollars` worth of a company at the last close, turned into
+ * shares, because the price it will sell at isn't known until the close. Only
+ * shares past the club's minimum hold can go, less any already in a waiting
+ * sell. What it brings in goes back into the index fund.
+ */
+export async function placeSell(seller: Buyer, settings: GameSettings, ticker: string, dollars: number, now = new Date()): Promise<Order> {
+  const refuse = async (message: string, detail: Record<string, unknown> = {}): Promise<never> => {
+    await logEvent({ level: "info", kind: "trade.rejected", message, detail: { membershipId: seller.id, ticker, side: "sell", dollars, ...detail } });
+    throw new PickError(message);
+  };
+  if (!seller.plays) await refuse("You're running this club, not playing in it, so you don't have a portfolio");
+  if (ticker === INDEX_TICKER) await refuse("Your index fund money moves when you make a pick; it can't be sold on its own");
+  const { holdings } = await portfolioOf(seller.id, settings, { now });
+  const held = holdings.find((h) => h.ticker === ticker);
+  if (!held || held.price == null) await refuse("You don't own any of that company");
+  const h = held!;
+  if (h.sellableShares * h.price! < 0.01) {
+    await refuse(h.lockedUntil ? "This pick is still inside this club's minimum hold, so it can't be sold yet" : "All of this pick is already in a sell order that's waiting for the close", { lockedUntil: h.lockedUntil });
+  }
+  const asked = round2(Number(dollars));
+  if (!Number.isFinite(asked) || asked < 1) await refuse("Choose how much to sell");
+  const most = h.sellableShares * h.price!;
+  if (asked > most + 0.01) await refuse("That's more than you can sell right now", { most: round2(most) });
+  // Within a dollar of everything sells everything, so a few cents of a company aren't left behind.
+  const all = most - asked < 1;
+  const askedShares = all ? h.sellableShares : asked / h.price!;
+  const [order] = await db
+    .insert(orders)
+    .values({ membershipId: seller.id, ticker, side: "sell", amount: all ? round2(most) : asked, askedShares })
+    .returning();
+  return order;
 }
 
 /** The fee an order will pay when it fills, at the club's rate. */
