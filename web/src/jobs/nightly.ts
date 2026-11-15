@@ -1,5 +1,6 @@
 // The nightly job: refresh the S&P 500 list, pull the closes we don't have yet,
-// refresh the latest quarters from EDGAR, and update the earnings calendar.
+// fill the orders that were waiting for those closes, refresh the latest
+// quarters from EDGAR, and update the earnings calendar.
 // Every step is idempotent and can run alone (`?step=prices`). Steps that need
 // a provider key report `skipped` when the key isn't set, so a fresh deploy
 // runs clean and the data page says what's missing.
@@ -12,9 +13,10 @@ import { fetchCompanyFacts, quartersFromFacts } from "@/market/edgar_facts";
 import { computeMetrics, onePerCompany } from "@/market/metrics";
 import { fetchGroupedDaily, INDEX_FUND_TICKER, massiveFreeTierPause, weekdaysBetween } from "@/market/massive";
 import { fetchSp500Members, toSecTicker } from "@/market/sp500";
+import { runFills } from "@/game/fills";
 import { runJob, type Step, type StepResult } from "./runner";
 
-export const STEP_NAMES = ["sp500", "prices", "financials", "earnings"] as const;
+export const STEP_NAMES = ["sp500", "prices", "fills", "financials", "earnings"] as const;
 export type StepName = (typeof STEP_NAMES)[number];
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
@@ -200,6 +202,8 @@ export function nightlySteps(only?: StepName[]): Step[] {
   const all: Record<StepName, Step> = {
     sp500: { name: "sp500", run: refreshSp500 },
     prices: { name: "prices", run: () => refreshPrices() },
+    // Right after the closes land: open new portfolios, then fill waiting orders.
+    fills: { name: "fills", run: runFills },
     financials: { name: "financials", run: () => refreshFinancials() },
     earnings: { name: "earnings", run: () => refreshEarnings() },
   };

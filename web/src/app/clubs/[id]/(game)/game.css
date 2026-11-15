@@ -387,3 +387,10 @@
 .game .pick-row:first-of-type { border-top: 0; }
 .game .pick-row small { display: block; color: var(--ink-2); }
 .game .source-note { font-size: 12px; color: var(--ink-2); margin: 10px 0 0; }
+
+/* The lines of a filled order: what moved, what came out, what went in. */
+.game .fill-lines { display: block; margin: 12px 0 4px; font-size: 14px; }
+.game .fill-lines > div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--line, rgba(0, 0, 0, 0.08)); }
+.game .fill-lines dt { color: var(--muted, #6b6b76); }
+.game .fill-lines dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.game .fill-lines .fill-total dt { color: inherit; font-weight: 700; }

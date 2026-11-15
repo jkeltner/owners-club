@@ -28,6 +28,7 @@ Source guesses follow the free stack in the [build spec](build_spec.md#market-da
 | Share of US companies with $100M+ yearly sales that are public | "What's the market?" card ("about 1 in 5") | Yearly | S&P Capital IQ counts of public vs. private companies (cited by Apollo) | `MARKET_FACTS.publicOneIn = 8`; from a tester note ("13%"), needs a source check |
 | Which big companies are in the Dow and listed on the Nasdaq | "What's the market?" card; Dow and Nasdaq glossary examples | When the Dow changes | Dow member list (S&P Dow Jones Indices); exchange per ticker from the price source | Hand-written |
 | Private companies (OpenAI, Anthropic, SpaceX): latest valuation, and which public companies own a stake | 🔒 cards; private-company lesson | When news breaks | Hand-curated, with a source link per fact | Hand-written |
+| Days the US market is closed or closes early | Telling a player which close their order fills at; locking cancels at the right time | Yearly | NYSE holiday calendar | Not stored: the order page says "or the next day the market is open", and early closes are treated as 4 pm |
 
 **Where the real app gets these (phase 2 slice b, 2026-11-13).**
 

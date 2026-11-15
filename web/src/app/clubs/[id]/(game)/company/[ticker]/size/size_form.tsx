@@ -85,7 +85,7 @@ export function SizeForm({ clubId, ticker, name, money, settings }: { clubId: st
         <div className="rule">
           <span>🧾</span>
           <span>
-            <b>Fee: {usd(fee, true)}</b> ({pct(settings.feeRate)} of the amount). Real trading has costs too, and they add up if you trade a lot.
+            <b>Fee: {usd(fee, true)}</b> ({pct(settings.feeRate)} of the amount), taken out of what you move. Real trading has costs too, and they add up if you trade a lot.
           </span>
         </div>
         <div className="rule">

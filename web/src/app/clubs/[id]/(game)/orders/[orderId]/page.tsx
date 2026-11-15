@@ -2,6 +2,7 @@
 // reason to come back: the company's next earnings report.
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { closeHasPassed, fillDay } from "@/game/ledger";
 import { orderOf, thesisText } from "@/game/picks";
 import { fmtPrediction, metricById } from "@/game/thesis_text";
 import { usd } from "@/lib/format";
@@ -26,6 +27,8 @@ export default async function Done({ params, searchParams }: { params: Promise<{
   const earned = first === "1";
   const metric = thesis ? metricById(thesis.predictionMetric) : undefined;
   const waiting = order.status === "waiting";
+  const locked = waiting && closeHasPassed(order.placedAt);
+  const day = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
 
   if (order.status === "cancelled") {
     return (
@@ -88,7 +91,7 @@ export default async function Done({ params, searchParams }: { params: Promise<{
 
       <Card className="my-thesis">
         <p className="eyebrow">
-          Your thesis · {usd(order.amount)} of {order.ticker}
+          Your thesis · {order.status === "filled" ? order.ticker : `${usd(order.amount)} of ${order.ticker}`}
         </p>
         {thesis && <p className="quote">&ldquo;{thesisText(thesis)}&rdquo;</p>}
         {thesis && metric && (
@@ -96,13 +99,43 @@ export default async function Done({ params, searchParams }: { params: Promise<{
             🎯 {metric.label}: {fmtPrediction(thesis.predictionUnit, thesis.predictionValue)} or more
           </div>
         )}
+        {order.status === "filled" && order.filledAmount != null && order.fillDate && (
+          <dl className="fill-lines">
+            <div>
+              <dt>Moved out of your index fund</dt>
+              <dd>{usd(order.filledAmount, true)}</dd>
+            </div>
+            <div>
+              <dt>Fee</dt>
+              <dd>−{usd(order.fee ?? 0, true)}</dd>
+            </div>
+            {order.tax != null && order.tax !== 0 && (
+              <div>
+                <dt>{order.tax > 0 ? "Tax on what your index money had gained" : "Tax back, because your index money had lost value"}</dt>
+                <dd>
+                  {order.tax > 0 ? "−" : "+"}
+                  {usd(Math.abs(order.tax), true)}
+                </dd>
+              </div>
+            )}
+            <div className="fill-total">
+              <dt>
+                Went into {name}: {(order.shares ?? 0).toFixed(3)} shares at {usd(order.fillPrice ?? 0, true)}
+              </dt>
+              <dd>{usd(order.filledAmount - (order.fee ?? 0) - (order.tax ?? 0), true)}</dd>
+            </div>
+          </dl>
+        )}
+        {order.note && <p className="notice">{order.note}</p>}
         <p className="muted small">
           {waiting
-            ? "Your buy goes through the next time the market closes (4 pm in New York, Monday to Friday). Until then the money stays in your index fund."
+            ? locked
+              ? "The market has closed on this order. It goes through overnight, at that closing price."
+              : `Your buy goes through at the market close on ${day(fillDay(order.placedAt))} (4 pm in New York), or the next day the market is open. Until then the money stays in your index fund, and you can still cancel.`
             : order.status === "filled"
-              ? `Bought on ${order.fillDate}${order.fillPrice != null ? ` at ${usd(order.fillPrice, true)} a share` : ""}.`
-              : "This order didn't go through."}{" "}
-          Your clubmates can read your thesis when they go to make a pick.
+              ? `Bought at the close on ${day(order.fillDate!)}.`
+              : "This order didn't go through. The money is still in your index fund, and your thesis is saved as a draft."}{" "}
+          {order.status !== "rejected" && "Your clubmates can read your thesis when they go to make a pick."}
         </p>
       </Card>
 
@@ -112,7 +145,7 @@ export default async function Done({ params, searchParams }: { params: Promise<{
       <Link className="btn btn-ghost" href={clubPath(id, "/pick")}>
         Make another pick
       </Link>
-      {waiting && <CancelForm clubId={id} orderId={order.id} amount={usd(order.amount)} name={name} />}
+      {waiting && !locked && <CancelForm clubId={id} orderId={order.id} amount={usd(order.amount)} name={name} />}
     </Page>
   );
 }

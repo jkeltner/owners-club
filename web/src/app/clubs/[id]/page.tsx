@@ -56,10 +56,10 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
                   <span className="who">
                     <Link href={`/clubs/${club.id}/orders/${order.id}`}>{displayName(order.ticker, name ?? order.ticker)}</Link>
                     <span className="tag">
-                      {order.status === "waiting" ? "buys at the next market close" : order.status === "filled" ? `bought ${order.fillDate}` : order.status === "cancelled" ? "cancelled" : "didn't go through"}
+                      {order.status === "waiting" ? "buys at the next market close" : order.status === "filled" && order.fillDate ? `bought ${new Date(`${order.fillDate}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}` : order.status === "cancelled" ? "cancelled" : "didn't go through"}
                     </span>
                   </span>
-                  <span>{usd(order.amount)}</span>
+                  <span>{usd(order.filledAmount ?? order.amount)}</span>
                 </li>
               ))}
             </ul>

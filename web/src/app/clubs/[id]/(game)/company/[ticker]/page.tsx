@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sectorPlural } from "@/content";
+import { holdingsOf } from "@/game/holdings";
 import { ordersOf } from "@/game/picks";
 import { bigUsd, isPeOffScale, peLabel, signedPct, usd } from "@/lib/format";
 import { lensValue } from "@/market/lens_values";
@@ -23,7 +24,7 @@ export default async function Company({ params }: { params: Promise<{ id: string
   const { id, ticker } = await params;
   const symbol = decodeURIComponent(ticker).toUpperCase();
   const { membership } = await requirePlayer(id, companyPath(id, symbol));
-  const [c, market, mine] = await Promise.all([companyView(symbol), marketSnapshot(), ordersOf(membership.id)]);
+  const [c, market, mine, mineHeld] = await Promise.all([companyView(symbol), marketSnapshot(), ordersOf(membership.id), holdingsOf(membership.id)]);
   if (!c) notFound();
   const m = c.metrics;
   const l = c.lens;
@@ -32,6 +33,7 @@ export default async function Company({ params }: { params: Promise<{ id: string
   const kind = l ? sectorPlural(l.kind) : undefined;
   const lensRows = l ? [l.look_first, ...l.then] : [];
   const waiting = mine.filter((o) => o.order.ticker === c.ticker && o.order.status === "waiting").reduce((a, o) => a + o.order.amount, 0);
+  const owned = mineHeld.holdings.find((h) => h.ticker === c.ticker);
   const first = c.series[0];
   const change = first && c.price != null && c.series.length > 1 ? (c.price / first.close - 1) * 100 : null;
   const losing = m.netIncomeTtm != null && m.netIncomeTtm <= 0;
@@ -41,6 +43,11 @@ export default async function Company({ params }: { params: Promise<{ id: string
       <TopBar back={clubPath(id, "/pick")} title={c.ticker} />
       <h1 className="co-name">{c.name}</h1>
       <p className="muted">{c.line}</p>
+      {owned && (
+        <p className="notice">
+          You own {usd(owned.value)} of {c.name} at the last close. You put in {usd(owned.cost)}.
+        </p>
+      )}
       {waiting > 0 && (
         <p className="notice">
           You have {usd(waiting)} waiting to go into {c.name} at the next market close.
