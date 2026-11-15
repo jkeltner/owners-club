@@ -98,7 +98,7 @@ Left over from this slice:
 - New tables this slice needs: `orders`, `theses`, `conversations` and `messages` (the scripted coach writes every turn, so a refresh resumes), per the data model in `docs/build_plan.md`. Orders are saved as waiting; slice c fills them.
 - Scripts that import `scripts/env` talk to the production database (`.env.local` holds its URL); `npm run dev` uses an empty local one. Local screens need market data copied in or a seed.
 
-### Slice b: the first 15 minutes, up to a placed order (2026-11-13, branch `phase2/onboarding`, not merged)
+### Slice b: the first 15 minutes, up to a placed order (2026-11-13; merged 2026-11-14 as PR #15)
 
 What a player can now do, start to finish, on real companies and real numbers:
 
@@ -148,3 +148,26 @@ Under it: tables `orders`, `theses`, `conversations` and `messages` (migration 0
 - Orders placed before slice c ships are tests (Jeff, 2026-11-14: nobody is invited until fills work). Slice c clears them, with their theses and conversations, before its first fill run; it does not fill them.
 - Two buys sent at the same instant are each checked against the cap before either is saved, so together they could pass it. Slice c's fill step should re-check the cap, which closes this.
 - A company removed from the index stops being reachable (`companyView` returns only current members); held positions in a removed company need a path in phase 3.
+
+### Slice c: orders fill at the close (2026-11-14, branch `phase2/fills`)
+
+**What a player gets.** A pick placed before 4 pm in New York goes through at that day's closing price; later, or on a weekend, at the next day the market is open. The next morning the order page shows what happened, line by line: what moved out of the index fund, the fee, any tax, and how many shares went in at what price. The club page says "bought" with the date, and the company page says what the player owns.
+
+**How it works.**
+
+- **The nightly job has a new step, `fills`,** right after the closes are stored (`web/src/game/fills.ts`). It opens portfolios, then fills waiting orders oldest first. Running it twice changes nothing.
+- **A portfolio opens at the first close after the player joined:** $10,000 of the index fund (SPY's close stands in for the S&P 500) becomes the first row in the new `lots` table. Until then the player has "$10,000 in the index" with no price behind it.
+- **A buy is one trade:** dollars leave the index, oldest index money first; the fee (0.5% of the amount) and the tax on whatever that index money had gained come out; the rest buys shares, to a fraction of a share. Each purchase is its own lot with its date, which is what the hold period and the 6-month tax line will read.
+- **Tax is paid when a gain becomes real,** against everything the player has made real so far, so a loss offsets earlier gains (tax comes back) and an early loss carries forward. The running totals are sums over the player's filled orders; there is no separate tax table.
+- **An order that no longer fits is trimmed, not refused.** The cap is checked again at the close against what the portfolio is worth then. If the market moved and $2,500 is now over a quarter, the order moves what fits and says so. It is refused only when nothing fits, or the company left the index in between; then the thesis goes back to a draft.
+- **Cancelling stops at the close.** Once 4 pm New York has passed on the order's day, it can't be cancelled, even though the job runs hours later. Otherwise a player could look at the closing price and then decide.
+- **The buying limits now use real values:** the cap is a quarter of what the portfolio is worth at the last close, and "left in your index fund" is what the index holding is worth, less orders still waiting.
+- **Migration `0005`** adds `lots` and the fill details on `orders`, and clears the test orders, theses and coach conversations placed before fills existed (Jeff, 2026-11-14).
+
+**Not in this slice.** Selling (the arithmetic for selling lots and taxing the gain is written and tested, because a buy sells index money; there is no sell button). The portfolio page, the board and daily valuations (`portfolio_days`): phase 3. Dividends: neither picks nor the index fund collect them, so the comparison stays fair but both run a little under real life.
+
+**Known gaps.**
+
+- Market holidays aren't known ahead of time. The order page names the next weekday and adds "or the next day the market is open"; the fill step waits for a day that has closes. Days the market closes early (1 pm) are treated as 4 pm.
+- A company with no close on a day the market was open (a trading halt) waits for its next close.
+- Two runs of the job at the same moment could both read a player's lots before either writes. The cron runs once a night and a hand run is one click, so this is left alone; each order still fills only once.

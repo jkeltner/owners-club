@@ -25,7 +25,7 @@ npm run dev
 - `src/content/`: the shared catalogs from `../content`, bundled by `scripts/build_content.ts` into a gitignored `generated.json`.
 - `src/market/`: the market-data adapters and the nightly job's steps; `read.ts` is the only thing player screens read market data through.
 - `src/coach/`: the scripted coach (`script.ts`, pure) and its stored conversations (`conversations.ts`).
-- `src/game/`: picks: the thesis and order rules (`picks.ts`) and the words around a thesis (`thesis_text.ts`).
+- `src/game/`: picks: the thesis and order rules (`picks.ts`), the words around a thesis (`thesis_text.ts`), the arithmetic of a trade (`ledger.ts`), the nightly fill step (`fills.ts`) and what a player holds (`holdings.ts`).
 - `src/app/clubs/[id]/(game)/`: the game screens, with their own stylesheet (`game.css`, scoped under `.game`).
 - `scripts/`: local dev server, migrations, content build, backfills.
 - `tests/`: vitest.

@@ -272,8 +272,38 @@ export const orders = pgTable(
     fillDate: date("fill_date"),
     fillPrice: doublePrecision("fill_price"),
     fee: doublePrecision("fee"),
+    // What actually moved: `amount` trimmed to the cap and to what the index held at that close.
+    filledAmount: doublePrecision("filled_amount"),
+    shares: doublePrecision("shares"), // bought (or sold) in the company
+    // Gains the sale side of the trade made real, by how long the sold lots were held, and the
+    // tax paid on them at the fill (negative when an earlier tax comes back against a loss).
+    gainShort: doublePrecision("gain_short"),
+    gainLong: doublePrecision("gain_long"),
+    tax: doublePrecision("tax"),
+    note: text("note"), // why it was trimmed or didn't go through, in the player's words
   },
   (t) => [index("orders_membership_idx").on(t.membershipId, t.placedAt), index("orders_status_idx").on(t.status)],
+);
+
+// What a player holds: one row per purchase, so the hold period and the
+// 6-month tax line are computable. `shares` and `cost` are what is left of the
+// lot; a lot sold out stays as a row with zero shares. The index holding is
+// ticker "SPX"; its first lot (no order) is the starting $10,000.
+export const lots = pgTable(
+  "lots",
+  {
+    id: id(),
+    membershipId: text("membership_id")
+      .notNull()
+      .references(() => memberships.id, { onDelete: "cascade" }),
+    ticker: text("ticker").notNull(),
+    shares: doublePrecision("shares").notNull(),
+    cost: doublePrecision("cost").notNull(),
+    boughtOn: date("bought_on").notNull(),
+    orderId: text("order_id").references(() => orders.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("lots_membership_idx").on(t.membershipId, t.ticker, t.boughtOn)],
 );
 
 export type ThesisKind = "pick" | "scout";

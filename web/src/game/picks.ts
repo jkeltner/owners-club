@@ -7,8 +7,11 @@ import { and, desc, eq, inArray, isNull, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { companies, conversations, memberships, orders, theses } from "@/db/schema";
 import { logEvent } from "@/lib/events";
-import { maxPurchase, round2, STARTING_VALUE, tradeFee, type GameSettings } from "@/lib/rules";
+import { INDEX_TICKER, maxPurchase, round2, STARTING_VALUE, tradeFee, type GameSettings } from "@/lib/rules";
 import type { LastQuarter } from "@/market/metrics";
+import { releaseThesis } from "./fills";
+import { holdingsOf } from "./holdings";
+import { closeHasPassed } from "./ledger";
 import { joinParts, MAX_PART, metricById, written, type Parts, type PredictionMetric } from "./thesis_text";
 
 export type Thesis = typeof theses.$inferSelect;
@@ -92,20 +95,29 @@ export type Money = {
 };
 
 /**
- * What a player can put into a company right now. Until orders fill and
- * holdings are valued each night (the next slices), the portfolio is the
- * starting $10,000 and every buy order counts at the dollars it asked for.
- * A cancelled order counts for nothing: its money never left the index.
+ * What a player can put into a company right now. Holdings are valued at the
+ * last close; before a portfolio's first close it is the starting $10,000,
+ * all in the index. A waiting buy counts at the dollars it asked for, so five
+ * orders in one evening can't add up past the cap. The fill step checks again
+ * at the close and trims an order that no longer fits.
  */
 export async function moneyFor(membershipId: string, settings: GameSettings, ticker?: string): Promise<Money> {
-  const rows = await db
-    .select({ ticker: orders.ticker, amount: orders.amount })
-    .from(orders)
-    .where(and(eq(orders.membershipId, membershipId), eq(orders.side, "buy"), inArray(orders.status, ["waiting", "filled"])));
-  const inPicks = round2(rows.reduce((a, o) => a + o.amount, 0));
-  const inThisCompany = round2(rows.filter((o) => o.ticker === ticker).reduce((a, o) => a + o.amount, 0));
-  const portfolio = STARTING_VALUE;
-  const indexLeft = round2(Math.max(0, portfolio - inPicks));
+  const [{ holdings, total }, waiting] = await Promise.all([
+    holdingsOf(membershipId),
+    db
+      .select({ ticker: orders.ticker, amount: orders.amount })
+      .from(orders)
+      .where(and(eq(orders.membershipId, membershipId), eq(orders.side, "buy"), eq(orders.status, "waiting"))),
+  ]);
+  const opened = holdings.length > 0;
+  const portfolio = opened ? total : STARTING_VALUE;
+  const inIndex = opened ? (holdings.find((h) => h.ticker === INDEX_TICKER)?.value ?? 0) : STARTING_VALUE;
+  const held = holdings.find((h) => h.ticker === ticker)?.value ?? 0;
+  const waitingAll = waiting.reduce((a, o) => a + o.amount, 0);
+  const waitingHere = waiting.filter((o) => o.ticker === ticker).reduce((a, o) => a + o.amount, 0);
+  const inPicks = round2(portfolio - inIndex + waitingAll);
+  const inThisCompany = round2(held + waitingHere);
+  const indexLeft = round2(Math.max(0, inIndex - waitingAll));
   const cap = maxPurchase(portfolio, settings);
   return { portfolio, inPicks, indexLeft, inThisCompany, cap, max: Math.max(0, Math.floor(Math.min(cap - inThisCompany, indexLeft))) };
 }
@@ -156,11 +168,15 @@ export async function placeBuy(buyer: Buyer, settings: GameSettings, ticker: str
 }
 
 /**
- * Takes back an order that hasn't filled. Nothing was bought, so there is no
- * fee and no hold: the money never left the index. The thesis goes back to a
- * draft and the coach conversation reopens, so the player can pick it up again.
+ * Takes back an order before the close it is waiting for. Nothing was bought,
+ * so there is no fee and no hold: the money never left the index. The thesis
+ * goes back to a draft and the coach conversation reopens. Once that close has
+ * passed the order is going through, even if the nightly job hasn't run yet:
+ * otherwise a player could see the closing price and then decide.
  */
-export async function cancelOrder(orderId: string, membershipId: string): Promise<Order> {
+export async function cancelOrder(orderId: string, membershipId: string, now = new Date()): Promise<Order> {
+  const [mine] = await db.select().from(orders).where(and(eq(orders.id, orderId), eq(orders.membershipId, membershipId)));
+  if (mine?.status === "waiting" && closeHasPassed(mine.placedAt, now)) throw new PickError("The market has closed on this order, so it's going through tonight and can't be cancelled");
   const cancelled = await db.transaction(async (tx) => {
     const [order] = await tx
       .update(orders)
@@ -168,8 +184,7 @@ export async function cancelOrder(orderId: string, membershipId: string): Promis
       .where(and(eq(orders.id, orderId), eq(orders.membershipId, membershipId), eq(orders.status, "waiting")))
       .returning();
     if (!order) return null;
-    const freed = await tx.update(theses).set({ status: "draft", orderId: null }).where(eq(theses.orderId, order.id)).returning({ id: theses.id });
-    if (freed.length) await tx.update(conversations).set({ thesisId: null }).where(inArray(conversations.thesisId, freed.map((t) => t.id)));
+    await releaseThesis(tx, order.id);
     return order;
   });
   if (!cancelled) throw new PickError("This order can't be cancelled: it has already gone through, or it isn't yours");
