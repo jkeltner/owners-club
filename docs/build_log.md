@@ -164,10 +164,12 @@ Under it: tables `orders`, `theses`, `conversations` and `messages` (migration 0
 - **The buying limits now use real values:** the cap is a quarter of what the portfolio is worth at the last close, and "left in your index fund" is what the index holding is worth, less orders still waiting.
 - **Migration `0005`** adds `lots` and the fill details on `orders`, and clears the test orders, theses and coach conversations placed before fills existed (Jeff, 2026-11-14).
 
+**Rules decided.** Jeff approved the four rules a player can see on 2026-11-15, as built: fee and tax come out of the amount moved; the $10,000 enters the index at the first close after joining; an over-cap order is trimmed with a note; no cancelling after 4 pm New York on the order's day. The size screen gained a line saying tax on index gains comes out of the amount too, not only the fee.
+
 **Not in this slice.** Selling (the arithmetic for selling lots and taxing the gain is written and tested, because a buy sells index money; there is no sell button). The portfolio page, the board and daily valuations (`portfolio_days`): phase 3. Dividends: neither picks nor the index fund collect them, so the comparison stays fair but both run a little under real life.
 
 **Known gaps.**
 
-- Market holidays aren't known ahead of time. The order page names the next weekday and adds "or the next day the market is open"; the fill step waits for a day that has closes. Days the market closes early (1 pm) are treated as 4 pm.
+- Market holidays aren't known ahead of time, so on a holiday (Thanksgiving, say) an order placed that day locks at 4 pm but fills at the next open day's close. Jeff, 2026-11-15: known quirk, no fix for now. The order page names the next weekday and adds "or the next day the market is open"; the fill step waits for a day that has closes. Days the market closes early (1 pm) are treated as 4 pm.
 - A company with no close on a day the market was open (a trading halt) waits for its next close.
 - Two runs of the job at the same moment could both read a player's lots before either writes. The cron runs once a night and a hand run is one click, so this is left alone; each order still fills only once.
