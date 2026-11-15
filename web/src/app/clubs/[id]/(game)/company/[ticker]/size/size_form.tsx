@@ -89,6 +89,14 @@ export function SizeForm({ clubId, ticker, name, money, settings }: { clubId: st
           </span>
         </div>
         <div className="rule">
+          <span>🏛️</span>
+          <span>
+            <b>Tax, if your index money has grown.</b> You&apos;re selling index fund to buy this. If that money is worth more than when it went in, tax on the gain (
+            {pct(settings.shortTermTaxRate)} if it&apos;s been there under 6 months, {pct(settings.longTermTaxRate)} after) also comes out of what you move. Your order
+            shows the exact amount once it goes through.
+          </span>
+        </div>
+        <div className="rule">
           <span>🔒</span>
           <span>
             {settings.minHoldDays === 0 ? (
