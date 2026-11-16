@@ -73,14 +73,16 @@ describe("selling a pick", () => {
   });
 
   it("refuses while the pick is inside the club's minimum hold", async () => {
-    await expect(placeSell(dee, settings, "SEL", 500, ny("2026-11-12", 10))).rejects.toThrow(/minimum hold/);
-    await expect(placeSell(dee, settings, INDEX_TICKER, 500, ny("2026-11-12", 10))).rejects.toThrow(/index fund/);
+    await expect(placeSell(dee, settings, "SEL", 500, "I want the money back in the index", ny("2026-11-12", 10))).rejects.toThrow(/minimum hold/);
+    await expect(placeSell(dee, settings, INDEX_TICKER, 500, "I want the money back in the index", ny("2026-11-12", 10))).rejects.toThrow(/index fund/);
   });
 
   it("shows the portfolio at the last close, with the tax owed and the untouched index beside it", async () => {
     await day("2026-11-23", 500, 120);
     const p = await portfolioOf(dee.id, settings, { now: ny("2026-11-23", 17) });
-    expect(p).toMatchObject({ opened: true, asOf: "2026-11-23", total: 10388, taxOwed: 159.2, afterTax: 10228.8, feesPaid: 10, taxesPaid: 0, index: { value: 10000, afterTax: 10000 } });
+    expect(p).toMatchObject({ opened: true, asOf: "2026-11-23", total: 10388, taxOwed: 159.2, afterTax: 10228.8, feesPaid: 10, taxesPaid: 0, index: { value: 10000, afterTax: 10000, kept: 9950 } });
+    // What the game compares: after the tax and the 0.5% fee a full sale would cost.
+    expect(p).toMatchObject({ feeToSell: 51.94, kept: 10176.86 });
     expect(p.holdings.map((h) => h.ticker)).toEqual([INDEX_TICKER, "SEL"]);
     const pick = p.holdings[1];
     expect(pick).toMatchObject({ name: "Sellco", value: 2388, cost: 1990, lockedUntil: null });
@@ -89,12 +91,14 @@ describe("selling a pick", () => {
   });
 
   it("sells half at the next close: fee and tax out, the rest into the index", async () => {
-    const order = await placeSell(dee, settings, "SEL", 1194, ny("2026-11-23", 17));
-    expect(order).toMatchObject({ side: "sell", status: "waiting", amount: 1194 });
+    const order = await placeSell(dee, settings, "SEL", 1194, "I want the money back in the index", ny("2026-11-23", 17));
+    expect(order).toMatchObject({ side: "sell", status: "waiting", amount: 1194, reason: "I want the money back in the index" });
+    // A reason is asked for, but any reason will do.
+    await expect(placeSell(dee, settings, "SEL", 100, "  ", ny("2026-11-23", 17))).rejects.toThrow(/why you're selling/);
     expect(order.askedShares).toBeCloseTo(9.95, 6);
     await placedAt(order.id, ny("2026-11-23", 17));
     // The shares in a waiting sell can't be sold twice.
-    await expect(placeSell(dee, settings, "SEL", 1500, ny("2026-11-23", 18))).rejects.toThrow(/more than you can sell/);
+    await expect(placeSell(dee, settings, "SEL", 1500, "I want the money back in the index", ny("2026-11-23", 18))).rejects.toThrow(/more than you can sell/);
     await day("2026-11-24", 500, 120);
     expect(await runFills()).toMatchObject({ filled: 1, rejected: 0, snapshots: 1 });
     // 9.95 shares at 120 = 1194; they cost 995: a 199 gain held two weeks, taxed at 40%.
@@ -110,12 +114,12 @@ describe("selling a pick", () => {
   it("records each day for the board", async () => {
     const days = await daysOf(dee.id);
     expect(days.map((d) => d.date)).toEqual(["2026-11-09", "2026-11-10", "2026-11-24"]);
-    expect(days.at(-1)).toMatchObject({ value: 10302.43, taxOwed: 79.6, afterTax: 10222.83, indexAfterTax: 10000 });
+    expect(days.at(-1)).toMatchObject({ value: 10302.43, taxOwed: 79.6, afterTax: 10222.83, indexAfterTax: 10000, kept: 10171.32, indexKept: 9950 });
     expect(days.at(-1)!.holdings.map((h) => h.ticker)).toEqual([INDEX_TICKER, "SEL"]);
   });
 
   it("lets a waiting sell be cancelled before the close, and frees the shares", async () => {
-    const order = await placeSell(dee, settings, "SEL", 1194, ny("2026-11-24", 17));
+    const order = await placeSell(dee, settings, "SEL", 1194, "I want the money back in the index", ny("2026-11-24", 17));
     expect(order.askedShares).toBeCloseTo(9.95, 6); // the whole of what is left
     await placedAt(order.id, ny("2026-11-24", 17));
     expect((await portfolioOf(dee.id, settings, { now: ny("2026-11-24", 18) })).holdings[1].sellableShares).toBe(0);
@@ -124,7 +128,7 @@ describe("selling a pick", () => {
   });
 
   it("gives tax back when the rest is sold at a loss", async () => {
-    const order = await placeSell(dee, settings, "SEL", 1194, ny("2026-11-24", 18));
+    const order = await placeSell(dee, settings, "SEL", 1194, "I want the money back in the index", ny("2026-11-24", 18));
     await placedAt(order.id, ny("2026-11-24", 18));
     await day("2026-11-25", 500, 90);
     expect(await runFills()).toMatchObject({ filled: 1 });

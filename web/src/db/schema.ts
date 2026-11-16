@@ -284,6 +284,7 @@ export const orders = pgTable(
     gainLong: doublePrecision("gain_long"),
     tax: doublePrecision("tax"),
     note: text("note"), // why it was trimmed or didn't go through, in the player's words
+    reason: text("reason"), // a sell's "why are you selling?", as the player wrote it; never judged
   },
   (t) => [index("orders_membership_idx").on(t.membershipId, t.placedAt), index("orders_status_idx").on(t.status)],
 );
@@ -327,6 +328,10 @@ export const portfolioDays = pgTable(
     taxOwed: doublePrecision("tax_owed").notNull(),
     afterTax: doublePrecision("after_tax").notNull(),
     indexAfterTax: doublePrecision("index_after_tax").notNull(),
+    // After the tax and the fee a full sale would cost: what the board compares. Null on rows
+    // written before the fee was counted.
+    kept: doublePrecision("kept"),
+    indexKept: doublePrecision("index_kept"),
     holdings: jsonb("holdings").$type<DayHolding[]>().notNull(),
   },
   (t) => [uniqueIndex("portfolio_days_membership_date_idx").on(t.membershipId, t.date)],

@@ -1,4 +1,4 @@
-// The portfolio: what it's worth, what you'd keep after tax, how that compares
+// The portfolio: what it's worth, what you'd keep after tax and the fee to sell, how that compares
 // with leaving the money in the index, and every holding with what selling it
 // would cost. Valued once a day, at the last close.
 import Link from "next/link";
@@ -6,7 +6,7 @@ import { unrealized } from "@/game/ledger";
 import { ordersOf } from "@/game/picks";
 import { daysOf, portfolioOf, type PortfolioHolding } from "@/game/portfolio";
 import { signedPct, usd } from "@/lib/format";
-import { INDEX_TICKER, STARTING_VALUE, type GameSettings } from "@/lib/rules";
+import { INDEX_TICKER, STARTING_VALUE, tradeFee, type GameSettings } from "@/lib/rules";
 import { displayName } from "@/market/names";
 import { clubPath, companyPath, requirePlayer } from "../_lib/player";
 import { DriftChart, MixBar } from "../_ui/charts";
@@ -18,7 +18,8 @@ const COLORS = ["var(--primary)", "var(--gold)", "var(--mint)", "var(--coral)"];
 const longDay = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
 const shortDay = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 const rate = (n: number) => `${Math.round(n * 100)}%`;
-const returnOn = (afterTax: number) => (afterTax / STARTING_VALUE - 1) * 100;
+const returnOn = (kept: number) => (kept / STARTING_VALUE - 1) * 100;
+const feePct = (s: GameSettings) => `${(s.feeRate * 100).toFixed(1)}%`;
 
 export default async function Portfolio({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -52,8 +53,8 @@ export default async function Portfolio({ params }: { params: Promise<{ id: stri
     );
   }
 
-  const mine = returnOn(p.afterTax);
-  const market = p.index ? returnOn(p.index.afterTax) : null;
+  const mine = returnOn(p.kept);
+  const market = p.index ? returnOn(p.index.kept) : null;
   const largest = picks.reduce((m, h) => Math.max(m, h.share), 0);
   // The drift chart: each day's holdings as shares of that day's total, index at the bottom.
   const driftOrder = [INDEX_TICKER, ...new Set(days.flatMap((d) => d.holdings.map((h) => h.ticker)).filter((t) => t !== INDEX_TICKER))];
@@ -65,7 +66,7 @@ export default async function Portfolio({ params }: { params: Promise<{ id: stri
       <h1>Your portfolio</h1>
       <p className="muted small">At the market close on {longDay(p.asOf)}. It updates once a day, overnight.</p>
 
-      <Card className="three-numbers">
+      <Card className="three-numbers four">
         <div>
           <small>Worth</small>
           <b>{usd(p.total)}</b>
@@ -74,21 +75,25 @@ export default async function Portfolio({ params }: { params: Promise<{ id: stri
           <small>{p.taxOwed >= 0 ? "Tax if you sold it all" : "Tax back if you sold it all"}</small>
           <b>{usd(Math.abs(p.taxOwed))}</b>
         </div>
+        <div>
+          <small>Fee to sell it all ({feePct(s)})</small>
+          <b>{usd(p.feeToSell)}</b>
+        </div>
         <div className="key">
-          <small>After tax</small>
-          <b>{usd(p.afterTax)}</b>
+          <small>What you&apos;d keep</small>
+          <b>{usd(p.kept)}</b>
         </div>
       </Card>
 
       <Card className="vs-card">
         <div className="vs-row">
-          <span>You, after tax</span>
+          <span>You, after tax and the fee</span>
           <b>{signedPct(mine)}</b>
         </div>
         {market != null && (
           <>
             <div className="vs-row">
-              <span>If you&apos;d left it all in the S&amp;P 500, after tax</span>
+              <span>If you&apos;d left it all in the S&amp;P 500, after tax and the fee</span>
               <b>{signedPct(market)}</b>
             </div>
             <div className="vs-row total">
@@ -98,7 +103,8 @@ export default async function Portfolio({ params }: { params: Promise<{ id: stri
           </>
         )}
         <p className="muted small">
-          Both start from your {usd(STARTING_VALUE)}. &ldquo;After tax&rdquo; is what you&apos;d keep if you sold everything today, which is the number the game compares.
+          Both start from your {usd(STARTING_VALUE)}. Each is what you&apos;d keep if you sold everything today: the tax on the gains comes out, and so does the{" "}
+          {feePct(s)} fee on the sale. That&apos;s the number the game compares.
           Fees paid so far: <b>{usd(p.feesPaid, true)}</b> · Taxes paid: <b>{usd(p.taxesPaid, true)}</b>
         </p>
       </Card>
@@ -197,6 +203,7 @@ function HoldingCard({ id, h, asOf, s, color }: { id: string; h: PortfolioHoldin
   // Each holding on its own: its gains at their rates. The top of the page nets losses against gains across everything.
   const tax = Math.max(0, split.short) * s.shortTermTaxRate + Math.max(0, split.long) * s.longTermTaxRate;
   const nextLongTerm = h.lots.filter((l) => l.longTermOn > asOf && l.value > l.cost).map((l) => l.longTermOn).sort()[0];
+  const fee = tradeFee(h.value, s);
   const canSell = !h.isIndex && h.price != null && h.sellableShares * h.price >= 1;
   return (
     <Card className="holding">
@@ -216,12 +223,13 @@ function HoldingCard({ id, h, asOf, s, color }: { id: string; h: PortfolioHoldin
           {gain > 0 ? (
             <>
               {h.isIndex ? `This money was ${usd(h.cost)} when it went in.` : `You put in ${usd(h.cost)}.`} Tax if sold today: <b>{usd(tax, true)}</b>
-              {split.long <= 0 ? ` (${rate(s.shortTermTaxRate)} of the ${usd(gain)} gain)` : split.short <= 0 ? ` (${rate(s.longTermTaxRate)} of the ${usd(gain)} gain)` : ""}.
+              {split.long <= 0 ? ` (${rate(s.shortTermTaxRate)} of the ${usd(gain)} gain)` : split.short <= 0 ? ` (${rate(s.longTermTaxRate)} of the ${usd(gain)} gain)` : ""}, plus a{" "}
+              <b>{usd(fee, true)}</b> fee.
             </>
           ) : (
             <>
               {h.isIndex ? `This money was ${usd(h.cost)} when it went in.` : `You put in ${usd(h.cost)}.`} That&apos;s a {usd(-gain)} loss so far. If you sold, it would
-              lower the tax on your gains.
+              lower the tax on your gains, and the fee would be <b>{usd(fee, true)}</b>.
             </>
           )}
         </p>

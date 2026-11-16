@@ -200,3 +200,5 @@ Jeff's call (2026-11-15): portfolio and selling first, the board and the feed af
 - The drift chart starts the night this ships; it has no days before that, and a night the job misses leaves a gap.
 - The hold is counted in calendar days from the day a pick filled, so a pick can unlock on a weekend and be sold at Monday's close.
 - "After tax" doesn't subtract the 0.5% fee a full sale would cost.
+
+**Jeff's answers (2026-11-15; branch `phase3/sell_reason`).** Selling asks "Why are you selling?" and takes one line, never judged (`orders.reason`, shown on the order page). Shares and oldest-first stay; no choosing lots. The compared number is now "what you'd keep": after the tax and the 0.5% fee a full sale would cost, for the player and for the untouched index; the portfolio page shows worth, tax, fee and what you'd keep (`feeToSell` and `kept` in `portfolioOf`; `kept` and `index_kept` on `portfolio_days`, migration 0007, adds three columns and deletes nothing). The board is next; the feed is the least important.

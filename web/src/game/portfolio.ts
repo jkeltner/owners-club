@@ -4,7 +4,7 @@
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { companies, lots, orders, portfolioDays, prices, type DayHolding } from "@/db/schema";
-import { INDEX_TICKER, round2, STARTING_VALUE, type GameSettings } from "@/lib/rules";
+import { INDEX_TICKER, round2, STARTING_VALUE, tradeFee, type GameSettings } from "@/lib/rules";
 import { INDEX_FUND_TICKER } from "@/market/massive";
 import { displayName } from "@/market/names";
 import { closesFor, openLots, taxLedger, type Reader } from "./holdings";
@@ -43,15 +43,17 @@ export type Portfolio = {
   total: number;
   taxOwed: number; // if it were all sold at that close; negative when tax would come back
   afterTax: number;
-  index: { value: number; afterTax: number } | null; // the starting money, never moved
+  feeToSell: number; // the trade fee on selling all of it
+  kept: number; // after the tax and that fee: the number the game compares
+  index: { value: number; afterTax: number; kept: number } | null; // the starting money, never moved
   feesPaid: number;
   taxesPaid: number;
   realized: Realized;
   holdings: PortfolioHolding[]; // the index first, then picks by size
 };
 
-/** The starting $10,000 left alone in the index since the portfolio opened, valued at `date`'s close, before and after tax. */
-async function untouchedIndex(membershipId: string, date: string, s: GameSettings, from: Reader): Promise<{ value: number; afterTax: number } | null> {
+/** The starting $10,000 left alone in the index since the portfolio opened, valued at `date`'s close: before tax, after tax, and after the fee to sell it too. */
+async function untouchedIndex(membershipId: string, date: string, s: GameSettings, from: Reader): Promise<{ value: number; afterTax: number; kept: number } | null> {
   const [first] = await from
     .select({ boughtOn: lots.boughtOn })
     .from(lots)
@@ -68,7 +70,8 @@ async function untouchedIndex(membershipId: string, date: string, s: GameSetting
   const value = round2((STARTING_VALUE * close) / then.close);
   const gain = value - STARTING_VALUE;
   const rate = longTermDay(first.boughtOn, s) <= date ? s.longTermTaxRate : s.shortTermTaxRate;
-  return { value, afterTax: round2(value - Math.max(0, gain) * rate) };
+  const afterTax = round2(value - Math.max(0, gain) * rate);
+  return { value, afterTax, kept: round2(afterTax - tradeFee(value, s)) };
 }
 
 /**
@@ -120,12 +123,15 @@ export async function portfolioOf(membershipId: string, s: GameSettings, opts: {
   const opened = open.length > 0 || ledger.fees > 0;
   const day = asOf ?? sellOn;
   const taxOwed = taxIfAllSold(all.flatMap((h) => h.lots), day, ledger.realized, ledger.paid, s);
+  const feeToSell = tradeFee(total, s);
   return {
     opened,
     asOf,
     total,
     taxOwed,
     afterTax: round2(total - taxOwed),
+    feeToSell,
+    kept: round2(total - taxOwed - feeToSell),
     index: asOf ? await untouchedIndex(membershipId, asOf, s, from) : null,
     feesPaid: round2(ledger.fees),
     taxesPaid: round2(ledger.paid),
@@ -139,7 +145,7 @@ export async function snapshotDay(membershipId: string, s: GameSettings, date?: 
   const p = await portfolioOf(membershipId, s, { date });
   if (!p.opened || !p.asOf || !p.index) return false;
   const holdings: DayHolding[] = p.holdings.map((h) => ({ ticker: h.ticker, value: h.value }));
-  const row = { value: p.total, taxOwed: p.taxOwed, afterTax: p.afterTax, indexAfterTax: p.index.afterTax, holdings };
+  const row = { value: p.total, taxOwed: p.taxOwed, afterTax: p.afterTax, indexAfterTax: p.index.afterTax, kept: p.kept, indexKept: p.index.kept, holdings };
   await db
     .insert(portfolioDays)
     .values({ membershipId, date: p.asOf, ...row })

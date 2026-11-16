@@ -35,7 +35,7 @@ The clickable prototype in `prototype/` is done and live at owners-club-alpha.ve
 These come from the concept doc's design principles. Don't change them without updating the docs.
 
 - **The coach coaches; it never recommends.** It asks questions and shows numbers. It never says a stock is good or bad, never tells a player what to buy, and never blocks a trade.
-- **Everything is measured against the S&P 500**, on after-tax value as if sold today.
+- **Everything is measured against the S&P 500**, on what the player would keep if sold today: after tax and the selling fee.
 - **Game settings are per club**, with defaults: 25% cap at purchase, 3-month minimum hold, 0.5% fee per trade, 40% tax on gains held under 6 months and 20% after, losses offset gains. The index holding is exempt from the cap and the hold, but not from fees or taxes.
 - **Trades fill at the next market close**; portfolios and the leaderboard update once a day.
 - **Quizzes teach; theses prove.** A passed check question marks a concept "explained", never "applied".

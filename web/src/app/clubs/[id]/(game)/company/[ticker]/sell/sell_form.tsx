@@ -7,6 +7,7 @@ import { useActionState, useState } from "react";
 import { daysBetween, longTermDay, sellOldestFirst, taxForSale, type OpenLot, type Realized } from "@/game/ledger";
 import { usd } from "@/lib/format";
 import { round2, tradeFee, type GameSettings } from "@/lib/rules";
+import { SELL_REASON_MAX } from "@/game/sell_reason";
 import { sell, type FormState } from "../../../actions";
 import { clubPath } from "../../../_lib/paths";
 
@@ -115,6 +116,12 @@ export function SellForm({ clubId, ticker, name, price, most, lots, sellOn, real
           </p>
         </>
       )}
+
+      <label className="field">
+        <span>Why are you selling?</span>
+        <textarea name="reason" rows={2} maxLength={SELL_REASON_MAX} required placeholder="One line is enough" />
+        <small className="muted">Any reason is fine and nobody argues with it. It&apos;s saved with the sale so you can look back at what you were thinking.</small>
+      </label>
 
       <p className="muted small">
         Your sell goes through at the market close on {day(sellOn)} (4 pm in New York), or the next day the market is open. The price that day will be different from the
