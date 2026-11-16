@@ -11,15 +11,15 @@ export const dynamic = "force-dynamic";
 
 const longDay = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
 const shortDay = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
-const LABEL: Record<BoardWindow, string> = { start: "Since each start", "3m": "3 months", "6m": "6 months", "12m": "12 months" };
-const STRETCH: Record<BoardWindow, string> = { start: "since they started", "3m": "over the last 3 months", "6m": "over the last 6 months", "12m": "over the last 12 months" };
+const LABEL: Record<BoardWindow, string> = { start: "Since opening", "3m": "3 months", "6m": "6 months", "12m": "12 months" };
+const STRETCH: Record<BoardWindow, string> = { start: "since the club opened", "3m": "over the last 3 months", "6m": "over the last 6 months", "12m": "over the last 12 months" };
 const playing = (days: number) => (days < 1 ? "first day" : days < 60 ? `playing ${days} day${days === 1 ? "" : "s"}` : `playing ${Math.floor(days / 30)} months`);
 const lead = (vs: number) => (Math.abs(vs) < 0.05 ? "Even" : signedPct(vs));
 
 export default async function BoardPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ w?: string }> }) {
   const { id } = await params;
   const { w } = await searchParams;
-  const { membership } = await requireMember(id, clubPath(id, "/board"));
+  const { membership, club } = await requireMember(id, clubPath(id, "/board"));
   const board = await boardOf(id, w);
   const back = clubPath(id);
   const windows = (Object.keys(LABEL) as BoardWindow[]).filter((k) => k === "start" || board.open[k] || k === "3m" || k === "6m");
@@ -31,8 +31,8 @@ export default async function BoardPage({ params, searchParams }: { params: Prom
         <h1>The board</h1>
         <Card>
           <p>
-            Nobody&apos;s portfolio has opened yet. Everyone&apos;s $10,000 goes into the S&amp;P 500 index fund at the next market close (4 pm in New York, Monday to
-            Friday), and the board shows up here the morning after.
+            Nobody&apos;s portfolio has opened yet. This club opens on {longDay(club.opensOn)}: everyone&apos;s $10,000 goes into the S&amp;P 500 index fund at that
+            day&apos;s market close (4 pm in New York), and the board shows up here the morning after.
           </p>
         </Card>
       </Page>
@@ -64,8 +64,8 @@ export default async function BoardPage({ params, searchParams }: { params: Prom
       </div>
       {(!board.open["3m"] || !board.open["6m"]) && (
         <p className="muted small">
-          {!board.open["3m"] ? "The 3-month and 6-month boards open" : "The 6-month board opens"} once someone has played that long. Until then the board measures everyone
-          from their own first day.
+          {!board.open["3m"] ? "The 3-month and 6-month boards open" : "The 6-month board opens"} once the club has been open that long. Until then the board measures
+          everyone from the club&apos;s opening day.
         </p>
       )}
 
@@ -101,7 +101,7 @@ export default async function BoardPage({ params, searchParams }: { params: Prom
                   <span>
                     {r.avatar} {r.name}
                   </span>
-                  <span className="muted small">{r.started ? `started ${shortDay(r.started)}` : "portfolio opens at the next market close"}</span>
+                  <span className="muted small">{r.started ? `joined ${shortDay(r.started)}` : "portfolio opens at the next market close"}</span>
                 </li>
               ))}
             </ul>
@@ -118,8 +118,8 @@ export default async function BoardPage({ params, searchParams }: { params: Prom
           </p>
         ) : (
           <p>
-            The Bell is the title for whoever leads the 6-month board, named for the bell that opens the stock market each morning. Nobody holds it yet, because nobody
-            has played 6 months{board.bell.firstChance ? `. The first chance is ${shortDay(board.bell.firstChance)}.` : "."}
+            The Bell is the title for whoever leads the 6-month board, named for the bell that opens the stock market each morning. Nobody holds it yet, because the club
+            hasn&apos;t been open 6 months{board.bell.firstChance ? `. The first chance is ${shortDay(board.bell.firstChance)}.` : "."}
           </p>
         )}
         {board.bell.holder && board.window !== BELL_WINDOW && (

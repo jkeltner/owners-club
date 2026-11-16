@@ -76,7 +76,7 @@ describe("placing a pick", () => {
   beforeAll(async () => {
     await dbReady;
     await db.insert(user).values(["pick-ana", "pick-bo", "pick-cy", "pick-teach"].map((p) => ({ id: p, name: p, email: `${p}@example.test` })));
-    const made = await createClub("pick-teach", { name: "Period 3", displayName: "Ms. T", plays: false });
+    const made = await createClub("pick-teach", { name: "Period 3", displayName: "Ms. T", plays: false }, new Date("2026-01-05T15:00:00Z")); // long open
     clubId = made.club.id;
     teacher = made.membership;
     inviteCode = (await createInvite("pick-teach", clubId)).code;
@@ -158,7 +158,7 @@ describe("placing a pick", () => {
     expect(await clubTheses(clubId, ana.id)).toHaveLength(0);
     await saveDraft(bo.id, "PCK2", thesis);
     expect(await clubTheses(clubId, ana.id)).toHaveLength(0);
-    const elsewhere = await createClub("pick-cy", { name: "Other Club", displayName: "Cy", plays: true });
+    const elsewhere = await createClub("pick-cy", { name: "Other Club", displayName: "Cy", plays: true }, new Date("2026-01-05T15:00:00Z"));
     expect(await clubTheses(elsewhere.club.id, elsewhere.membership.id)).toHaveLength(0);
   });
 

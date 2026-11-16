@@ -58,6 +58,18 @@ export default async function NewClub() {
           <ExperiencePicker value={experience} />
         </section>
 
+        <section className="card stack">
+          <label className="field">
+            Opening day (optional)
+            <input type="date" name="opensOn" />
+            <small>
+              Leave it empty to open at the next market close. Or pick a later day so everyone can join first: nobody can place a pick before it, and everyone&apos;s
+              $10,000 goes into the S&amp;P 500 at that day&apos;s close. Anyone who joins after it starts from the same day, so the whole club is measured over the same
+              stretch.
+            </small>
+          </label>
+        </section>
+
         <details className="card">
           <summary>
             <b>Game rules</b> <span className="muted small">(the usual ones are filled in; change them only if you mean to)</span>

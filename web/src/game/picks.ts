@@ -5,13 +5,13 @@
 // place, on the server, whatever the screen allowed.
 import { and, desc, eq, inArray, isNull, ne } from "drizzle-orm";
 import { db } from "@/db";
-import { companies, conversations, memberships, orders, theses } from "@/db/schema";
+import { clubs, companies, conversations, memberships, orders, theses } from "@/db/schema";
 import { logEvent } from "@/lib/events";
 import { INDEX_TICKER, maxPurchase, round2, STARTING_VALUE, tradeFee, type GameSettings } from "@/lib/rules";
 import type { LastQuarter } from "@/market/metrics";
 import { releaseThesis } from "./fills";
 import { holdingsOf } from "./holdings";
-import { closeHasPassed } from "./ledger";
+import { clubIsOpen, closeHasPassed } from "./ledger";
 import { portfolioOf } from "./portfolio";
 import { SELL_REASON_MAX } from "./sell_reason";
 import { joinParts, MAX_PART, metricById, written, type Parts, type PredictionMetric } from "./thesis_text";
@@ -126,6 +126,8 @@ export async function moneyFor(membershipId: string, settings: GameSettings, tic
 
 // ---- The order ----
 
+const longDate = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
+
 type Buyer = { id: string; clubId: string; plays: boolean };
 
 /**
@@ -133,12 +135,14 @@ type Buyer = { id: string; clubId: string; plays: boolean };
  * the player has a written thesis for. The order waits for the next market
  * close. Refused (and logged, without the player's words) when a rule says no.
  */
-export async function placeBuy(buyer: Buyer, settings: GameSettings, ticker: string, amount: number): Promise<{ order: Order; thesis: Thesis; first: boolean }> {
+export async function placeBuy(buyer: Buyer, settings: GameSettings, ticker: string, amount: number, now = new Date()): Promise<{ order: Order; thesis: Thesis; first: boolean }> {
   const refuse = async (message: string, detail: Record<string, unknown> = {}): Promise<never> => {
     await logEvent({ level: "info", kind: "trade.rejected", message, detail: { membershipId: buyer.id, ticker, amount, ...detail } });
     throw new PickError(message);
   };
   if (!buyer.plays) await refuse("You're running this club, not playing in it, so you don't have a portfolio");
+  const [club] = await db.select({ opensOn: clubs.opensOn }).from(clubs).where(eq(clubs.id, buyer.clubId));
+  if (club && !clubIsOpen(club.opensOn, now)) await refuse(`This club opens on ${longDate(club.opensOn)}. Picks can be placed from that day; your thesis is saved until then`, { opensOn: club.opensOn });
   const [company] = await db
     .select({ ticker: companies.ticker })
     .from(companies)

@@ -91,7 +91,7 @@ describe("the nightly fill step", () => {
   beforeAll(async () => {
     await dbReady;
     await db.insert(user).values({ id: "fill-dee", name: "fill-dee", email: "fill-dee@example.test" });
-    dee = (await createClub("fill-dee", { name: "Fill Club", displayName: "Dee", plays: true })).membership;
+    dee = (await createClub("fill-dee", { name: "Fill Club", displayName: "Dee", plays: true }, ny("2026-11-09", 10))).membership; // opens at that day's close
     await db.update(memberships).set({ joinedAt: ny("2026-11-09", 10) }).where(eq(memberships.id, dee.id));
     await db.insert(companies).values([
       { ticker: "FIL", name: "Fillco", cik: 900300, sector: "Information Technology", subIndustry: "Semiconductors", lens: "Chipmakers" },

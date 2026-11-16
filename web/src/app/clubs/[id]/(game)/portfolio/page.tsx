@@ -2,7 +2,7 @@
 // with leaving the money in the index, and every holding with what selling it
 // would cost. Valued once a day, at the last close.
 import Link from "next/link";
-import { unrealized } from "@/game/ledger";
+import { clubIsOpen, fillDay, unrealized } from "@/game/ledger";
 import { ordersOf } from "@/game/picks";
 import { daysOf, portfolioOf, type PortfolioHolding } from "@/game/portfolio";
 import { signedPct, usd } from "@/lib/format";
@@ -41,8 +41,9 @@ export default async function Portfolio({ params }: { params: Promise<{ id: stri
         <h1>Your portfolio</h1>
         <Card>
           <p>
-            Your {usd(STARTING_VALUE)} goes into the S&amp;P 500 index fund at the next market close (4 pm in New York, Monday to Friday). Your portfolio shows up here the
-            morning after.
+            {clubIsOpen(club.opensOn)
+              ? `Your ${usd(STARTING_VALUE)} goes into the S&P 500 index fund at the next market close (4 pm in New York, Monday to Friday). Your portfolio shows up here the morning after.`
+              : `This club opens on ${longDay(club.opensOn)}. Your ${usd(STARTING_VALUE)} goes into the S&P 500 index fund at that day's market close (4 pm in New York), and your portfolio shows up here the morning after. Picks can be placed from that day.`}
           </p>
         </Card>
         <Waiting id={id} rows={waiting} />
@@ -53,6 +54,9 @@ export default async function Portfolio({ params }: { params: Promise<{ id: stri
     );
   }
 
+  // Someone who joined after the club opened: their starting money is dated the opening day.
+  const firstDay = p.holdings.find((h) => h.isIndex)?.lots.map((l) => l.boughtOn).sort()[0] ?? null;
+  const joinedLate = firstDay != null && fillDay(membership.joinedAt) > firstDay;
   const mine = returnOn(p.kept);
   const market = p.index ? returnOn(p.index.kept) : null;
   const largest = picks.reduce((m, h) => Math.max(m, h.share), 0);
@@ -107,6 +111,12 @@ export default async function Portfolio({ params }: { params: Promise<{ id: stri
           {feePct(s)} fee on the sale. That&apos;s the number the game compares.
           Fees paid so far: <b>{usd(p.feesPaid, true)}</b> · Taxes paid: <b>{usd(p.taxesPaid, true)}</b>
         </p>
+        {joinedLate && (
+          <p className="muted small">
+            You joined after this club opened on {longDay(firstDay!)}. So that everyone is measured over the same stretch, your {usd(STARTING_VALUE)} went into the index
+            fund on that day, the same as everyone else&apos;s. What the index has done since then is already in your numbers.
+          </p>
+        )}
         <Link className="btn btn-ghost" href={clubPath(id, "/board")}>
           See the club&apos;s board
         </Link>

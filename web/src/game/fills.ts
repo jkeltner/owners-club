@@ -1,6 +1,8 @@
 // The nightly fill step. After the day's closes are stored it (1) puts each
-// new player's $10,000 into the index at the first close after they joined,
-// and (2) fills every waiting order at the first close after it was placed.
+// new player's $10,000 into the index at the club's opening close (the first
+// close on or after its opening day), however late they joined, so everyone
+// in a club is measured over the same stretch, and (2) fills every waiting
+// order at the first close after it was placed.
 // Safe to run again: a portfolio opens once, and an order fills only while it
 // is still waiting.
 import { and, asc, eq, gte, inArray, sql } from "drizzle-orm";
@@ -28,24 +30,42 @@ async function firstCloseDay(tickers: string[], from: string): Promise<{ date: s
   return null;
 }
 
-/** Every playing member without a portfolio gets the starting $10,000 of the index at the first close after joining. */
+/** The $10,000 goes into the index at the club's opening close. False while that close hasn't happened, or if the portfolio is already open. */
+async function openAt(membershipId: string, opensOn: string): Promise<boolean> {
+  const day = await firstCloseDay([INDEX_FUND_TICKER], opensOn);
+  if (!day) return false;
+  return db.transaction(async (tx) => {
+    if (await tx.$count(lots, eq(lots.membershipId, membershipId))) return false;
+    await tx.insert(lots).values({ membershipId, ticker: INDEX_TICKER, shares: STARTING_VALUE / day.closes.get(INDEX_FUND_TICKER)!, cost: STARTING_VALUE, boughtOn: day.date });
+    return true;
+  });
+}
+
+/** Every playing member without a portfolio gets the starting $10,000 of the index, dated the club's opening close. */
 export async function openPortfolios(): Promise<{ opened: number; waitingForAClose: number }> {
   const fresh = await db
-    .select({ id: memberships.id, joinedAt: memberships.joinedAt })
+    .select({ id: memberships.id, opensOn: clubs.opensOn })
     .from(memberships)
+    .innerJoin(clubs, eq(clubs.id, memberships.clubId))
     .where(and(eq(memberships.plays, true), sql`not exists (select 1 from ${lots} where ${lots.membershipId} = ${memberships.id})`));
   let opened = 0;
-  for (const m of fresh) {
-    const day = await firstCloseDay([INDEX_FUND_TICKER], fillDay(m.joinedAt));
-    if (!day) continue;
-    await db.transaction(async (tx) => {
-      const already = await tx.$count(lots, eq(lots.membershipId, m.id));
-      if (already) return;
-      await tx.insert(lots).values({ membershipId: m.id, ticker: INDEX_TICKER, shares: STARTING_VALUE / day.closes.get(INDEX_FUND_TICKER)!, cost: STARTING_VALUE, boughtOn: day.date });
-      opened++;
-    });
-  }
+  for (const m of fresh) if (await openAt(m.id, m.opensOn)) opened++;
   return { opened, waitingForAClose: fresh.length - opened };
+}
+
+/**
+ * For someone joining a club that has already opened: their portfolio opens
+ * on the spot, dated the club's opening close, with today's row for the board.
+ */
+export async function openLateJoiner(membershipId: string): Promise<boolean> {
+  const [m] = await db
+    .select({ plays: memberships.plays, opensOn: clubs.opensOn, settings: clubs.settings })
+    .from(memberships)
+    .innerJoin(clubs, eq(clubs.id, memberships.clubId))
+    .where(eq(memberships.id, membershipId));
+  if (!m?.plays || !(await openAt(membershipId, m.opensOn))) return false;
+  await snapshotDay(membershipId, m.settings);
+  return true;
 }
 
 /** An order that can't go through: marked, and its thesis handed back as a draft with its conversation. */

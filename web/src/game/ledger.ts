@@ -31,6 +31,24 @@ export function fillDay(placedAt: Date): string {
   return day;
 }
 
+/**
+ * A club's opening day from what the organizer asked for: a weekday, no
+ * earlier than the next close and no more than a year out. Nothing asked (or
+ * nonsense) means the next close.
+ */
+export function openingDay(asked: unknown, now = new Date()): string {
+  const first = fillDay(now);
+  const text = String(asked ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text) || Number.isNaN(Date.parse(`${text}T00:00:00Z`))) return first;
+  let day = text;
+  while (isWeekend(day)) day = addDays(day, 1);
+  const last = addDays(first, 366);
+  return day < first ? first : day > last ? last : day;
+}
+
+/** Whether the club's opening day has come (in New York): from then on orders can be placed. */
+export const clubIsOpen = (opensOn: string, now = new Date()) => inNewYork(now).date >= opensOn;
+
 /** Whether the close an order was waiting for has passed: from then on it can't be taken back. */
 export function closeHasPassed(placedAt: Date, now = new Date()): boolean {
   const day = fillDay(placedAt);

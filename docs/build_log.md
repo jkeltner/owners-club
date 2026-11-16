@@ -223,3 +223,16 @@ Jeff's call (2026-11-15): the board next; the feed is the least important.
 
 **The week's delay is gone (2026-11-15, branch `phase3/live_holdings`).** Jeff: drop it. A clubmate's page now shows their mix at the last close, as shares, with dollars still private to the player and a non-playing organizer. The concept's "Delayed positions" rule, the Privacy page and the start-a-club form say so. The feed's first version is agreed: a card when a clubmate places a pick (thesis and prediction), a line when a buy or sell goes through (company only), and comments on a thesis.
 
+### Slice c: the club's opening day (2026-11-15, branch `phase3/opening_day`)
+
+Jeff's call: late joiners get their $10,000 backdated to the club's opening day; an organizer can set a future opening day; no trades before it; the test club opens Monday 2026-11-16.
+
+- **Starting a club** asks for an optional opening day. Empty means the next market close.
+- **Before it**: the club page, portfolio page and size screen say when the club opens; a pick can't be placed (the thesis is kept); the organizer can move the day.
+- **At its close**: every player's $10,000 goes into the index.
+- **Joining later**: the portfolio opens at once, dated the opening day, and the portfolio page says so. The board measures everyone "since opening"; trailing boards open for the whole club together.
+
+Migration 0008 adds `clubs.opens_on` and sets it to 2026-11-16 for every club that already exists (it changes that one new column; nothing is deleted). Tests: `web/tests/opening.test.ts`. Checked locally: the migration on a database with clubs in it, the club page before opening, the new field on the start-a-club form. Only in tests: a late joiner's portfolio and the moved opening day.
+
+**Not built:** annual seasons. A waiting sell placed before opening can't exist (nothing to sell), so only buys are gated.
+

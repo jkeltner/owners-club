@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { canManageClub } from "@/clubs/access";
 import { INVITE_DAYS, liveInvites, membershipIn, roster } from "@/clubs/clubs";
+import { clubIsOpen } from "@/game/ledger";
 import { ordersOf } from "@/game/picks";
 import { baseURL } from "@/lib/auth_options";
 import { usd } from "@/lib/format";
@@ -28,6 +29,8 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
   const organizer = canManageClub(membership);
   const [members, invites, picks] = await Promise.all([roster(club.id), organizer ? liveInvites(club.id) : [], membership.plays ? ordersOf(membership.id) : []]);
   const s = club.settings;
+  const open = clubIsOpen(club.opensOn);
+  const openingDay = new Date(`${club.opensOn}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
 
   return (
     <main className="status">
@@ -40,6 +43,12 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
       <p className="sub">
         {members.length === 1 ? "Just you so far." : `${members.length} people.`} {membership.plays ? "Make picks, see your portfolio, and see how everyone is doing against the S&P 500 on the board." : "The board shows how everyone is doing against the S&P 500."}
       </p>
+      {!open && (
+        <p className="problem">
+          This club opens on {openingDay}. Until then you can look at companies and write a thesis, but picks can&apos;t be placed. At that day&apos;s market close (4 pm
+          in New York) everyone&apos;s $10,000 goes into the S&amp;P 500 index fund.
+        </p>
+      )}
       <Link className="button secondary" href={`/clubs/${club.id}/board`}>
         See the board
       </Link>
@@ -147,6 +156,8 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
       <section className="card">
         <h2>Rules in this club</h2>
         <dl>
+          <dt>{open ? "Opened" : "Opens"}</dt>
+          <dd>{openingDay}</dd>
           <dt>Minimum hold before selling a pick</dt>
           <dd>{s.minHoldDays} days</dd>
           <dt>Biggest single purchase</dt>
@@ -167,6 +178,13 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
                 Club name
                 <input type="text" name="name" maxLength={60} defaultValue={club.name} required />
               </label>
+              {!open && (
+                <label className="field">
+                  Opening day
+                  <input type="date" name="opensOn" defaultValue={club.opensOn} />
+                  <small>Can be changed until it arrives. Nobody can place a pick before it.</small>
+                </label>
+              )}
               <SettingsFields settings={s} />
               <button className="button">Save</button>
             </form>

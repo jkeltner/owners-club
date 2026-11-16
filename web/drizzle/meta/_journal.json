@@ -57,6 +57,13 @@
       "when": 1794788682842,
       "tag": "0007_mixed_brother_voodoo",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794795294711,
+      "tag": "0008_true_shard",
+      "breakpoints": true
     }
   ]
 }
