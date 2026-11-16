@@ -2,8 +2,8 @@
 // stretch, with how the return was made beside it. Everything comes from the
 // nightly `portfolio_days` rows, so the board can't disagree with a player's
 // own portfolio page. Also what a clubmate may see of someone else's holdings:
-// the mix, a week late.
-import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
+// the mix at the last close, as shares of the whole.
+import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import { companies, memberships, portfolioDays, type DayHolding } from "@/db/schema";
 import { INDEX_TICKER, STARTING_VALUE } from "@/lib/rules";
@@ -17,8 +17,6 @@ export type BoardWindow = (typeof WINDOWS)[number];
 const MONTHS: Record<Exclude<BoardWindow, "start">, number> = { "3m": 3, "6m": 6, "12m": 12 };
 /** The board the Bell follows. */
 export const BELL_WINDOW: BoardWindow = "6m";
-/** Clubmates see each other's holdings this many days late, so nobody can copy the leader. */
-export const HOLDINGS_DELAY_DAYS = 7;
 
 export type BoardDay = { date: string; value: number; kept: number; indexKept: number; holdings: DayHolding[] };
 
@@ -33,12 +31,6 @@ export function shiftMonths(date: string, months: number): string {
   d.setUTCMonth(d.getUTCMonth() + months);
   const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
   d.setUTCDate(Math.min(day, last));
-  return iso(d);
-}
-
-export function shiftDays(date: string, days: number): string {
-  const d = at(date);
-  d.setUTCDate(d.getUTCDate() + days);
   return iso(d);
 }
 
@@ -157,20 +149,15 @@ export async function boardOf(clubId: string, asked?: string | null): Promise<Bo
 export type MixPart = { ticker: string; name: string; isIndex: boolean; share: number; value: number };
 export type Mix =
   | { state: "none" } // no portfolio yet
-  | { state: "soon"; showsOn: string } // playing, but not for a week yet
   | { state: "shown"; date: string; total: number; parts: MixPart[] };
 
 /**
- * What a player held, as shares of their whole portfolio. `late` shows the
- * newest day that is at least a week old (what a clubmate sees); otherwise the
- * newest day (what a non-playing organizer sees).
+ * What a player held at their latest close, as shares of their whole
+ * portfolio. The screen decides whether the dollars are shown too.
  */
-export async function mixOf(membershipId: string, opts: { late: boolean; today?: string }): Promise<Mix> {
-  const days = await db.select().from(portfolioDays).where(eq(portfolioDays.membershipId, membershipId)).orderBy(asc(portfolioDays.date));
-  if (!days.length) return { state: "none" };
-  const cutoff = shiftDays(opts.today ?? iso(new Date()), -HOLDINGS_DELAY_DAYS);
-  const day = opts.late ? days.filter((d) => d.date <= cutoff).at(-1) : days.at(-1);
-  if (!day) return { state: "soon", showsOn: shiftDays(days[0].date, HOLDINGS_DELAY_DAYS) };
+export async function mixOf(membershipId: string): Promise<Mix> {
+  const [day] = await db.select().from(portfolioDays).where(eq(portfolioDays.membershipId, membershipId)).orderBy(desc(portfolioDays.date)).limit(1);
+  if (!day) return { state: "none" };
   const tickers = day.holdings.map((h) => h.ticker).filter((t) => t !== INDEX_TICKER);
   const named = tickers.length ? await db.select({ ticker: companies.ticker, name: companies.name }).from(companies).where(inArray(companies.ticker, tickers)) : [];
   const nameOf = new Map(named.map((c) => [c.ticker, c.name]));

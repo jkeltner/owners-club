@@ -1,11 +1,11 @@
-// A clubmate's portfolio as the rest of the club may see it: the mix, as shares
-// of the whole, a week late, so nobody can copy whoever is in front. An
-// organizer who doesn't play sees it as of the last close, in dollars.
+// A clubmate's portfolio as the rest of the club may see it: the mix at the
+// last close, as shares of the whole. An organizer who doesn't play sees the
+// dollars too.
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { seesDollars, viewOf } from "@/clubs/access";
 import { roster } from "@/clubs/clubs";
-import { HOLDINGS_DELAY_DAYS, mixOf } from "@/game/board";
+import { mixOf } from "@/game/board";
 import { usd } from "@/lib/format";
 import { clubPath, companyPath, requireMember } from "../../_lib/player";
 import { MixBar } from "../../_ui/charts";
@@ -25,7 +25,7 @@ export default async function Player({ params }: { params: Promise<{ id: string;
   if (view === "none") notFound();
   if (view === "own") redirect(clubPath(id, "/portfolio"));
   const dollars = seesDollars(view);
-  const mix = await mixOf(them.id, { late: !dollars });
+  const mix = await mixOf(them.id);
   let pick = 0;
   const colored = mix.state === "shown" ? mix.parts.map((p) => ({ ...p, color: p.isIndex ? "var(--index)" : COLORS[pick++ % COLORS.length] })) : [];
 
@@ -42,20 +42,12 @@ export default async function Player({ params }: { params: Promise<{ id: string;
           <p>{them.displayName}&apos;s portfolio hasn&apos;t opened yet. It opens at the first market close after joining.</p>
         </Card>
       )}
-      {mix.state === "soon" && (
-        <Card>
-          <p>
-            You see a clubmate&apos;s holdings {HOLDINGS_DELAY_DAYS} days late, so nobody can copy whoever is in front. {them.displayName} hasn&apos;t been playing that
-            long. Their first day shows up here on {longDay(mix.showsOn)}.
-          </p>
-        </Card>
-      )}
       {mix.state === "shown" && (
         <>
           <p className="muted small">
             {dollars
-              ? `What ${them.displayName} held at the market close on ${longDay(mix.date)}. You run this club without playing, so you see it up to date and in dollars.`
-              : `What ${them.displayName} held at the market close on ${longDay(mix.date)}. You see a clubmate's holdings ${HOLDINGS_DELAY_DAYS} days late, and as shares of their portfolio, not dollars, so nobody can copy whoever is in front.`}
+              ? `What ${them.displayName} held at the market close on ${longDay(mix.date)}. You run this club without playing, so you see the dollars too.`
+              : `What ${them.displayName} held at the market close on ${longDay(mix.date)}, as shares of their portfolio. The dollars stay private.`}
           </p>
           <MixBar parts={colored.map((p) => ({ label: p.ticker, value: p.value, color: p.color }))} />
           <Card>

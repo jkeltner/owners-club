@@ -97,17 +97,13 @@ describe("the club's board", () => {
     expect((await boardOf(clubId, "start")).window).toBe("start");
   });
 
-  it("shows a clubmate's mix a week late, and an organizer's view up to date", async () => {
-    expect(await mixOf(ids.dot, { late: true, today: "2026-11-21" })).toEqual({ state: "none" });
-    expect(await mixOf(ids.ben, { late: true, today: "2026-11-21" })).toEqual({ state: "soon", showsOn: "2026-11-25" });
-    const late = await mixOf(ids.ben, { late: true, today: "2026-11-26" });
-    expect(late).toMatchObject({ state: "shown", date: "2026-11-18" }); // not the 20th, which is only six days old
-    if (late.state === "shown") expect(late.parts.map((p) => p.ticker)).toEqual(["SPX"]);
-    const live = await mixOf(ids.ben, { late: false, today: "2026-11-21" });
-    expect(live).toMatchObject({ state: "shown", date: "2027-05-20" });
-    if (live.state === "shown") {
-      expect(live.parts.map((p) => p.ticker)).toEqual(["SPX", "BBB"]);
-      expect(live.parts[1].share).toBeCloseTo(6000 / 11300, 6);
+  it("shows a clubmate's mix at their latest close", async () => {
+    expect(await mixOf(ids.dot)).toEqual({ state: "none" });
+    const mix = await mixOf(ids.ben);
+    expect(mix).toMatchObject({ state: "shown", date: "2027-05-20" });
+    if (mix.state === "shown") {
+      expect(mix.parts.map((p) => p.ticker)).toEqual(["SPX", "BBB"]);
+      expect(mix.parts[1].share).toBeCloseTo(6000 / 11300, 6);
     }
   });
 });

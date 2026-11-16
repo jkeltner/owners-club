@@ -22,7 +22,7 @@ export default function Privacy() {
       <h2>Who can see it</h2>
       <ul>
         <li>
-          <b>Your club</b> sees your club name, avatar, theses, comments and results. Clubmates see your holdings as shares of your portfolio, a week late.
+          <b>Your club</b> sees your club name, avatar, theses, comments and results. Clubmates see your holdings as shares of your portfolio, not in dollars.
         </li>
         <li>
           <b>Your club&apos;s organizers</b> who don&apos;t play themselves can see every player&apos;s holdings, trades, theses, returns and progress as they happen.

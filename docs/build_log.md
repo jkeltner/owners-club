@@ -221,3 +221,5 @@ Jeff's call (2026-11-15): the board next; the feed is the least important.
 
 **Jeff's answers on slice b (2026-11-15).** "Since each start" stays: a club can't wait three months for a comparison. The sell reason stays private to the seller. Two things he raised and hasn't decided: a club "opening day" (join before it and start together; late joiners get an index purchase backdated to it; maybe annual seasons), and showing clubmates' holdings in real time, since the week's delay exists only to stop copying. Order of work from here: Jeff walks the test doc, then the feed (basic), then the live coach last.
 
+**The week's delay is gone (2026-11-15, branch `phase3/live_holdings`).** Jeff: drop it. A clubmate's page now shows their mix at the last close, as shares, with dollars still private to the player and a non-playing organizer. The concept's "Delayed positions" rule, the Privacy page and the start-a-club form say so. The feed's first version is agreed: a card when a clubmate places a pick (thesis and prediction), a line when a buy or sell goes through (company only), and comments on a thesis.
+

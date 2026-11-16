@@ -7,7 +7,7 @@ export type View =
   | "none" // not in the same club: nothing
   | "own" // your own portfolio: dollars, live
   | "organizer" // a non-playing organizer: dollars, live, for every player
-  | "clubmate"; // anyone else in the club: shares of the whole, a week late
+  | "clubmate"; // anyone else in the club: shares of the whole at the last close, no dollars
 
 export function viewOf(viewer: Viewer | null | undefined, target: { id: string; clubId: string }): View {
   if (!viewer || viewer.clubId !== target.clubId) return "none";
