@@ -13,6 +13,7 @@ import { releaseThesis } from "./fills";
 import { holdingsOf } from "./holdings";
 import { closeHasPassed } from "./ledger";
 import { portfolioOf } from "./portfolio";
+import { SELL_REASON_MAX } from "./sell_reason";
 import { joinParts, MAX_PART, metricById, written, type Parts, type PredictionMetric } from "./thesis_text";
 
 export type Thesis = typeof theses.$inferSelect;
@@ -201,7 +202,7 @@ export async function cancelOrder(orderId: string, membershipId: string, now = n
  * shares past the club's minimum hold can go, less any already in a waiting
  * sell. What it brings in goes back into the index fund.
  */
-export async function placeSell(seller: Buyer, settings: GameSettings, ticker: string, dollars: number, now = new Date()): Promise<Order> {
+export async function placeSell(seller: Buyer, settings: GameSettings, ticker: string, dollars: number, reason: string, now = new Date()): Promise<Order> {
   const refuse = async (message: string, detail: Record<string, unknown> = {}): Promise<never> => {
     await logEvent({ level: "info", kind: "trade.rejected", message, detail: { membershipId: seller.id, ticker, side: "sell", dollars, ...detail } });
     throw new PickError(message);
@@ -219,12 +220,15 @@ export async function placeSell(seller: Buyer, settings: GameSettings, ticker: s
   if (!Number.isFinite(asked) || asked < 1) await refuse("Choose how much to sell");
   const most = h.sellableShares * h.price!;
   if (asked > most + 0.01) await refuse("That's more than you can sell right now", { most: round2(most) });
+  // The reason is asked for, not argued with: anything the player writes is accepted.
+  const why = reason.trim().replace(/\s+/g, " ").slice(0, SELL_REASON_MAX);
+  if (why.length < 2) await refuse("Write a line about why you're selling. Any reason is fine; it's for you to look back on");
   // Within a dollar of everything sells everything, so a few cents of a company aren't left behind.
   const all = most - asked < 1;
   const askedShares = all ? h.sellableShares : asked / h.price!;
   const [order] = await db
     .insert(orders)
-    .values({ membershipId: seller.id, ticker, side: "sell", amount: all ? round2(most) : asked, askedShares })
+    .values({ membershipId: seller.id, ticker, side: "sell", amount: all ? round2(most) : asked, askedShares, reason: why })
     .returning();
   return order;
 }

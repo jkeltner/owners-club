@@ -24,7 +24,7 @@ This version folds in feedback from a first reviewer who works in wealth managem
 - **Diversification is a rule:** no purchase can exceed 25% of the portfolio.
 - **Trading fees are a percentage of the trade, not a flat amount.** A flat fee made a 10-stock portfolio pay 10 times what a one-stock portfolio paid.
 - **Taxes are tougher and closer to real rates:** 40% on gains held under 6 months, 20% after. Losses offset gains.
-- **The leaderboard shows after-tax value**, as if everything were sold today.
+- **The leaderboard shows what a player would keep**, as if everything were sold today: after the tax on the gains and the fee on the sale.
 - **Competition built into the club:** a rotating title for the leader and an Owner of the Year trophy.
 - **Social features borrowed from fantasy sports:** club chat, a weekly AI recap, and news on companies you own. A draft, playoffs, weekly head-to-head matchups and cash stakes were considered and dropped.
 - **A guided first 15 minutes:** every player starts fully in the S&P 500 index and makes one guided first pick, starting from the companies they're curious about.
@@ -180,7 +180,7 @@ The cost of selling early is shown at the moment of decision, which is when it t
 > **Sell now:** you keep $1,120 (40% tax on the gain)  
 > **Wait 23 more days:** you keep $1,160 (20% tax)
 
-Each portfolio page shows three numbers side by side: total value, unrealized tax owed, and after-tax value if everything were sold today. It also shows a running total of fees and taxes paid this season.
+Each portfolio page shows four numbers together: total value, the tax owed if everything were sold today, the fee that sale would cost, and what the player would keep after both. It also shows a running total of fees and taxes paid this season.
 
 ## The first 15 minutes
 
@@ -198,9 +198,9 @@ A first-timer shouldn't face a blank $10,000. That's intimidating, and it pushes
 
 **What happens when a pick goes through.** A new player's $10,000 goes into the index at the first market close after they join. When a pick fills, the amount the player chose leaves the index. Two things come out of it before it buys shares: the fee, and the tax on whatever that index money had gained since it went in (tax is paid when a gain becomes real, not at the end of a season). So $2,000 moved might buy $1,974 of the company, and the order shows each line. If the index money had lost value instead, and the player had paid tax on an earlier gain, some of that tax comes back. The 25% cap is checked at the close, on what the portfolio is worth then; an order that has slipped over the cap moves what fits and says so, so nobody loses a pick to a small market move.
 
-**What happens when a pick is sold.** A player sells some or all of a pick from their portfolio, once its minimum hold is over. The screen asks how much in dollars at the last close, and the order is placed as that many shares, because the selling price isn't known until the close. The oldest shares are sold first. Two things come out of what the shares sell for: the fee, and the tax on what those shares gained (or tax comes back, if they lost and the player had paid tax on an earlier gain). The rest goes into the index fund as new money, with its own date for the 6-month tax line. Before confirming, the player sees each of those lines and, when waiting would lower the tax, the "sell now vs. wait" comparison. Nothing blocks the sale. The index fund itself can't be sold on its own: its money moves when a pick is made.
+**What happens when a pick is sold.** A player sells some or all of a pick from their portfolio, once its minimum hold is over. The screen asks how much in dollars at the last close, and the order is placed as that many shares, because the selling price isn't known until the close. The oldest shares are sold first. Two things come out of what the shares sell for: the fee, and the tax on what those shares gained (or tax comes back, if they lost and the player had paid tax on an earlier gain). The rest goes into the index fund as new money, with its own date for the 6-month tax line. Before confirming, the player sees each of those lines and, when waiting would lower the tax, the "sell now vs. wait" comparison. The screen also asks "Why are you selling?" and takes one line. Any reason is accepted: nobody questions it or asks for a better one, the way the coach does with a thesis for buying. It is kept with the sale so the player can look back at what they were thinking. Nothing blocks the sale. The oldest shares always go first; players don't choose which shares to sell, because that choice is more to explain than it teaches. The index fund itself can't be sold on its own: its money moves when a pick is made.
 
-**What the portfolio page compares.** "You, after tax" is what the player would keep if they sold everything at the last close, measured from their $10,000. Beside it is the same $10,000 left in the index since their first close, also after tax. The difference is "you vs. the market". The fee a full sale would cost isn't subtracted from either.
+**What the portfolio page compares.** "What you'd keep" is what the player would have if they sold everything at the last close: the value, less the tax on the gains, less the 0.5% fee on the sale. The tax and the fee are each shown, and the number after both is the one the game compares, measured from the player's $10,000. Beside it is the same $10,000 left in the index since their first close, also after its tax and its fee. The difference is "you vs. the market".
 
 ## The AI coach
 
@@ -234,7 +234,7 @@ Separating good reasoning from good outcomes is the most important lesson in inv
 
 ## Scoring and leaderboard
 
-The main board ranks players by their 6-month trailing return minus the S&P 500's return over the same period. Returns are measured on after-tax value, as if every position were sold today, so the tax cost of recent trades always shows. The board runs cumulatively across the school year rather than resetting each round, which rewards consistency over one lucky stretch.
+The main board ranks players by their 6-month trailing return minus the S&P 500's return over the same period. Returns are measured on what the player would keep if every position were sold today (after tax and the selling fee), so the tax cost of recent trades always shows. The board runs cumulatively across the school year rather than resetting each round, which rewards consistency over one lucky stretch.
 
 **Returns are shown over 3, 6, 9 and 12 months, never annualized.** This is how Morningstar reports fund performance, so kids learn the real convention. Trailing windows also make late joiners comparable: everyone is measured against the index over the same period. Annualizing would break this: a player up 8% in their first month would show roughly +150% a year and top the board.
 

@@ -92,7 +92,7 @@ export async function sell(_prev: FormState, f: FormData): Promise<FormState> {
   const { membership, club } = await requirePlayer(clubId, companyPath(clubId, ticker, "/sell"));
   let orderId: string;
   try {
-    orderId = (await placeSell(membership, club.settings, ticker, Number(str(f, "amount")))).id;
+    orderId = (await placeSell(membership, club.settings, ticker, Number(str(f, "amount")), str(f, "reason"))).id;
   } catch (err) {
     if (err instanceof PickError) return { problem: err.message };
     throw err;

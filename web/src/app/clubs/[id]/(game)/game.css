@@ -397,6 +397,11 @@
 
 /* ---- Portfolio and selling ---- */
 .game .three-numbers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; padding: 14px 8px; }
+.game .sell-reason { margin: 12px 0; padding: 10px 12px; border-left: 4px solid var(--line); background: var(--primary-2); border-radius: 0 10px 10px 0; text-align: left; }
+.game .sell-reason small { display: block; font-weight: 700; font-size: 12px; color: var(--ink-2); margin-bottom: 2px; }
+.game .field small { display: block; margin-top: 6px; font-size: 13px; }
+.game .field textarea { width: 100%; }
+.game .three-numbers.four { grid-template-columns: repeat(2, 1fr); row-gap: 12px; }
 .game .three-numbers small { display: block; font-size: 12px; color: var(--ink-2); font-weight: 700; }
 .game .three-numbers b { font-family: var(--display); font-size: 21px; font-weight: 800; }
 .game .three-numbers .key { background: var(--primary-2); border-radius: 12px; padding: 6px 2px; }

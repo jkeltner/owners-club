@@ -50,6 +50,13 @@
       "when": 1794782154096,
       "tag": "0006_green_korg",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794788682842,
+      "tag": "0007_mixed_brother_voodoo",
+      "breakpoints": true
     }
   ]
 }

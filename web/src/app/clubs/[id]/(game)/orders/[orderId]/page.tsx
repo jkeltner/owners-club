@@ -81,6 +81,12 @@ export default async function Done({ params, searchParams }: { params: Promise<{
             </>
           )}
           {order.note && <p className="notice">{order.note}</p>}
+          {order.reason && (
+            <blockquote className="sell-reason">
+              <small>{order.status === "filled" ? "Why you sold" : order.status === "waiting" ? "Why you're selling" : "Why you were going to sell"}</small>
+              {order.reason}
+            </blockquote>
+          )}
           {order.status === "waiting" && (
             <p className="muted">
               {locked
