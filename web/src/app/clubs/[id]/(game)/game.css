@@ -432,3 +432,23 @@
 .game .sell-option .keep { font-family: var(--display); font-size: 30px; font-weight: 800; margin-top: 6px; }
 .game .sell-option p { margin: 0 0 8px; color: var(--ink-2); }
 .game .sell-option.later { border-color: var(--mint); }
+
+/* The board */
+.game .chip-off { opacity: 0.45; }
+.game a.chip.chip-active { color: #fff; }
+.game .board { padding: 4px 12px; }
+.game .board ol { list-style: none; margin: 0; padding: 0; }
+.game .board li + li { border-top: 1px solid var(--line); }
+.game a.board-row { display: flex; align-items: center; gap: 10px; padding: 12px 2px; text-decoration: none; color: var(--ink); }
+.game .board-row .rank { width: 18px; font-family: var(--display); font-weight: 800; color: var(--ink-2); text-align: center; flex: none; }
+.game .board-row .who, .game .board-row .lead { display: flex; flex-direction: column; }
+.game .board-row .who { flex: 1; min-width: 0; }
+.game .board-row .lead { text-align: right; flex: none; }
+.game .board-row .lead b { font-family: var(--display); font-size: 19px; }
+.game .board-row small { color: var(--ink-2); font-size: 12.5px; }
+.game .board-row.you .who b { color: var(--primary); }
+.game .board-market { display: flex; justify-content: space-between; gap: 12px; padding: 7px 2px; font-size: 13px; font-weight: 700; color: var(--ink-2); border-bottom: 2px dashed var(--line); }
+.game li:last-child > .board-market:only-child { border-bottom: 0; border-top: 2px dashed var(--line); }
+.game .player-head { display: flex; align-items: center; gap: 12px; }
+.game .player-head h1 { margin: 0; }
+.game .dot { display: inline-block; width: 10px; height: 10px; border-radius: 5px; margin-right: 4px; }

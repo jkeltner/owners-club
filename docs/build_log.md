@@ -202,3 +202,20 @@ Jeff's call (2026-11-15): portfolio and selling first, the board and the feed af
 - "After tax" doesn't subtract the 0.5% fee a full sale would cost.
 
 **Jeff's answers (2026-11-15; branch `phase3/sell_reason`).** Selling asks "Why are you selling?" and takes one line, never judged (`orders.reason`, shown on the order page). Shares and oldest-first stay; no choosing lots. The compared number is now "what you'd keep": after the tax and the 0.5% fee a full sale would cost, for the player and for the untouched index; the portfolio page shows worth, tax, fee and what you'd keep (`feeToSell` and `kept` in `portfolioOf`; `kept` and `index_kept` on `portfolio_days`, migration 0007, adds three columns and deletes nothing). The board is next; the feed is the least important.
+
+### Slice b: the board and clubmates' portfolios (2026-11-15, branch `phase3/board`)
+
+Jeff's call (2026-11-15): the board next; the feed is the least important.
+
+**What a player gets.**
+
+- **The board** (`/clubs/[id]/board`, linked from the club page and the portfolio page): every player's lead over the S&P 500 in percentage points, with their own return and the market's under it; the index as a line at zero; under each name the number of picks, the biggest pick's share and how long they've played. Chips switch between "since each start", 3, 6 and 12 months; a window opens when one player has played that long. Players without a portfolio yet, or without the whole window, are listed below.
+- **The Bell**: a card under the board saying who leads the 6-month board, or the first date anyone can.
+- **A clubmate's page** (`/clubs/[id]/players/[memberId]`, from a board row): their mix as shares of the whole, from the newest day at least a week old, or the date their first day will show. An organizer who doesn't play sees the latest day with dollars.
+
+**How it works.** Everything is read from `portfolio_days` (`web/src/game/board.ts`); no migration. Tests: `web/tests/board.test.ts`.
+
+**Checked** on the local app with three invented clubmates: the board since start, the "not on this board yet" list, the Bell card, a clubmate's week-old mix and the "shows up on" message. Only in tests: the 3- and 6-month boards and the Bell holder (nobody has the history), and the organizer's view.
+
+**Known gaps.** The board shows a clubmate's pick count and biggest share as of last night while their page is a week old, and theses already name companies the day they're written; Jeff to say whether that is the intended line. No 9-month window, no risk-adjusted or predictions board, no weighted P/E. The weekly recap that announces the Bell is phase 5 work.
+

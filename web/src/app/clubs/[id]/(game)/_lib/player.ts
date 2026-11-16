@@ -14,4 +14,12 @@ export async function requirePlayer(clubId: string, path: string) {
   return { user, experience, club: mine.club, membership: mine.membership };
 }
 
+/** For screens the whole club reads (the board): anyone in the club, playing or only running it. */
+export async function requireMember(clubId: string, path: string) {
+  const user = await requireUser(path);
+  const mine = await membershipIn(user.id, clubId);
+  if (!mine) notFound();
+  return { user, club: mine.club, membership: mine.membership };
+}
+
 export { clubPath, companyPath } from "./paths";

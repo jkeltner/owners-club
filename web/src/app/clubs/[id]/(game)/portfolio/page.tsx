@@ -107,6 +107,9 @@ export default async function Portfolio({ params }: { params: Promise<{ id: stri
           {feePct(s)} fee on the sale. That&apos;s the number the game compares.
           Fees paid so far: <b>{usd(p.feesPaid, true)}</b> · Taxes paid: <b>{usd(p.taxesPaid, true)}</b>
         </p>
+        <Link className="btn btn-ghost" href={clubPath(id, "/board")}>
+          See the club&apos;s board
+        </Link>
       </Card>
 
       <h2>What you own</h2>
