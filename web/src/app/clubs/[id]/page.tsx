@@ -1,5 +1,5 @@
 // The club's page: your picks, who's in it, the invite link and the rules.
-// The portfolio, board and feed land here in the next phases.
+// The feed lands here in a later phase.
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { canManageClub } from "@/clubs/access";
@@ -38,8 +38,11 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
       <h1>{club.name}</h1>
       {problem && <p className="problem">{problem}</p>}
       <p className="sub">
-        {members.length === 1 ? "Just you so far." : `${members.length} people.`} You can make picks and see your portfolio now. The club&apos;s board is being built.
+        {members.length === 1 ? "Just you so far." : `${members.length} people.`} {membership.plays ? "Make picks, see your portfolio, and see how everyone is doing against the S&P 500 on the board." : "The board shows how everyone is doing against the S&P 500."}
       </p>
+      <Link className="button secondary" href={`/clubs/${club.id}/board`}>
+        See the board
+      </Link>
 
       {membership.plays && (
         <section className="card stack">

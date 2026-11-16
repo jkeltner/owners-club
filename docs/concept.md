@@ -236,6 +236,8 @@ Separating good reasoning from good outcomes is the most important lesson in inv
 
 The main board ranks players by their 6-month trailing return minus the S&P 500's return over the same period. Returns are measured on what the player would keep if every position were sold today (after tax and the selling fee), so the tax cost of recent trades always shows. The board runs cumulatively across the school year rather than resetting each round, which rewards consistency over one lucky stretch.
 
+**Before anyone has played three months,** the board measures each player from their own first day, against the same $10,000 left in the index since that day, and shows how many days each has been playing. The 3-month and 6-month boards open when the first player has played that long; a player who hasn't yet is listed under the board, not ranked on it. The index sits on the board as a line at zero, so everyone can see who is ahead of it.
+
 **Returns are shown over 3, 6, 9 and 12 months, never annualized.** This is how Morningstar reports fund performance, so kids learn the real convention. Trailing windows also make late joiners comparable: everyone is measured against the index over the same period. Annualizing would break this: a player up 8% in their first month would show roughly +150% a year and top the board.
 
 **Risk sits next to return on every row.** This is what keeps the leaderboard from teaching "bet everything on one stock":
