@@ -219,3 +219,5 @@ Jeff's call (2026-11-15): the board next; the feed is the least important.
 
 **Known gaps.** The board shows a clubmate's pick count and biggest share as of last night while their page is a week old, and theses already name companies the day they're written; Jeff to say whether that is the intended line. No 9-month window, no risk-adjusted or predictions board, no weighted P/E. The weekly recap that announces the Bell is phase 5 work.
 
+**Jeff's answers on slice b (2026-11-15).** "Since each start" stays: a club can't wait three months for a comparison. The sell reason stays private to the seller. Two things he raised and hasn't decided: a club "opening day" (join before it and start together; late joiners get an index purchase backdated to it; maybe annual seasons), and showing clubmates' holdings in real time, since the week's delay exists only to stop copying. Order of work from here: Jeff walks the test doc, then the feed (basic), then the live coach last.
+
