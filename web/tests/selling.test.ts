@@ -59,7 +59,7 @@ describe("selling a pick", () => {
   beforeAll(async () => {
     await dbReady;
     await db.insert(user).values({ id: "sell-dee", name: "sell-dee", email: "sell-dee@example.test" });
-    dee = (await createClub("sell-dee", { name: "Sell Club", displayName: "Dee", plays: true })).membership;
+    dee = (await createClub("sell-dee", { name: "Sell Club", displayName: "Dee", plays: true }, ny("2026-11-09", 10))).membership;
     await db.update(clubs).set({ settings }).where(eq(clubs.id, dee.clubId));
     await db.update(memberships).set({ joinedAt: ny("2026-11-09", 10) }).where(eq(memberships.id, dee.id));
     await db.insert(companies).values({ ticker: "SEL", name: "Sellco", cik: 900400, sector: "Information Technology", subIndustry: "Semiconductors", lens: "Chipmakers" });

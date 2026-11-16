@@ -1,6 +1,7 @@
 // Clubs, memberships, invite links and the Agree click. Everything a page or
 // a server action does to these tables goes through here, so the access rule
 // ("a player sees only their own club") lives in one place.
+import { clubIsOpen, openingDay } from "@/game/ledger";
 import { randomInt } from "node:crypto";
 import { and, asc, desc, eq, gt, isNull, ne } from "drizzle-orm";
 import { db } from "@/db";
@@ -45,14 +46,15 @@ export async function setExperience(userId: string, experience: string) {
 
 export async function createClub(
   userId: string,
-  input: { name: string; displayName: string; avatar?: string; plays: boolean; settings?: Partial<Record<keyof GameSettings, unknown>> },
+  input: { name: string; displayName: string; avatar?: string; plays: boolean; settings?: Partial<Record<keyof GameSettings, unknown>>; opensOn?: string },
+  now = new Date(),
 ) {
   const name = cleanName(input.name, 60);
   const displayName = cleanName(input.displayName, 30);
   if (!name) throw new Error("A club needs a name");
   if (!displayName) throw new Error("You need a name in the club");
   return db.transaction(async (tx) => {
-    const [club] = await tx.insert(clubs).values({ name, createdBy: userId, settings: cleanSettings(input.settings) }).returning();
+    const [club] = await tx.insert(clubs).values({ name, createdBy: userId, settings: cleanSettings(input.settings), opensOn: openingDay(input.opensOn, now) }).returning();
     const [membership] = await tx
       .insert(memberships)
       .values({ clubId: club.id, userId, displayName, avatar: cleanAvatar(input.avatar), role: "organizer", plays: input.plays })
@@ -100,12 +102,14 @@ async function requireOrganizer(userId: string, clubId: string) {
   return mine;
 }
 
-export async function updateSettings(userId: string, clubId: string, input: Partial<Record<keyof GameSettings, unknown>>, name?: string) {
+export async function updateSettings(userId: string, clubId: string, input: Partial<Record<keyof GameSettings, unknown>>, name?: string, opensOn?: string, now = new Date()) {
   const { club } = await requireOrganizer(userId, clubId);
   const newName = name == null ? club.name : cleanName(name, 60) || club.name;
+  // The opening day can move only until it arrives: after that portfolios are measured from it.
+  const opening = opensOn && !clubIsOpen(club.opensOn, now) ? openingDay(opensOn, now) : club.opensOn;
   await db
     .update(clubs)
-    .set({ settings: cleanSettings({ ...club.settings, ...input }), name: newName })
+    .set({ settings: cleanSettings({ ...club.settings, ...input }), name: newName, opensOn: opening })
     .where(eq(clubs.id, clubId));
 }
 

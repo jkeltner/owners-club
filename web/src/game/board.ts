@@ -11,7 +11,7 @@ import { displayName } from "@/market/names";
 import { daysBetween } from "./ledger";
 import { INDEX_NAME } from "./portfolio";
 
-/** How far back the board looks. "start" is since each player's first day. */
+/** How far back the board looks. "start" is since the club's opening day, when everyone's $10,000 went into the index. */
 export const WINDOWS = ["start", "3m", "6m", "12m"] as const;
 export type BoardWindow = (typeof WINDOWS)[number];
 const MONTHS: Record<Exclude<BoardWindow, "start">, number> = { "3m": 3, "6m": 6, "12m": 12 };
@@ -43,10 +43,13 @@ export type Standing = {
 
 /**
  * One player's return against the market over a window ending at their latest
- * day. Both sides are "what you'd keep": after tax and the fee to sell. Null
- * when the player hasn't been playing for the whole window. Never annualized.
+ * day. Both sides are "what you'd keep": after tax and the fee to sell. Never
+ * annualized. `indexLine` is the club's untouched $10,000, day by day: a
+ * player who joined after a window began was the index until then (their
+ * money is dated the club's opening day), so the window starts from that
+ * line. Null when neither they nor the club go back far enough.
  */
-export function standing(days: BoardDay[], window: BoardWindow, asOf: string): Standing | null {
+export function standing(days: BoardDay[], window: BoardWindow, asOf: string, indexLine: { date: string; indexKept: number }[] = []): Standing | null {
   const last = days.at(-1);
   if (!last) return null;
   let from: string, mineBase: number, marketBase: number;
@@ -55,8 +58,10 @@ export function standing(days: BoardDay[], window: BoardWindow, asOf: string): S
   } else {
     const start = shiftMonths(asOf, -MONTHS[window]);
     const base = days.filter((d) => d.date <= start).at(-1);
-    if (!base) return null;
-    [from, mineBase, marketBase] = [base.date, base.kept, base.indexKept];
+    const before = base ? null : indexLine.filter((d) => d.date <= start).at(-1);
+    if (base) [from, mineBase, marketBase] = [base.date, base.kept, base.indexKept];
+    else if (before) [from, mineBase, marketBase] = [before.date, before.indexKept, before.indexKept];
+    else return null;
   }
   const mine = (last.kept / mineBase - 1) * 100;
   const market = (last.indexKept / marketBase - 1) * 100;
@@ -109,12 +114,16 @@ async function clubDays(clubId: string) {
 
 /**
  * The club's board. Without a window it picks the longest of 6 and 3 months
- * that anyone has played, and "since each player started" before that.
+ * the club has been open, and "since the club opened" before that.
  */
 export async function boardOf(clubId: string, asked?: string | null): Promise<Board> {
   const { members, byMember } = await clubDays(clubId);
   const asOf = [...byMember.values()].map((d) => d.at(-1)?.date).filter((d): d is string => !!d).sort().at(-1) ?? null;
-  const standings = (w: BoardWindow) => new Map(members.map((m) => [m.id, asOf ? standing(byMember.get(m.id)!, w, asOf) : null]));
+  // The untouched $10,000 since opening is the same line for everyone in the club; take each day from whoever has it.
+  const line = new Map<string, number>();
+  for (const days of byMember.values()) for (const d of days) if (!line.has(d.date)) line.set(d.date, d.indexKept);
+  const indexLine = [...line].map(([date, indexKept]) => ({ date, indexKept })).sort((a, b) => a.date.localeCompare(b.date));
+  const standings = (w: BoardWindow) => new Map(members.map((m) => [m.id, asOf ? standing(byMember.get(m.id)!, w, asOf, indexLine) : null]));
   const all = Object.fromEntries(WINDOWS.map((w) => [w, standings(w)])) as Record<BoardWindow, Map<string, Standing | null>>;
   const open = Object.fromEntries(WINDOWS.map((w) => [w, [...all[w].values()].some(Boolean)])) as Record<BoardWindow, boolean>;
   const wanted = WINDOWS.find((w) => w === asked);

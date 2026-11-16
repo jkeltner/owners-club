@@ -186,6 +186,9 @@ export const clubs = pgTable("clubs", {
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
   // The club's game settings; the concept doc's defaults unless an organizer changes them.
   settings: jsonb("settings").$type<GameSettings>().notNull(),
+  // The club's opening day: every player's $10,000 goes into the index at the first market
+  // close on or after it, whenever they join, and no order can be placed before it.
+  opensOn: date("opens_on").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

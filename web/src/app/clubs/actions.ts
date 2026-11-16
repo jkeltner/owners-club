@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import {
   createClub, createInvite, deleteAccount, joinClub, leaveClub, makeOrganizer, removeMember, revokeInvite, setExperience, updateProfile, updateSettings,
 } from "@/clubs/clubs";
+import { openLateJoiner } from "@/game/fills";
 import { requireUser } from "@/lib/session";
 
 const str = (f: FormData, key: string) => String(f.get(key) ?? "");
@@ -28,6 +29,7 @@ export async function startClub(f: FormData) {
     avatar: str(f, "avatar"),
     plays: str(f, "plays") !== "no",
     settings: settingsFrom(f),
+    opensOn: str(f, "opensOn"),
   });
   redirect(`/clubs/${club.id}`);
 }
@@ -37,6 +39,9 @@ export async function join(f: FormData) {
   const me = await requireUser(`/join/${code}`);
   await setExperience(me.id, str(f, "experience"));
   const membership = await joinClub(me.id, code, { displayName: str(f, "displayName"), avatar: str(f, "avatar") });
+  // A club that has already opened: the portfolio opens now, dated the club's opening day.
+  // If it can't (no close stored yet), the nightly job does it.
+  await openLateJoiner(membership.id).catch(() => false);
   // A new player goes straight into the first 15 minutes: the market, then a first pick.
   redirect(`/clubs/${membership.clubId}/start`);
 }
@@ -58,7 +63,7 @@ export async function turnOffInvite(f: FormData) {
 export async function saveSettings(f: FormData) {
   const clubId = str(f, "clubId");
   const me = await requireUser(`/clubs/${clubId}`);
-  await updateSettings(me.id, clubId, settingsFrom(f), str(f, "name"));
+  await updateSettings(me.id, clubId, settingsFrom(f), str(f, "name"), str(f, "opensOn"));
   revalidatePath(`/clubs/${clubId}`);
 }
 

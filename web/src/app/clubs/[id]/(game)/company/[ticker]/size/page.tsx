@@ -1,6 +1,7 @@
 // Size the pick: how much moves out of the index fund and into the company,
 // with the club's rules beside the slider.
 import { notFound, redirect } from "next/navigation";
+import { clubIsOpen } from "@/game/ledger";
 import { draftFor, moneyFor } from "@/game/picks";
 import { companyView } from "@/market/read";
 import { companyPath, requirePlayer } from "../../../_lib/player";
@@ -23,6 +24,12 @@ export default async function Size({ params }: { params: Promise<{ id: string; t
     <Page>
       <TopBar back={companyPath(id, c.ticker, "/thesis")} title="Size your pick" />
       <h1>How much goes into {c.name}?</h1>
+      {!clubIsOpen(club.opensOn) && (
+        <p className="notice">
+          This club opens on {new Date(`${club.opensOn}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })}. You
+          can&apos;t place this pick until then. Your thesis is saved, so come back that day.
+        </p>
+      )}
       <SizeForm clubId={id} ticker={c.ticker} name={c.name} money={money} settings={club.settings} />
     </Page>
   );
