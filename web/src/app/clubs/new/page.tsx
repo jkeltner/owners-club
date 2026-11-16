@@ -40,7 +40,7 @@ export default async function NewClub() {
                 <input type="radio" name="plays" value="yes" defaultChecked />
                 <span>
                   <b>Yes, I&apos;m playing</b>
-                  <small>You get a portfolio and see clubmates the way any player does: their holdings as shares, a week late.</small>
+                  <small>You get a portfolio and see clubmates the way any player does: their holdings as shares of their portfolio, without the dollars.</small>
                 </span>
               </label>
               <label>
