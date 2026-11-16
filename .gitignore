@@ -16,3 +16,6 @@ build/
 .idea/
 .vercel
 .env*
+
+# Copies the Mac makes of new files ("name 2.ext"); never ours
+* 2.*
