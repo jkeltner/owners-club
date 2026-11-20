@@ -69,7 +69,9 @@ export default function Privacy() {
       <p>We use one cookie to keep you signed in. There is no advertising or cross-site tracking.</p>
 
       <h2>Questions</h2>
-      <p>Ask your club&apos;s organizer, or open an issue on the project&apos;s public code repository.</p>
+      <p>
+        Ask your club&apos;s organizer, or email <a href="mailto:support@playownersclub.com">support@playownersclub.com</a>.
+      </p>
     </main>
   );
 }
