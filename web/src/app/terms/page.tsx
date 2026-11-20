@@ -56,9 +56,6 @@ export default function Terms() {
         extent the law allows, we aren&apos;t liable for losses that come from using it.
       </p>
 
-      <h2>Open source</h2>
-      <p>The code is public under the MIT license. Someone else running their own copy is responsible for that copy.</p>
-
       <h2>Changes</h2>
       <p>If these terms change in a way that matters, you&apos;ll be asked to agree again the next time you sign in.</p>
     </main>
