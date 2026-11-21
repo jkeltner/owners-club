@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { closeHasPassed, fillDay } from "@/game/ledger";
 import { orderOf, thesisText } from "@/game/picks";
 import { fmtPrediction, metricById } from "@/game/thesis_text";
-import { usd } from "@/lib/format";
+import { aboutShares, usd } from "@/lib/format";
 import { RANKS } from "@/lib/ranks";
 import { displayName } from "@/market/names";
 import { companyView } from "@/market/read";
@@ -47,7 +47,7 @@ export default async function Done({ params, searchParams }: { params: Promise<{
               <dl className="fill-lines">
                 <div>
                   <dt>
-                    Sold {(order.shares ?? 0).toFixed(3)} shares at {usd(order.fillPrice ?? 0, true)}
+                    Sold {aboutShares(order.shares ?? 0)} at {usd(order.fillPrice ?? 0, true)}
                   </dt>
                   <dd>{usd(order.filledAmount ?? 0, true)}</dd>
                 </div>
@@ -91,7 +91,7 @@ export default async function Done({ params, searchParams }: { params: Promise<{
             <p className="muted">
               {locked
                 ? "The market has closed on this order. It goes through overnight, at that closing price."
-                : `Your sell goes through at the market close on ${day(fillDay(order.placedAt))} (4 pm in New York), or the next day the market is open. You're selling ${(order.askedShares ?? 0).toFixed(3)} shares at whatever the price is then, so the dollars will be a little different. Until then you still own them, and you can still cancel.`}
+                : `Your sell goes through at the market close on ${day(fillDay(order.placedAt))} (4 pm in New York), or the next day the market is open. You're selling ${aboutShares(order.askedShares ?? 0)} at whatever the price is then, so the dollars will be a little different. Until then you still own them, and you can still cancel.`}
             </p>
           )}
           {order.status === "cancelled" && <p className="muted">You cancelled this before the market closed, so nothing was sold. You still own the shares, and there was no fee or tax.</p>}
@@ -195,7 +195,7 @@ export default async function Done({ params, searchParams }: { params: Promise<{
             )}
             <div className="fill-total">
               <dt>
-                Went into {name}: {(order.shares ?? 0).toFixed(3)} shares at {usd(order.fillPrice ?? 0, true)}
+                Went into {name}: {aboutShares(order.shares ?? 0)} at {usd(order.fillPrice ?? 0, true)}
               </dt>
               <dd>{usd(order.filledAmount - (order.fee ?? 0) - (order.tax ?? 0), true)}</dd>
             </div>

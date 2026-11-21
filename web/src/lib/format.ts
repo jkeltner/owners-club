@@ -22,6 +22,17 @@ export const pct = (n: number, digits = 0) => `${n.toFixed(digits)}%`;
 // Signed, using a real minus sign.
 export const signedPct = (n: number, digits = 1) => `${n > 0 ? "+" : n < 0 ? "−" : "±"}${Math.abs(n).toFixed(digits)}%`;
 
+// You against the market, in percentage points. Only a real tie reads "Even":
+// a gap of a few hundredths (a fee, say) still shows, with two decimals, so a
+// player never reads "Even" while sitting below the line to beat.
+export const EVEN_WITHIN = 0.005;
+export const versusMarket = (vs: number) => (Math.abs(vs) < EVEN_WITHIN ? "Even" : signedPct(vs, Math.abs(vs) < 0.1 ? 2 : 1));
+export const isBehindMarket = (vs: number) => vs <= -EVEN_WITHIN;
+
+// "about 0.90 shares". Fractions of a share are real, but three decimals only
+// invite multiplying them out, and the rounding never quite lands on the cent.
+export const aboutShares = (n: number) => `about ${n.toFixed(n < 10 ? 2 : 1)} shares`;
+
 export const signedUsd = (n: number) => `${n >= 0 ? "+" : "−"}${usd(Math.abs(n))}`;
 
 // A P/E above this is shown as "over 100", not the number. Profit that small
