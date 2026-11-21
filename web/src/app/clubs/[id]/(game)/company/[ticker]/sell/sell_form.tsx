@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { daysBetween, longTermDay, sellOldestFirst, taxForSale, type OpenLot, type Realized } from "@/game/ledger";
 import { usd } from "@/lib/format";
+import { snapAmount } from "@/lib/slider";
 import { round2, tradeFee, type GameSettings } from "@/lib/rules";
 import { SELL_REASON_MAX } from "@/game/sell_reason";
 import { sell, type FormState } from "../../../actions";
@@ -51,7 +52,7 @@ export function SellForm({ clubId, ticker, name, price, most, lots, sellOn, real
         </div>
         {most > low && (
           <>
-            <input type="range" min={low} max={most} step={most - low >= 100 ? 50 : 1} value={amount} onChange={(e) => setAmount(Number(e.target.value))} aria-label="Amount to sell" />
+            <input type="range" min={low} max={most} step={1} value={amount} onChange={(e) => setAmount(snapAmount(Number(e.target.value), low, most))} aria-label="Amount to sell" />
             <div className="range-ends">
               <span>{usd(low)}</span>
               <span>{usd(most)} (all of it)</span>

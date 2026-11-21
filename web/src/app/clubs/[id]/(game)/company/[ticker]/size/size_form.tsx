@@ -4,6 +4,7 @@
 import { useActionState, useState } from "react";
 import type { Money } from "@/game/picks";
 import { usd } from "@/lib/format";
+import { snapAmount } from "@/lib/slider";
 import { tradeFee, type GameSettings } from "@/lib/rules";
 import { buy, type FormState } from "../../../actions";
 import { MixBar } from "../../../_ui/charts";
@@ -44,7 +45,7 @@ export function SizeForm({ clubId, ticker, name, money, settings }: { clubId: st
       <section className="card size-card">
         <div className="size-amount">{usd(amount)}</div>
         <div className="muted">{Math.round(((amount + money.inThisCompany) / money.portfolio) * 100)}% of your portfolio</div>
-        <input type="range" min={low} max={money.max} step={money.max - low >= 100 ? 50 : 1} value={amount} onChange={(e) => setAmount(Number(e.target.value))} aria-label="Amount to move into the pick" />
+        <input type="range" min={low} max={money.max} step={1} value={amount} onChange={(e) => setAmount(snapAmount(Number(e.target.value), low, money.max))} aria-label="Amount to move into the pick" />
         <div className="range-ends">
           <span>{usd(low)}</span>
           <span>{usd(money.max)} max</span>
