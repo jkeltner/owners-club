@@ -2,6 +2,7 @@
 // with the club's rules beside the slider.
 import { notFound, redirect } from "next/navigation";
 import { clubIsOpen } from "@/game/ledger";
+import { dividendChoice, dividendYear } from "@/game/dividends";
 import { draftFor, moneyFor } from "@/game/picks";
 import { companyView } from "@/market/read";
 import { companyPath, requirePlayer } from "../../../_lib/player";
@@ -18,7 +19,7 @@ export default async function Size({ params }: { params: Promise<{ id: string; t
   if (!c) notFound();
   // Every pick needs a written reason: no thesis, no "how much?".
   if (!(await draftFor(membership.id, c.ticker))) redirect(companyPath(id, c.ticker, "/thesis"));
-  const money = await moneyFor(membership.id, club.settings, c.ticker);
+  const [money, year, into] = await Promise.all([moneyFor(membership.id, club.settings, c.ticker), dividendYear(c.ticker), dividendChoice(membership.id, c.ticker)]);
 
   return (
     <Page>
@@ -30,7 +31,7 @@ export default async function Size({ params }: { params: Promise<{ id: string; t
           can&apos;t place this pick until then. Your thesis is saved, so come back that day.
         </p>
       )}
-      <SizeForm clubId={id} ticker={c.ticker} name={c.name} money={money} settings={club.settings} />
+      <SizeForm clubId={id} ticker={c.ticker} name={c.name} money={money} settings={club.settings} dividend={year ? { year, price: c.price, into } : null} />
     </Page>
   );
 }

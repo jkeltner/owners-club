@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sectorPlural } from "@/content";
+import { dividendChoice, dividendYear } from "@/game/dividends";
 import { holdingsOf } from "@/game/holdings";
 import { ordersOf } from "@/game/picks";
 import { bigUsd, isPeOffScale, peLabel, signedPct, usd } from "@/lib/format";
@@ -11,6 +12,8 @@ import { lensValue } from "@/market/lens_values";
 import { companyView, marketSnapshot, usualPe } from "@/market/read";
 import { clubPath, companyPath, requirePlayer } from "../../_lib/player";
 import { PeScale, PriceChart } from "../../_ui/charts";
+import { chooseDividends } from "../../actions";
+import { DividendChoiceFields, DividendExplainer } from "../../_ui/dividends";
 import { Linked } from "../../_ui/terms";
 import { Card, Page, Stat, TopBar } from "../../_ui/ui";
 
@@ -20,11 +23,12 @@ const day = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en
 const quarterLabel = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
 const billions = (dollars: number) => bigUsd(dollars / 1e9);
 
-export default async function Company({ params }: { params: Promise<{ id: string; ticker: string }> }) {
+export default async function Company({ params, searchParams }: { params: Promise<{ id: string; ticker: string }>; searchParams: Promise<{ saved?: string }> }) {
   const { id, ticker } = await params;
+  const { saved } = await searchParams;
   const symbol = decodeURIComponent(ticker).toUpperCase();
-  const { membership } = await requirePlayer(id, companyPath(id, symbol));
-  const [c, market, mine, mineHeld] = await Promise.all([companyView(symbol), marketSnapshot(), ordersOf(membership.id), holdingsOf(membership.id)]);
+  const { membership, club } = await requirePlayer(id, companyPath(id, symbol));
+  const [c, market, mine, mineHeld, year, into] = await Promise.all([companyView(symbol), marketSnapshot(), ordersOf(membership.id), holdingsOf(membership.id), dividendYear(symbol), dividendChoice(membership.id, symbol)]);
   if (!c) notFound();
   const m = c.metrics;
   const l = c.lens;
@@ -47,6 +51,20 @@ export default async function Company({ params }: { params: Promise<{ id: string
         <p className="notice">
           You own {usd(owned.value)} of {c.name} at the last close. You put in {usd(owned.cost)}. <Link href={clubPath(id, "/portfolio")}>See it in your portfolio</Link>
         </p>
+      )}
+      {owned && year && (
+        <Card>
+          <form action={chooseDividends} className="stack">
+            <input type="hidden" name="clubId" value={id} />
+            <input type="hidden" name="ticker" value={c.ticker} />
+            <p className="small">
+              <DividendExplainer name={c.name} year={year} price={c.price} taxRate={club.settings.longTermTaxRate} />
+            </p>
+            <DividendChoiceFields name={c.name} into={into} />
+            <button className="btn">Save</button>
+            {saved === "dividends" && <p className="muted small">Saved. It applies from the next dividend.</p>}
+          </form>
+        </Card>
       )}
       {waiting > 0 && (
         <p className="notice">

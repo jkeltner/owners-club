@@ -236,3 +236,19 @@ Migration 0008 adds `clubs.opens_on` and sets it to 2026-11-16 for every club th
 
 **Not built:** annual seasons. A waiting sell placed before opening can't exist (nothing to sell), so only buys are gated.
 
+
+### From Jeff's test pass (2026-11-21)
+
+- **Even and shares (PR #35).** Only a real tie reads "Even"; a fee-sized gap shows as −0.05% and sits below the board's line. The order page says "about 0.90 shares". Fixes #34.
+- **Sliders (PR #36).** The buy and sell sliders reach their exact top again. Fixes #33.
+- **Fills by hand don't come sooner.** Massive's free plan serves a day's closes from midnight New York, so running `fills` on /admin in the afternoon finds nothing new. The test doc said otherwise and now doesn't.
+
+### Slice d: dividends (2026-11-21, branch `phase3/dividends`)
+
+Jeff moved dividends up: they must work before the adult pilot club. His rules: credit on the ex-dividend date; tax at the long-term rate; the player chooses index fund or more of the same company; the index fund's own dividends reinvest, in the comparison too; back-credit the beta club's Costco special ($30, ex 2026-11-24).
+
+- **What a player sees.** On the buy screen, a company that pays dividends gets a card: what it paid over the last year, as a share of the price and per $1,000, any special or announced one, how the game pays it, and a choice of where it goes. The company page shows the same for a company they own, with Save. The portfolio lists each dividend (per share, shares, tax, where it went), and "Taxes paid" says how much was on dividends. "Dividend" is a tappable term (the `dividends` concept).
+- **How it works.** The nightly `dividends` step stores the market's last ten days; the fill step credits before orders fill. Details in the decision log's Dividends row. Migration 0009 adds `dividends`, `dividend_credits`, `dividend_choices`, `lots.credit_id` and `companies.dividends_checked_on` (new tables and columns only).
+- **Checked.** Tests (`web/tests/dividends.test.ts`): the arithmetic, crediting into the index and into the company, shares bought on the ex-date not paid, running twice, no hold on dividend shares, and an all-index player staying exactly even with the comparison when SPY pays. Live against Massive: a week of the market (1,820 rows, three pages) and Costco's year. On the local app: the buy screen card and choice, the choice saved with the order, the company page's Save, the portfolio's list.
+- **Not yet.** The first dividend doesn't mark the `dividends` concept as learned by experience (that waits for the ranks work). No dividend line on a clubmate's page or in the feed.
+- **Costco.** The beta club's Costco special is credited by the nightly run early on 2026-11-25 (Wednesday), the first run with the 2026-11-24 close.

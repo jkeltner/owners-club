@@ -8,6 +8,7 @@ import { INDEX_TICKER, round2, STARTING_VALUE, tradeFee, type GameSettings } fro
 import { INDEX_FUND_TICKER } from "@/market/massive";
 import { displayName } from "@/market/names";
 import { closesFor, openLots, taxLedger, type Reader } from "./holdings";
+import { dividendTaxPaid, indexDividends, planDividend } from "./dividends";
 import { fillDay, longTermDay, taxIfAllSold, unlockDay, type Realized } from "./ledger";
 
 export const INDEX_NAME = "S&P 500 index fund";
@@ -21,6 +22,7 @@ export type PortfolioLot = {
   unlockOn: string; // first day it can be sold
   longTermOn: string; // first day its gain is taxed at the lower rate
   sellable: boolean; // an order placed now could sell it
+  creditId: string | null; // a dividend put back to work: not a pick, so no minimum hold
 };
 
 export type PortfolioHolding = {
@@ -47,30 +49,42 @@ export type Portfolio = {
   kept: number; // after the tax and that fee: the number the game compares
   index: { value: number; afterTax: number; kept: number } | null; // the starting money, never moved
   feesPaid: number;
-  taxesPaid: number;
+  taxesPaid: number; // on sales and on dividends
+  dividendTax: number; // the part of taxesPaid taken from dividends
   realized: Realized;
   holdings: PortfolioHolding[]; // the index first, then picks by size
 };
 
-/** The starting $10,000 left alone in the index since the portfolio opened, valued at `date`'s close: before tax, after tax, and after the fee to sell it too. */
+/**
+ * The starting $10,000 left alone in the index since the portfolio opened,
+ * valued at `date`'s close: before tax, after tax, and after the fee to sell it
+ * too. It collects the index fund's dividends the way a player does (taxed at
+ * the long-term rate, the rest back into the fund), so a player who never
+ * moves reads exactly even with it.
+ */
 async function untouchedIndex(membershipId: string, date: string, s: GameSettings, from: Reader): Promise<{ value: number; afterTax: number; kept: number } | null> {
   const [first] = await from
     .select({ boughtOn: lots.boughtOn })
     .from(lots)
-    .where(and(eq(lots.membershipId, membershipId), eq(lots.ticker, INDEX_TICKER), isNull(lots.orderId)))
+    .where(and(eq(lots.membershipId, membershipId), eq(lots.ticker, INDEX_TICKER), isNull(lots.orderId), isNull(lots.creditId)))
     .orderBy(asc(lots.boughtOn))
     .limit(1);
   if (!first) return null;
-  const [[then], now] = await Promise.all([
+  const [[then], now, paid] = await Promise.all([
     from.select({ close: prices.close }).from(prices).where(and(eq(prices.ticker, INDEX_FUND_TICKER), eq(prices.date, first.boughtOn))),
     closesFor([INDEX_TICKER], date, from),
+    indexDividends(first.boughtOn, date, from),
   ]);
   const close = now.get(INDEX_TICKER)?.close;
   if (!then || close == null) return null;
-  const value = round2((STARTING_VALUE * close) / then.close);
-  const gain = value - STARTING_VALUE;
-  const rate = longTermDay(first.boughtOn, s) <= date ? s.longTermTaxRate : s.shortTermTaxRate;
-  const afterTax = round2(value - Math.max(0, gain) * rate);
+  const held = [{ shares: STARTING_VALUE / then.close, cost: STARTING_VALUE, boughtOn: first.boughtOn }];
+  for (const d of paid) {
+    const plan = planDividend(held.reduce((a, l) => a + l.shares, 0), d.perShare, d.close, s);
+    if (plan.net > 0) held.push({ shares: plan.intoShares, cost: plan.net, boughtOn: d.exDate });
+  }
+  const valued = held.map((l) => ({ ...l, value: l.shares * close }));
+  const value = round2(valued.reduce((a, l) => a + l.value, 0));
+  const afterTax = round2(value - taxIfAllSold(valued, date, { short: 0, long: 0 }, 0, s));
   return { value, afterTax, kept: round2(afterTax - tradeFee(value, s)) };
 }
 
@@ -81,9 +95,10 @@ async function untouchedIndex(membershipId: string, date: string, s: GameSetting
 export async function portfolioOf(membershipId: string, s: GameSettings, opts: { date?: string; now?: Date; from?: Reader } = {}): Promise<Portfolio> {
   const from = opts.from ?? db;
   const open = await openLots(membershipId, from);
-  const [closes, ledger, waitingSells] = await Promise.all([
+  const [closes, ledger, dividendTax, waitingSells] = await Promise.all([
     closesFor(open.map((l) => l.ticker), opts.date, from),
     taxLedger(membershipId, from),
+    dividendTaxPaid(membershipId, from),
     from
       .select({ ticker: orders.ticker, askedShares: orders.askedShares })
       .from(orders)
@@ -102,9 +117,9 @@ export async function portfolioOf(membershipId: string, s: GameSettings, opts: {
     const h =
       byTicker.get(lot.ticker) ??
       ({ ticker: lot.ticker, name: isIndex ? INDEX_NAME : displayName(lot.ticker, nameOf.get(lot.ticker) ?? lot.ticker), isIndex, shares: 0, cost: 0, value: 0, price, share: 0, lots: [], sellableShares: 0, lockedUntil: null } satisfies PortfolioHolding);
-    const unlockOn = isIndex ? lot.boughtOn : unlockDay(lot.boughtOn, s);
+    const unlockOn = isIndex || lot.creditId ? lot.boughtOn : unlockDay(lot.boughtOn, s);
     const sellable = unlockOn <= sellOn;
-    h.lots.push({ id: lot.id, shares: lot.shares, cost: lot.cost, value: price == null ? lot.cost : lot.shares * price, boughtOn: lot.boughtOn, unlockOn, longTermOn: longTermDay(lot.boughtOn, s), sellable });
+    h.lots.push({ id: lot.id, shares: lot.shares, cost: lot.cost, value: price == null ? lot.cost : lot.shares * price, boughtOn: lot.boughtOn, unlockOn, longTermOn: longTermDay(lot.boughtOn, s), sellable, creditId: lot.creditId });
     h.shares += lot.shares;
     h.cost += lot.cost;
     if (sellable) h.sellableShares += lot.shares;
@@ -134,7 +149,8 @@ export async function portfolioOf(membershipId: string, s: GameSettings, opts: {
     kept: round2(total - taxOwed - feeToSell),
     index: asOf ? await untouchedIndex(membershipId, asOf, s, from) : null,
     feesPaid: round2(ledger.fees),
-    taxesPaid: round2(ledger.paid),
+    taxesPaid: round2(ledger.paid + dividendTax),
+    dividendTax: round2(dividendTax),
     realized: ledger.realized,
     holdings: all,
   };

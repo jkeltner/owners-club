@@ -58,7 +58,7 @@ export function closeHasPassed(placedAt: Date, now = new Date()): boolean {
 
 // ---- Lots ----
 
-export type OpenLot = { id: string; shares: number; cost: number; boughtOn: string };
+export type OpenLot = { id: string; shares: number; cost: number; boughtOn: string; creditId?: string | null }; // creditId: a dividend put back to work, never held back
 export type Realized = { short: number; long: number };
 export type LotChange = { id: string; shares: number; cost: number }; // what is left of the lot
 
@@ -183,7 +183,7 @@ export const unlockDay = (boughtOn: string, s: GameSettings) => addDaysTo(bought
 export const longTermDay = (boughtOn: string, s: GameSettings) => addDaysTo(boughtOn, s.longTermAfterDays);
 
 /** The lots whose minimum hold is over by `onDate`. */
-export const sellableLots = <L extends { boughtOn: string }>(lots: L[], onDate: string, s: GameSettings) => lots.filter((l) => unlockDay(l.boughtOn, s) <= onDate);
+export const sellableLots = <L extends { boughtOn: string; creditId?: string | null }>(lots: L[], onDate: string, s: GameSettings) => lots.filter((l) => l.creditId || unlockDay(l.boughtOn, s) <= onDate);
 
 /** The lots with `shares` taken off the oldest first: what is left to sell once a waiting sell has its share. */
 export function lessShares(lots: OpenLot[], shares: number): OpenLot[] {
@@ -192,7 +192,7 @@ export function lessShares(lots: OpenLot[], shares: number): OpenLot[] {
   for (const l of [...lots].sort((a, b) => a.boughtOn.localeCompare(b.boughtOn))) {
     const out = Math.min(l.shares, taken);
     taken -= out;
-    if (l.shares - out > 1e-9) left.push({ id: l.id, shares: l.shares - out, cost: l.cost * (1 - out / l.shares), boughtOn: l.boughtOn });
+    if (l.shares - out > 1e-9) left.push({ id: l.id, shares: l.shares - out, cost: l.cost * (1 - out / l.shares), boughtOn: l.boughtOn, creditId: l.creditId });
   }
   return left;
 }

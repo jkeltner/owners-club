@@ -13,6 +13,7 @@ import { INDEX_TICKER, STARTING_VALUE, type GameSettings } from "@/lib/rules";
 import { INDEX_FUND_TICKER } from "@/market/massive";
 import { holdingsOf, openLots, taxLedger } from "./holdings";
 import { fillDay, planBuy, planSell } from "./ledger";
+import { creditDividends } from "./dividends";
 import { snapshotDay } from "./portfolio";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -64,6 +65,8 @@ export async function openLateJoiner(membershipId: string): Promise<boolean> {
     .innerJoin(clubs, eq(clubs.id, memberships.clubId))
     .where(eq(memberships.id, membershipId));
   if (!m?.plays || !(await openAt(membershipId, m.opensOn))) return false;
+  // Backdated to the opening close, so the index fund's dividends since then are owed too.
+  await creditDividends(membershipId);
   await snapshotDay(membershipId, m.settings);
   return true;
 }
@@ -190,10 +193,15 @@ export async function snapshotPortfolios(): Promise<{ snapshots: number }> {
   return { snapshots };
 }
 
-/** The whole step, in order: portfolios open before orders fill against them, and the day is recorded last. */
+/**
+ * The whole step, in order: portfolios open, then dividends are credited (to
+ * shares held before the ex-date, so before tonight's sells take any away),
+ * then orders fill, and the day is recorded last.
+ */
 export async function runFills() {
   const portfolios = await openPortfolios();
+  const paid = await creditDividends();
   const fills = await fillOrders();
   const days = await snapshotPortfolios();
-  return { ...portfolios, ...fills, ...days };
+  return { ...portfolios, dividends: paid.credited, dividendsWaiting: paid.waitingForAClose, ...fills, ...days };
 }

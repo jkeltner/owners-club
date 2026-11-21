@@ -13,10 +13,11 @@ import { fetchCompanyFacts, quartersFromFacts } from "@/market/edgar_facts";
 import { computeMetrics, onePerCompany } from "@/market/metrics";
 import { fetchGroupedDaily, INDEX_FUND_TICKER, massiveFreeTierPause, weekdaysBetween } from "@/market/massive";
 import { fetchSp500Members, toSecTicker } from "@/market/sp500";
+import { refreshDividends } from "@/game/dividends";
 import { runFills } from "@/game/fills";
 import { runJob, type Step, type StepResult } from "./runner";
 
-export const STEP_NAMES = ["sp500", "prices", "fills", "financials", "earnings"] as const;
+export const STEP_NAMES = ["sp500", "prices", "dividends", "fills", "financials", "earnings"] as const;
 export type StepName = (typeof STEP_NAMES)[number];
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
@@ -202,6 +203,8 @@ export function nightlySteps(only?: StepName[]): Step[] {
   const all: Record<StepName, Step> = {
     sp500: { name: "sp500", run: refreshSp500 },
     prices: { name: "prices", run: () => refreshPrices() },
+    // Dividends whose ex-date fell in the last ten days, before the fill step credits them.
+    dividends: { name: "dividends", run: () => refreshDividends() },
     // Right after the closes land: open new portfolios, then fill waiting orders.
     fills: { name: "fills", run: runFills },
     financials: { name: "financials", run: () => refreshFinancials() },

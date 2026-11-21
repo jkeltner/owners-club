@@ -5,6 +5,7 @@
 import { redirect } from "next/navigation";
 import { coachTurn, openConversation, type Turn } from "@/coach/conversations";
 import { numberStarters, type Parts } from "@/game/thesis_text";
+import { setDividendChoice } from "@/game/dividends";
 import { cancelOrder, PickError, placeBuy, placeSell, saveDraft } from "@/game/picks";
 import { companyCards, companyView, searchCards, type CompanyCard } from "@/market/read";
 import { clubPath, companyPath, requirePlayer } from "./_lib/player";
@@ -63,6 +64,8 @@ export async function buy(_prev: FormState, f: FormData): Promise<FormState> {
     const placed = await placeBuy(membership, club.settings, ticker, Number(str(f, "amount")));
     orderId = placed.order.id;
     first = placed.first;
+    const into = str(f, "dividends");
+    if (into === "index" || into === "reinvest") await setDividendChoice(membership.id, placed.order.ticker, into);
   } catch (err) {
     if (err instanceof PickError) return { problem: err.message };
     throw err;
@@ -83,6 +86,17 @@ export async function cancelWaitingOrder(_prev: FormState, f: FormData): Promise
     throw err;
   }
   redirect(here);
+}
+
+/** Where a held company's dividends go from now on: the index fund or more of the company. */
+export async function chooseDividends(f: FormData) {
+  const clubId = str(f, "clubId");
+  const ticker = str(f, "ticker");
+  const here = companyPath(clubId, ticker);
+  const { membership } = await requirePlayer(clubId, here);
+  const into = str(f, "dividends");
+  if (into === "index" || into === "reinvest") await setDividendChoice(membership.id, ticker, into);
+  redirect(`${here}?saved=dividends`);
 }
 
 /** Places a sell order. It waits for the next market close, like a buy. */
