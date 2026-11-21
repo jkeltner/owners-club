@@ -3,7 +3,7 @@
 // a day with the portfolios.
 import Link from "next/link";
 import { BELL_WINDOW, boardOf, type BoardRow, type BoardWindow } from "@/game/board";
-import { signedPct } from "@/lib/format";
+import { isBehindMarket, signedPct, versusMarket } from "@/lib/format";
 import { clubPath, requireMember } from "../_lib/player";
 import { Avatar, Card, Page, TopBar } from "../_ui/ui";
 
@@ -14,7 +14,6 @@ const shortDay = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateStrin
 const LABEL: Record<BoardWindow, string> = { start: "Since opening", "3m": "3 months", "6m": "6 months", "12m": "12 months" };
 const STRETCH: Record<BoardWindow, string> = { start: "since the club opened", "3m": "over the last 3 months", "6m": "over the last 6 months", "12m": "over the last 12 months" };
 const playing = (days: number) => (days < 1 ? "first day" : days < 60 ? `playing ${days} day${days === 1 ? "" : "s"}` : `playing ${Math.floor(days / 30)} months`);
-const lead = (vs: number) => (Math.abs(vs) < 0.05 ? "Even" : signedPct(vs));
 
 export default async function BoardPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ w?: string }> }) {
   const { id } = await params;
@@ -40,7 +39,7 @@ export default async function BoardPage({ params, searchParams }: { params: Prom
   }
 
   // The market sits on the board as a line at zero: everyone above it is ahead of the index.
-  const aheadOf = board.ranked.findIndex((r) => r.standing!.vs < 0);
+  const aheadOf = board.ranked.findIndex((r) => isBehindMarket(r.standing!.vs));
   const marketAt = aheadOf === -1 ? board.ranked.length : aheadOf;
 
   return (
@@ -158,7 +157,7 @@ function Row({ id, r, rank, you, bell }: { id: string; r: BoardRow; rank: number
         </small>
       </span>
       <span className="lead">
-        <b>{lead(s.vs)}</b>
+        <b>{versusMarket(s.vs)}</b>
         <small>
           {signedPct(s.mine)} · S&amp;P {signedPct(s.market)}
         </small>

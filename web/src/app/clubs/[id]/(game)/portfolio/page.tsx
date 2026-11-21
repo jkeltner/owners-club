@@ -5,7 +5,7 @@ import Link from "next/link";
 import { clubIsOpen, fillDay, unrealized } from "@/game/ledger";
 import { ordersOf } from "@/game/picks";
 import { daysOf, portfolioOf, type PortfolioHolding } from "@/game/portfolio";
-import { signedPct, usd } from "@/lib/format";
+import { signedPct, usd, versusMarket } from "@/lib/format";
 import { INDEX_TICKER, STARTING_VALUE, tradeFee, type GameSettings } from "@/lib/rules";
 import { displayName } from "@/market/names";
 import { clubPath, companyPath, requirePlayer } from "../_lib/player";
@@ -102,7 +102,7 @@ export default async function Portfolio({ params }: { params: Promise<{ id: stri
             </div>
             <div className="vs-row total">
               <span>You vs. the market</span>
-              <b>{Math.abs(mine - market) < 0.05 ? "Even" : signedPct(mine - market)}</b>
+              <b>{versusMarket(mine - market)}</b>
             </div>
           </>
         )}
