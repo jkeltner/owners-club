@@ -36,6 +36,37 @@ export async function fetchDailyRange(ticker: string, from: string, to: string):
   return (res.results ?? []).map((r) => ({ ticker, date: new Date(r.t).toISOString().slice(0, 10), close: r.c, volume: r.v }));
 }
 
+type DividendPage = {
+  results?: { id: string; ticker: string; ex_dividend_date: string; pay_date?: string; cash_amount: number; currency?: string; dividend_type?: string; frequency?: number }[];
+  next_url?: string;
+};
+
+export type Dividend = { id: string; ticker: string; exDate: string; payDate: string | null; cash: number; kind: string | null; perYear: number | null };
+
+/**
+ * Cash dividends, by ex-dividend date: the whole market between two dates, or
+ * one company's. The whole market runs to about 280 a day, so a week is two
+ * pages; every page after the first waits out the free plan's limit. Only US
+ * dollar amounts are kept.
+ */
+export async function fetchDividends(q: { from: string; to?: string; ticker?: string }, maxPages = 5): Promise<Dividend[]> {
+  const params = new URLSearchParams({ "ex_dividend_date.gte": q.from, limit: "1000", sort: "ex_dividend_date", order: "asc" });
+  if (q.to) params.set("ex_dividend_date.lte", q.to);
+  if (q.ticker) params.set("ticker", q.ticker);
+  let url: string | undefined = `https://api.massive.com/v3/reference/dividends?${params}`;
+  const out: Dividend[] = [];
+  for (let page = 0; url && page < maxPages; page++) {
+    if (page > 0) await massiveFreeTierPause();
+    const res: DividendPage = await fetchJson<DividendPage>(url, { headers: { Authorization: `Bearer ${apiKey()}` } });
+    for (const r of res.results ?? []) {
+      if ((r.currency ?? "USD") !== "USD" || !(r.cash_amount > 0)) continue;
+      out.push({ id: r.id, ticker: r.ticker, exDate: r.ex_dividend_date, payDate: r.pay_date ?? null, cash: r.cash_amount, kind: r.dividend_type ?? null, perYear: r.frequency ?? null });
+    }
+    url = res.next_url;
+  }
+  return out;
+}
+
 /** Pause to stay inside the free plan's five requests a minute. */
 export const massiveFreeTierPause = () => sleep(12_500);
 

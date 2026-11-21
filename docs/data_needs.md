@@ -65,7 +65,7 @@ Source guesses follow the free stack in the [build spec](build_spec.md#market-da
 | Operating cash flow and capital spending | Free cash flow; cash conversion | Quarterly | EDGAR | |
 | Debt and cash | Debt lesson; return on invested capital | Quarterly | EDGAR | |
 | Shareholders' equity, goodwill and intangibles | Price-to-book and tangible book (banks); return on equity | Quarterly | EDGAR | |
-| Dividends per share and payment dates | Dividends lesson; crediting cash to portfolios | Per payment | Price source | Open question in the build spec |
+| Dividends per share, ex-dividend and payment dates | Crediting portfolios; the buy screen's dividend card and choice; the company page; dividends lesson | Per payment | Massive `/v3/reference/dividends` (nightly for the last ten days; a company's year on first view, then weekly) | Built 2026-11-21 |
 | Earnings dates, past and next | Countdowns; prediction checks; scouting reports; "This week on the market" feed card (companies reporting in the next 7 days); earnings showdowns (voting closes at the last close before the report) | Weekly | Alpha Vantage earnings calendar | Hand-written `daysToEarnings` per company |
 | Reported quarter numbers behind each prediction metric (revenue growth, EPS, net margin), the day of the report | Scoring predictions and resolving showdown votes; the result card ("Profit margin: 31¢ of each $1 of sales") | Per report | The company's earnings press release (same day), reconciled against EDGAR when the 10-Q lands weeks later | One hand-written result in `prototype/src/data/club.ts` |
 | Sector and industry → which lens | Sector lens; sector P/E band | When it changes | Member list (part A), mapped to our lenses | |

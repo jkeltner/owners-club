@@ -70,6 +70,8 @@ export const companies = pgTable(
     oneLiner: text("one_liner"),
     status: text("status").$type<CompanyStatus>().notNull().default("active"),
     addedToIndex: date("added_to_index"),
+    // When this company's last year of dividends was last looked up (src/game/dividends.ts).
+    dividendsCheckedOn: date("dividends_checked_on"),
     firstSeen: timestamp("first_seen", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -88,6 +90,25 @@ export const prices = pgTable(
     source: text("source").notNull(), // "massive", "alpha_vantage", ...
   },
   (t) => [primaryKey({ columns: [t.ticker, t.date] }), index("prices_date_idx").on(t.date)],
+);
+
+// Dividends from the price source, for the companies in the game and the index
+// fund (SPY). One row per payment, keyed by the source's id. `cash` is dollars
+// per share; whoever held shares at the close before `exDate` is owed it, and
+// that is the day the game credits it (the price drops by about that much).
+export const dividends = pgTable(
+  "dividends",
+  {
+    id: text("id").primaryKey(),
+    ticker: text("ticker").notNull(),
+    exDate: date("ex_date").notNull(),
+    payDate: date("pay_date"),
+    cash: doublePrecision("cash").notNull(),
+    kind: text("kind"), // the source's dividend_type: CD regular, SC special, LT/ST fund distributions
+    perYear: integer("per_year"), // the source's frequency: 4 = quarterly, 12 = monthly, 0 = one-off
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("dividends_ticker_ex_idx").on(t.ticker, t.exDate), index("dividends_ex_idx").on(t.exDate)],
 );
 
 // Financials from SEC EDGAR's XBRL frames, one row per company per calendar
@@ -308,9 +329,55 @@ export const lots = pgTable(
     cost: doublePrecision("cost").notNull(),
     boughtOn: date("bought_on").notNull(),
     orderId: text("order_id").references(() => orders.id, { onDelete: "set null" }),
+    // Set when the lot is a dividend put back to work. Such a lot isn't a pick: no minimum hold.
+    creditId: text("credit_id").references(() => dividendCredits.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("lots_membership_idx").on(t.membershipId, t.ticker, t.boughtOn)],
+);
+
+export type DividendInto = "index" | "reinvest";
+
+// One row per player per dividend they were owed, written by the nightly job:
+// the shares that earned it, what it paid, the tax taken (the club's long-term
+// rate), and where the rest went: the index fund, or more of the same company.
+export const dividendCredits = pgTable(
+  "dividend_credits",
+  {
+    id: id(),
+    membershipId: text("membership_id")
+      .notNull()
+      .references(() => memberships.id, { onDelete: "cascade" }),
+    dividendId: text("dividend_id")
+      .notNull()
+      .references(() => dividends.id),
+    ticker: text("ticker").notNull(), // the holding: a member's ticker, or "SPX" for the index
+    exDate: date("ex_date").notNull(),
+    shares: doublePrecision("shares").notNull(),
+    perShare: doublePrecision("per_share").notNull(),
+    amount: doublePrecision("amount").notNull(),
+    tax: doublePrecision("tax").notNull(),
+    into: text("into").$type<DividendInto>().notNull(),
+    intoPrice: doublePrecision("into_price").notNull(),
+    intoShares: doublePrecision("into_shares").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("dividend_credits_once_idx").on(t.membershipId, t.dividendId), index("dividend_credits_membership_idx").on(t.membershipId, t.exDate)],
+);
+
+// Where a player's dividends from one company go. No row means the index fund.
+// The index fund's own dividends always go back into it.
+export const dividendChoices = pgTable(
+  "dividend_choices",
+  {
+    membershipId: text("membership_id")
+      .notNull()
+      .references(() => memberships.id, { onDelete: "cascade" }),
+    ticker: text("ticker").notNull(),
+    into: text("into").$type<DividendInto>().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.membershipId, t.ticker] })],
 );
 
 export type DayHolding = { ticker: string; value: number };

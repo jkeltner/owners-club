@@ -2,6 +2,7 @@
 // with leaving the money in the index, and every holding with what selling it
 // would cost. Valued once a day, at the last close.
 import Link from "next/link";
+import { creditsOf } from "@/game/dividends";
 import { clubIsOpen, fillDay, unrealized } from "@/game/ledger";
 import { ordersOf } from "@/game/picks";
 import { daysOf, portfolioOf, type PortfolioHolding } from "@/game/portfolio";
@@ -25,7 +26,7 @@ export default async function Portfolio({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const { membership, club } = await requirePlayer(id, clubPath(id, "/portfolio"));
   const s = club.settings;
-  const [p, orders, days] = await Promise.all([portfolioOf(membership.id, s), ordersOf(membership.id), daysOf(membership.id)]);
+  const [p, orders, days, credits] = await Promise.all([portfolioOf(membership.id, s), ordersOf(membership.id), daysOf(membership.id), creditsOf(membership.id)]);
   const waiting = orders.filter((o) => o.order.status === "waiting");
   const past = orders.filter((o) => o.order.status !== "waiting");
   const picks = p.holdings.filter((h) => !h.isIndex);
@@ -110,6 +111,7 @@ export default async function Portfolio({ params }: { params: Promise<{ id: stri
           Both start from your {usd(STARTING_VALUE)}. Each is what you&apos;d keep if you sold everything today: the tax on the gains comes out, and so does the{" "}
           {feePct(s)} fee on the sale. That&apos;s the number the game compares.
           Fees paid so far: <b>{usd(p.feesPaid, true)}</b> · Taxes paid: <b>{usd(p.taxesPaid, true)}</b>
+          {p.dividendTax > 0 && <> (of which {usd(p.dividendTax, true)} on dividends)</>}
         </p>
         {joinedLate && (
           <p className="muted small">
@@ -178,6 +180,30 @@ export default async function Portfolio({ params }: { params: Promise<{ id: stri
                   </span>
                 </li>
               ))}
+            </ul>
+          </Card>
+        </>
+      )}
+      {credits.length > 0 && (
+        <>
+          <h2>Dividends</h2>
+          <Card>
+            <ul className="trade-list">
+              {credits.map(({ credit: d, name }) => {
+                const from = d.ticker === INDEX_TICKER ? "Your S&P 500 index fund" : displayName(d.ticker, name ?? d.ticker);
+                const to = d.into === "reinvest" ? `more ${displayName(d.ticker, name ?? d.ticker)}` : "your index fund";
+                return (
+                  <li key={d.id}>
+                    <span>
+                      💵 {from} paid {usd(d.amount, true)}
+                      <span className="muted small" style={{ display: "block" }}>
+                        {usd(d.perShare, true)} a share on {d.shares.toFixed(d.shares < 10 ? 2 : 1)} shares · {usd(d.tax, true)} tax · {usd(d.amount - d.tax, true)} into {to}
+                      </span>
+                    </span>
+                    <span className="muted small">{shortDay(d.exDate)}</span>
+                  </li>
+                );
+              })}
             </ul>
           </Card>
         </>

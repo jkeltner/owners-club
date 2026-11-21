@@ -18,6 +18,7 @@ export const PATTERNS: [RegExp, TermKey][] = [
   [/\binventory\b/i, { kind: "glossary", slug: "inventory" }],
   [/\bclosing price\b|\btoday's close\b|\byesterday's close\b|\bthe next close\b/i, { kind: "glossary", slug: "closing-price" }],
   [/\bindex fund\b/i, { kind: "glossary", slug: "index-fund" }],
+  [/\bdividend yield\b|\bdividends?\b/i, { kind: "concept", slug: "dividends" }],
   [/\bscouting reports?\b/i, { kind: "glossary", slug: "scouting-report" }],
   [/\bthes[ie]s\b/i, { kind: "glossary", slug: "thesis" }],
   [/\bthe Dow\b|\bDow Jones\b/, { kind: "glossary", slug: "dow" }],

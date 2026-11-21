@@ -2,18 +2,23 @@
 // The slider and the rules. The server checks the amount again when the order
 // is placed; the slider only keeps honest players inside the lines.
 import { useActionState, useState } from "react";
+import type { DividendInto } from "@/db/schema";
+import type { DividendYear } from "@/game/dividends";
 import type { Money } from "@/game/picks";
 import { usd } from "@/lib/format";
 import { snapAmount } from "@/lib/slider";
 import { tradeFee, type GameSettings } from "@/lib/rules";
 import { buy, type FormState } from "../../../actions";
 import { MixBar } from "../../../_ui/charts";
+import { DividendChoiceFields, DividendExplainer } from "../../../_ui/dividends";
 import { Linked } from "../../../_ui/terms";
 
 const pct = (n: number) => `${Math.round(n * 1000) / 10}%`;
 const share = (n: number) => (n === 0.25 ? "a quarter" : n === 0.5 ? "half" : n === 1 ? "all" : pct(n));
 
-export function SizeForm({ clubId, ticker, name, money, settings }: { clubId: string; ticker: string; name: string; money: Money; settings: GameSettings }) {
+type Dividend = { year: DividendYear; price: number | null; into: DividendInto } | null;
+
+export function SizeForm({ clubId, ticker, name, money, settings, dividend }: { clubId: string; ticker: string; name: string; money: Money; settings: GameSettings; dividend: Dividend }) {
   const [state, action, pending] = useActionState<FormState, FormData>(buy, {});
   const low = Math.min(100, money.max);
   const [amount, setAmount] = useState(Math.min(1000, money.max));
@@ -128,6 +133,18 @@ export function SizeForm({ clubId, ticker, name, money, settings }: { clubId: st
           </span>
         </div>
       </section>
+
+      {dividend && (
+        <section className="card stack">
+          <div className="rule">
+            <span>💵</span>
+            <span>
+              <DividendExplainer name={name} year={dividend.year} price={dividend.price} taxRate={settings.longTermTaxRate} />
+            </span>
+          </div>
+          <DividendChoiceFields name={name} into={dividend.into} />
+        </section>
+      )}
 
       {state.problem && <p className="notice">{state.problem}</p>}
       <div className="sticky-cta">
