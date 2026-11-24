@@ -18,7 +18,7 @@ describe("the arithmetic of a sell", () => {
     { id: "old", shares: 10, cost: 1000, boughtOn: "2026-01-05" },
     { id: "new", shares: 10, cost: 1500, boughtOn: "2026-11-02" },
   ];
-  const sell = { shares: 5, price: 120, indexPrice: 600, lots, date: "2026-11-12", realizedBefore: { short: 0, long: 0 }, taxPaid: 0, settings: S };
+  const sell = { dollars: 600, all: false, price: 120, indexPrice: 600, lots, date: "2026-11-12", realizedBefore: { short: 0, long: 0 }, taxPaid: 0, settings: S };
 
   it("sells the oldest shares, takes the fee and the tax out, and puts the rest in the index", () => {
     const plan = planSell(sell);
@@ -27,14 +27,27 @@ describe("the arithmetic of a sell", () => {
     if (plan.ok) expect(plan.indexShares).toBeCloseTo(577 / 600, 8);
   });
 
+  it("sells the dollars asked for at the close, however many shares that takes", () => {
+    // Asked at 120 a share (5 shares); the close came in at 100, so it takes 6.
+    expect(planSell({ ...sell, price: 100 })).toMatchObject({ ok: true, shares: 6, trimmed: false, proceeds: 600, fee: 3 });
+    expect(planSell({ ...sell, price: 150 })).toMatchObject({ ok: true, shares: 4, trimmed: false, proceeds: 600 });
+  });
+
+  it("sells every share for all of it, whatever they're worth at the close", () => {
+    // Only the January lot is past the hold. "All of it" was $1,200 at 120; at 130 it's $1,300, and none is left behind.
+    expect(planSell({ ...sell, dollars: 1200, all: true, price: 130 })).toMatchObject({ ok: true, shares: 10, trimmed: false, proceeds: 1300, changes: [{ id: "old", shares: 0, cost: 0 }] });
+    // Within a dollar of everything sells everything, too.
+    expect(planSell({ ...sell, dollars: 1199.5 })).toMatchObject({ ok: true, shares: 10, trimmed: false, proceeds: 1200 });
+  });
+
   it("sells only what is past the minimum hold, and says so", () => {
-    expect(planSell({ ...sell, shares: 15 })).toMatchObject({ ok: true, shares: 10, trimmed: true, proceeds: 1200, changes: [{ id: "old", shares: 0, cost: 0 }] });
+    expect(planSell({ ...sell, dollars: 1800 })).toMatchObject({ ok: true, shares: 10, trimmed: true, proceeds: 1200, changes: [{ id: "old", shares: 0, cost: 0 }] });
     expect(planSell({ ...sell, lots: [lots[1]] })).toMatchObject({ ok: false });
     expect(planSell({ ...sell, lots: [] })).toMatchObject({ ok: false });
   });
 
   it("gives tax back when a loss follows a gain that was already taxed", () => {
-    const plan = planSell({ ...sell, price: 80, realizedBefore: { short: 200, long: 0 }, taxPaid: 80 });
+    const plan = planSell({ ...sell, dollars: 400, price: 80, realizedBefore: { short: 200, long: 0 }, taxPaid: 80 });
     // 5 shares at 80 = 400 against a cost of 500: a 100 long-term loss, which comes off the 200 short-term gain.
     expect(plan).toMatchObject({ ok: true, proceeds: 400, fee: 2, tax: -40, into: 438 });
   });
@@ -92,7 +105,7 @@ describe("selling a pick", () => {
 
   it("sells half at the next close: fee and tax out, the rest into the index", async () => {
     const order = await placeSell(dee, settings, "SEL", 1194, "I want the money back in the index", ny("2026-11-23", 17));
-    expect(order).toMatchObject({ side: "sell", status: "waiting", amount: 1194, reason: "I want the money back in the index" });
+    expect(order).toMatchObject({ side: "sell", status: "waiting", amount: 1194, sellAll: false, reason: "I want the money back in the index" });
     // A reason is asked for, but any reason will do.
     await expect(placeSell(dee, settings, "SEL", 100, "  ", ny("2026-11-23", 17))).rejects.toThrow(/why you're selling/);
     expect(order.askedShares).toBeCloseTo(9.95, 6);
@@ -129,6 +142,7 @@ describe("selling a pick", () => {
 
   it("gives tax back when the rest is sold at a loss", async () => {
     const order = await placeSell(dee, settings, "SEL", 1194, "I want the money back in the index", ny("2026-11-24", 18));
+    expect(order.sellAll).toBe(true); // what is left, so it sells every share at whatever price the close brings
     await placedAt(order.id, ny("2026-11-24", 18));
     await day("2026-11-25", 500, 90);
     expect(await runFills()).toMatchObject({ filled: 1 });

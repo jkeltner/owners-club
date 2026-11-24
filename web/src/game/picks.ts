@@ -201,8 +201,9 @@ export async function cancelOrder(orderId: string, membershipId: string, now = n
 // ---- Selling ----
 
 /**
- * Places a sell: `dollars` worth of a company at the last close, turned into
- * shares, because the price it will sell at isn't known until the close. Only
+ * Places a sell: `dollars` worth of a company, sold at the next close. How many
+ * shares that is depends on that close's price; until then the estimate at the
+ * last close holds those shares back from another sell. Only
  * shares past the club's minimum hold can go, less any already in a waiting
  * sell. What it brings in goes back into the index fund.
  */
@@ -232,7 +233,7 @@ export async function placeSell(seller: Buyer, settings: GameSettings, ticker: s
   const askedShares = all ? h.sellableShares : asked / h.price!;
   const [order] = await db
     .insert(orders)
-    .values({ membershipId: seller.id, ticker, side: "sell", amount: all ? round2(most) : asked, askedShares, reason: why })
+    .values({ membershipId: seller.id, ticker, side: "sell", amount: all ? round2(most) : asked, askedShares, sellAll: all, reason: why })
     .returning();
   return order;
 }

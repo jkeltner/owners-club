@@ -125,8 +125,11 @@ export function SellForm({ clubId, ticker, name, price, most, lots, sellOn, real
       </label>
 
       <p className="muted small">
-        Your sell goes through at the market close on {day(sellOn)} (4 pm in New York), or the next day the market is open. The price that day will be different from the
-        last close, so every number above will move a little. You can cancel until that close.
+        Your sell goes through at the market close on {day(sellOn)} (4 pm in New York), or the next day the market is open.{" "}
+        {all
+          ? "You're selling every share you can, so what they bring in depends on the price that day."
+          : `You're selling ${usd(dollars)} of ${name} at that day's price, so the number of shares, and the tax, will move a little.`}{" "}
+        You can cancel until that close.
       </p>
 
       {state.problem && <p className="notice">{state.problem}</p>}
