@@ -153,8 +153,6 @@ async function fillBuy(order: typeof orders.$inferSelect, settings: GameSettings
   return outcome;
 }
 
-const sharesText = (n: number) => n.toFixed(3);
-
 async function fillSell(order: typeof orders.$inferSelect, settings: GameSettings, date: string, price: number, indexPrice: number): Promise<"filled" | "trimmed" | "rejected" | "stillWaiting"> {
   const outcome = await db.transaction(async (tx) => {
     const reject = async (note: string) => {
@@ -163,9 +161,9 @@ async function fillSell(order: typeof orders.$inferSelect, settings: GameSetting
     };
     const open = (await openLots(order.membershipId, tx)).filter((l) => l.ticker === order.ticker && l.boughtOn <= date);
     const ledger = await taxLedger(order.membershipId, tx);
-    const plan = planSell({ shares: order.askedShares ?? 0, price, indexPrice, lots: open, date, realizedBefore: ledger.realized, taxPaid: ledger.paid, settings });
+    const plan = planSell({ dollars: order.amount, all: order.sellAll, price, indexPrice, lots: open, date, realizedBefore: ledger.realized, taxPaid: ledger.paid, settings });
     if (!plan.ok) return reject(plan.reason);
-    const note = plan.trimmed ? `You asked to sell ${sharesText(order.askedShares ?? 0)} shares. At that close ${sharesText(plan.shares)} could be sold, so that is what sold.` : null;
+    const note = plan.trimmed ? `You asked to sell ${dollars(order.amount)}. At that close the shares you could sell were worth ${dollars(plan.proceeds)}, so that is what sold.` : null;
     const done = await tx
       .update(orders)
       .set({ status: "filled", fillDate: date, fillPrice: price, fee: plan.fee, filledAmount: plan.proceeds, shares: plan.shares, gainShort: plan.realized.short, gainLong: plan.realized.long, tax: plan.tax, note })
@@ -177,7 +175,7 @@ async function fillSell(order: typeof orders.$inferSelect, settings: GameSetting
     await tx.insert(lots).values({ membershipId: order.membershipId, ticker: INDEX_TICKER, shares: plan.indexShares, cost: plan.into, boughtOn: date, orderId: order.id });
     return plan.trimmed ? ("trimmed" as const) : ("filled" as const);
   });
-  if (outcome === "rejected") await logEvent({ level: "info", kind: "trade.rejected", message: "A sell didn't go through at the close", detail: { membershipId: order.membershipId, orderId: order.id, ticker: order.ticker, shares: order.askedShares, date } });
+  if (outcome === "rejected") await logEvent({ level: "info", kind: "trade.rejected", message: "A sell didn't go through at the close", detail: { membershipId: order.membershipId, orderId: order.id, ticker: order.ticker, amount: order.amount, all: order.sellAll, date } });
   return outcome;
 }
 

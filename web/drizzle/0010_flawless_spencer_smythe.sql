@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "sell_all" boolean DEFAULT false NOT NULL;

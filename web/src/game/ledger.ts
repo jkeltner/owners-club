@@ -198,7 +198,8 @@ export function lessShares(lots: OpenLot[], shares: number): OpenLot[] {
 }
 
 export type SellInput = {
-  shares: number; // what the player asked to sell
+  dollars: number; // what the player asked to sell, at this close
+  all: boolean; // "all of it": every share that can be sold, whatever they're worth
   price: number; // the company's close
   indexPrice: number; // the index fund's close
   lots: OpenLot[]; // every open lot of the company
@@ -213,7 +214,7 @@ export type SellPlan =
   | {
       ok: true;
       shares: number; // sold
-      trimmed: boolean; // fewer than asked: the rest was still inside its hold, or already sold
+      trimmed: boolean; // less than asked: the rest was still inside its hold, or already sold
       proceeds: number;
       fee: number;
       tax: number; // negative when tax comes back against a loss
@@ -235,15 +236,17 @@ export function planSell(b: SellInput): SellPlan {
   const free = sellableLots(b.lots, b.date, s);
   const available = free.reduce((a, l) => a + l.shares, 0);
   if (available <= 0) return { ok: false, reason: b.lots.length ? "These shares were still inside this club's minimum hold at that close" : "You didn't own any of this company at that close" };
-  // Asking for all but a sliver sells it all, so no dust is left behind.
-  const shares = b.shares >= available - 1e-6 ? available : b.shares;
+  // The dollars are fixed; the shares follow the close. Asking for all of it, or for all but a
+  // dollar of what can be sold, sells every share, so no dust is left behind.
+  const worth = available * b.price;
+  const shares = b.all || worth - b.dollars < 1 ? available : b.dollars / b.price;
   if (shares * b.price < 0.01) return { ok: false, reason: "There was nothing to sell at that close" };
   const sale = sellOldestFirst(free, shares * b.price, b.price, b.date, s);
   const fee = tradeFee(sale.proceeds, s);
   const tax = taxForSale(b.realizedBefore, b.taxPaid, sale.realized, s);
   const into = round2(sale.proceeds - fee - tax);
   if (into <= 0) return { ok: false, reason: "The fee and tax would have used up everything the sale brought in" };
-  return { ok: true, shares, trimmed: b.shares > available + 1e-6, proceeds: sale.proceeds, fee, tax, realized: sale.realized, into, indexShares: into / b.indexPrice, changes: sale.changes };
+  return { ok: true, shares, trimmed: !b.all && b.dollars > worth + 0.01, proceeds: sale.proceeds, fee, tax, realized: sale.realized, into, indexShares: into / b.indexPrice, changes: sale.changes };
 }
 
 // ---- If sold today ----

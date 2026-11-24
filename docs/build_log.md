@@ -252,3 +252,10 @@ Jeff moved dividends up: they must work before the adult pilot club. His rules: 
 - **Checked.** Tests (`web/tests/dividends.test.ts`): the arithmetic, crediting into the index and into the company, shares bought on the ex-date not paid, running twice, no hold on dividend shares, and an all-index player staying exactly even with the comparison when SPY pays. Live against Massive: a week of the market (1,820 rows, three pages) and Costco's year. On the local app: the buy screen card and choice, the choice saved with the order, the company page's Save, the portfolio's list.
 - **Not yet.** The first dividend doesn't mark the `dividends` concept as learned by experience (that waits for the ranks work). No dividend line on a clubmate's page or in the feed.
 - **Costco.** The beta club's Costco special is credited by the nightly run early on 2026-11-25 (Wednesday), the first run with the 2026-11-24 close.
+
+### Sells in dollars (2026-11-24, branch `phase3/dollar_sells`)
+
+A "$500" sell filled as $498.08: the order was fixed in shares at Friday's close and sold at Monday's. Jeff agreed sells should work like buys.
+
+- **What changed.** A sell is now that many dollars at the next close, and the shares follow that day's price. "All of it" (or within $1 of everything) sells every share that can be sold, whatever they bring in. The sell screen, the waiting order and the filled order say which: "$300 of Costco … about 0.27 shares at the last close", or "All of your Costco". If the sellable shares are worth less than the dollars asked at the close, they all sell, with a note. Migration 0010 adds `orders.sell_all` (default false), so sells already waiting fill as dollar sells.
+- **Checked.** Tests: dollars fixed when the price falls or rises, "all of it" leaving nothing behind at a higher price, within-a-dollar, trimming to what is past the hold, and the waiting and filled orders end to end.

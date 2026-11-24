@@ -290,9 +290,12 @@ export const orders = pgTable(
     ticker: text("ticker").notNull(), // a member's ticker, or "SPX" for the index holding
     side: text("side").$type<OrderSide>().notNull(),
     amount: doublePrecision("amount").notNull(),
-    // A sell is asked for in shares (the price isn't known until the close); `amount` is then what
-    // those shares were worth at the last close before the order was placed.
+    // A sell is asked for in dollars, like a buy: `amount` is what to sell at the close, and the
+    // shares are worked out at that close's price. `askedShares` is the estimate at the last close
+    // before the order was placed, which holds those shares back from another sell meanwhile.
+    // `sellAll` ("all of it") sells every share that can be sold, whatever they're worth then.
     askedShares: doublePrecision("asked_shares"),
+    sellAll: boolean("sell_all").notNull().default(false),
     status: text("status").$type<OrderStatus>().notNull().default("waiting"),
     placedAt: timestamp("placed_at", { withTimezone: true }).notNull().defaultNow(),
     // Set by the nightly job when the order fills.

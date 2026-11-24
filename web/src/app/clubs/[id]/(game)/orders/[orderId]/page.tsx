@@ -40,7 +40,7 @@ export default async function Done({ params, searchParams }: { params: Promise<{
             {order.status === "filled" ? "Sold" : order.status === "cancelled" ? "Sell cancelled" : order.status === "rejected" ? "Sell didn't go through" : "Selling"}
           </p>
           <h1>
-            {order.status === "filled" ? `${usd(order.filledAmount ?? 0, true)} of ${name}` : `About ${usd(order.amount)} of ${name}`}
+            {order.status === "filled" ? `${usd(order.filledAmount ?? 0, true)} of ${name}` : order.sellAll ? `All of your ${name}` : `${usd(order.amount)} of ${name}`}
           </h1>
           {order.status === "filled" && order.fillDate && (
             <>
@@ -91,7 +91,7 @@ export default async function Done({ params, searchParams }: { params: Promise<{
             <p className="muted">
               {locked
                 ? "The market has closed on this order. It goes through overnight, at that closing price."
-                : `Your sell goes through at the market close on ${day(fillDay(order.placedAt))} (4 pm in New York), or the next day the market is open. You're selling ${aboutShares(order.askedShares ?? 0)} at whatever the price is then, so the dollars will be a little different. Until then you still own them, and you can still cancel.`}
+                : `Your sell goes through at the market close on ${day(fillDay(order.placedAt))} (4 pm in New York), or the next day the market is open. ${order.sellAll ? `You're selling all of it, ${aboutShares(order.askedShares ?? 0)}, so what they bring in depends on the price then.` : `You're selling ${usd(order.amount)} of it at the price then, which at the last close was ${aboutShares(order.askedShares ?? 0)}.`} Until then you still own them, and you can still cancel.`}
             </p>
           )}
           {order.status === "cancelled" && <p className="muted">You cancelled this before the market closed, so nothing was sold. You still own the shares, and there was no fee or tax.</p>}
